@@ -13,3 +13,4 @@ static/main.js
 venv
 debug.predictions.db
 predictions.db
+__pycache__

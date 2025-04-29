@@ -7,8 +7,13 @@ import binascii
 import re
 import json
 import sys
-from bottle_sqlite import SQLitePlugin
 from functools import wraps
+import sqlite3
+import inspect
+import bottle_sqlite
+
+
+
 
 # Load configuration from command line argument
 def load_config():
@@ -31,7 +36,7 @@ config = load_config()
 app = bottle.Bottle()
 
 # Add SQLite plugin with path from config
-app.install(SQLitePlugin(dbfile=config['dbFilepath']))
+app.install(bottle_sqlite.SQLitePlugin(dbfile=config['dbFilepath']))
 
 # Secret key for JWT from config
 JWT_SECRET = config['jwtSecret']

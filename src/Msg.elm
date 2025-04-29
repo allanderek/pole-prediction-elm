@@ -7,3 +7,6 @@ import Url
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | LoginIdentityInput String
+    | LoginPasswordInput String
+    | LoginSubmit
