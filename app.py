@@ -11,6 +11,8 @@ from functools import wraps
 import sqlite3
 import inspect
 import bottle_sqlite
+import base64
+import hmac
 
 
 
@@ -42,7 +44,8 @@ app.install(bottle_sqlite.SQLitePlugin(dbfile=config['dbFilepath']))
 JWT_SECRET = config['jwtSecret']
 JWT_ALGORITHM = "HS256"
 COOKIE_NAME = "auth_token"
-COOKIE_MAX_AGE = 360 * 24 * 60 * 60  # 360 days in seconds
+COOKIE_MAX_DAYS = 360
+COOKIE_MAX_AGE = COOKIE_MAX_DAYS * 24 * 60 * 60  # 360 days in seconds
 
 # Define index.html content as a string literal
 INDEX_HTML = """<!DOCTYPE html>
@@ -123,39 +126,49 @@ def get_user_id_from_cookie():
     except jwt.PyJWTError:
         return None
 
-# Password verification function for pdkdf2_sha256 format
+
 def verify_password(stored_password, provided_password):
-    # Parse the stored password hash
-    if not stored_password.startswith('pdkdf2_sha256'):
+    # Split the encoded hash into its components using $ as separator
+    parts = stored_password.split('$')
+    if len(parts) != 4:
+        print(f"Invalid hash format, expected 4 parts but got {len(parts)}: {stored_password}")
         return False
-        
+    
+    # Extract algorithm, salt, iterations, and hash
+    algorithm = parts[0]
+    if algorithm != "pdkdf2_sha256":  # Note: matches the hash format with "pd" not "pb"
+        print(f"Invalid algorithm: {algorithm}")
+        return False
+    
+    salt = parts[1]
+    
     try:
-        # Extract parameters from the hash
-        parts = stored_password.split('$')
-        if len(parts) != 4:
-            return False
-            
-        algorithm, salt, iterations_str, hash_value = parts
-        iterations = int(iterations_str)
-        
-        # Generate hash of the provided password
-        dk = hashlib.pbkdf2_hmac(
-            'sha256', 
-            provided_password.encode('utf-8'), 
-            salt.encode('utf-8'), 
-            iterations
-        )
-        
-        # Convert to hex format for comparison
-        computed_hash = binascii.hexlify(dk).decode('ascii')
-        
-        # Compare with stored hash value (partial match due to your truncated example)
-        return computed_hash.startswith(hash_value) or hash_value.startswith(computed_hash)
-        
-    except Exception as e:
-        if config.get('prettyLogging', False):
-            logger.error(f"Password verification error: {e}")
+        iterations = int(parts[2])
+    except ValueError as e:
+        print(f"Failed to parse iterations: {e}")
         return False
+    
+    stored_hash_base64 = parts[3]
+    
+    # Decode the stored hash from base64
+    try:
+        stored_hash_bytes = base64.b64decode(stored_hash_base64)
+    except Exception as e:
+        print(f"Failed to decode base64 hash: {e}")
+        return False
+    
+    # Generate hash from the provided password using the same parameters
+    # In Python, pbkdf2_hmac outputs binary, so we don't need to convert from hex
+    computed_hash = hashlib.pbkdf2_hmac(
+        'sha256',
+        provided_password.encode('utf-8'),
+        salt.encode('utf-8'),
+        iterations,
+        len(stored_hash_bytes)
+    )
+    
+    # Compare the computed hash with the stored hash (constant-time comparison)
+    return hmac.compare_digest(computed_hash, stored_hash_bytes)
 
 # Serve static files from the 'static' directory
 @app.route('/static/<filepath:path>')
@@ -182,7 +195,7 @@ def login(db):
         return {'success': False, 'message': 'Username and password required'}
     
     # Get user from database
-    query = "SELECT id, username, password, admin FROM users WHERE username = ?"
+    query = "SELECT id, username, fullname, password, admin FROM users WHERE username = ?"
     user = db.execute(query, (username,)).fetchone()
     
     if not user or not verify_password(user['password'], password):
@@ -192,7 +205,7 @@ def login(db):
     # Create JWT token with user_id embedded
     payload = {
         'user_id': user['id'],
-        'exp': datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=COOKIE_MAX_DAYS),
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
     
@@ -214,6 +227,7 @@ def login(db):
         'user': {
             'id': user['id'],
             'username': user['username'],
+            'fullname': user['fullname'],
             'admin': bool(user['admin'])
         }
     }

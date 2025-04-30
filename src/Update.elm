@@ -5,6 +5,7 @@ module Update exposing
 
 import Browser
 import Effect exposing (Effect)
+import Helpers.Http
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Return
@@ -55,7 +56,7 @@ update msg model =
                     model.loginForm
             in
             Return.noEffect
-                { model | loginForm = { form | identity = input } }
+                { model | loginForm = { form | username = input } }
 
         Msg.LoginPasswordInput input ->
             let
@@ -67,4 +68,21 @@ update msg model =
                 { model | loginForm = { form | password = input } }
 
         Msg.LoginSubmit ->
-            Return.noEffect model
+            case Types.Login.isValidForm model.loginForm of
+                False ->
+                    Return.noEffect model
+
+                True ->
+                    ( { model | userStatus = Helpers.Http.Inflight }
+                    , Effect.SubmitLogin model.loginForm
+                    )
+
+        Msg.LoginSubmitResponse result ->
+            ( { model | userStatus = Helpers.Http.fromResult result }
+            , case result of
+                Err _ ->
+                    Effect.None
+
+                Ok _ ->
+                    Effect.goto Route.Home
+            )

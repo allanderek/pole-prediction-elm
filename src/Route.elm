@@ -2,6 +2,7 @@ module Route exposing
     ( Route(..)
     , href
     , parse
+    , unparse
     )
 
 import Html

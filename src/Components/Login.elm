@@ -9,6 +9,7 @@ import Types.Login
 
 view : Types.Login.Form -> Html Msg
 view form =
+    -- TODO: This should be disabled if the request is inflight
     Html.form
         [ Html.Events.onSubmit Msg.LoginSubmit ]
         [ Html.label
@@ -16,7 +17,7 @@ view form =
             [ Html.text "Username"
             , Html.input
                 [ Attributes.type_ "text"
-                , Attributes.value form.identity
+                , Attributes.value form.username
                 , Html.Events.onInput Msg.LoginIdentityInput
                 , Attributes.placeholder "username"
                 ]

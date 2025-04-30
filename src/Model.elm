@@ -3,6 +3,7 @@ module Model exposing
     , initial
     )
 
+import Helpers.Http
 import Route exposing (Route)
 import Types.Login
 import Types.User exposing (User)
@@ -12,7 +13,7 @@ import Url exposing (Url)
 type alias Model key =
     { navigationKey : key
     , route : Route
-    , mUser : Maybe User
+    , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
     }
 
@@ -21,6 +22,6 @@ initial : key -> Url -> Model key
 initial key url =
     { navigationKey = key
     , route = Route.parse url
-    , mUser = Nothing
+    , userStatus = Helpers.Http.Ready
     , loginForm = Types.Login.emptyForm
     }

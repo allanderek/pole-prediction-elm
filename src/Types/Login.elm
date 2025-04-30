@@ -2,27 +2,34 @@ module Types.Login exposing
     ( Form
     , emptyForm
     , encodeForm
+    , isValidForm
     )
 
 import Json.Encode as Encode
 
 
 type alias Form =
-    { identity : String
+    { username : String
     , password : String
     }
 
 
 emptyForm : Form
 emptyForm =
-    { identity = ""
+    { username = ""
     , password = ""
     }
+
+
+isValidForm : Form -> Bool
+isValidForm form =
+    (String.length form.username > 0)
+        && (String.length form.password > 0)
 
 
 encodeForm : Form -> Encode.Value
 encodeForm form =
     Encode.object
-        [ ( "identity", Encode.string form.identity )
+        [ ( "username", Encode.string form.username )
         , ( "password", Encode.string form.password )
         ]

@@ -1,7 +1,13 @@
 module Msg exposing (Msg(..))
 
 import Browser
+import Http
+import Types.User exposing (User)
 import Url
+
+
+type alias HttpResult a =
+    Result Http.Error a
 
 
 type Msg
@@ -10,3 +16,4 @@ type Msg
     | LoginIdentityInput String
     | LoginPasswordInput String
     | LoginSubmit
+    | LoginSubmitResponse (HttpResult User)

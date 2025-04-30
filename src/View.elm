@@ -3,6 +3,7 @@ module View exposing (application)
 import Browser
 import Components.Login
 import Components.Navbar
+import Helpers.Http
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Model exposing (Model)
@@ -33,7 +34,7 @@ application model =
                     [ Html.h1
                         []
                         [ Html.text "Profile Page" ]
-                    , case model.mUser of
+                    , case Helpers.Http.toMaybe model.userStatus of
                         Just user ->
                             Html.dl
                                 []
