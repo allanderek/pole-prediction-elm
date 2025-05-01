@@ -31,6 +31,9 @@ perform model effect =
         Effect.LoadUrl url ->
             Browser.Navigation.load url
 
+        Effect.Reload ->
+            Browser.Navigation.reload
+
         Effect.SubmitLogin form ->
             let
                 url : String
@@ -52,4 +55,11 @@ perform model effect =
                 { url = url
                 , body = body
                 , expect = Http.expectJson Msg.LoginSubmitResponse decoder
+                }
+
+        Effect.SubmitLogout ->
+            Http.post
+                { url = apiUrl [ "logout" ]
+                , body = Http.emptyBody
+                , expect = Http.expectWhatever Msg.LogoutResponse
                 }

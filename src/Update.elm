@@ -86,3 +86,14 @@ update msg model =
                 Ok _ ->
                     Effect.goto Route.Home
             )
+
+        Msg.Logout ->
+            ( model, Effect.SubmitLogout )
+
+        Msg.LogoutResponse _ ->
+            -- It doesn't really matter what the result is, since even with success
+            -- we're just going to reload the current page, so any updates we do here would
+            -- be lost anyway. If this fails, then we could set the user status to the failure,
+            -- but then that would look like you were logged-out when maybe actually you weren't.
+            -- So we just ignore the result and reload the page.
+            ( model, Effect.Reload )

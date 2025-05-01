@@ -6,6 +6,7 @@ import Components.Navbar
 import Helpers.Http
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Events
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
@@ -44,6 +45,23 @@ application model =
                                 , Html.dd
                                     []
                                     [ Html.text user.username ]
+                                , Html.dt
+                                    []
+                                    [ Html.text "Name" ]
+                                , Html.dd
+                                    []
+                                    [ Html.text user.fullname ]
+                                , Html.dt
+                                    []
+                                    [ Html.text "Logout" ]
+                                , Html.dd
+                                    []
+                                    [ Html.button
+                                        [ Attributes.class "logout-button"
+                                        , Html.Events.onClick Msg.Logout
+                                        ]
+                                        [ Html.text "Logout" ]
+                                    ]
                                 ]
 
                         Nothing ->

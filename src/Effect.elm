@@ -11,7 +11,9 @@ type Effect
     = None
     | PushUrl String
     | LoadUrl String
+    | Reload
     | SubmitLogin Types.Login.Form
+    | SubmitLogout
 
 
 goto : Route -> Effect

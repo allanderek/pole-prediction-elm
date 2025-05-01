@@ -17,3 +17,5 @@ type Msg
     | LoginPasswordInput String
     | LoginSubmit
     | LoginSubmitResponse (HttpResult User)
+    | Logout
+    | LogoutResponse (HttpResult ())
