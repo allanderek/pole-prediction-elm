@@ -18,10 +18,10 @@ type alias Model key =
     }
 
 
-initial : key -> Url -> Model key
-initial key url =
+initial : key -> Url -> Helpers.Http.Status User -> Model key
+initial key url userStatus =
     { navigationKey = key
     , route = Route.parse url
-    , userStatus = Helpers.Http.Ready
+    , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
     }

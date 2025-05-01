@@ -47,22 +47,6 @@ COOKIE_NAME = "auth_token"
 COOKIE_MAX_DAYS = 360
 COOKIE_MAX_AGE = COOKIE_MAX_DAYS * 24 * 60 * 60  # 360 days in seconds
 
-# Define index.html content as a string literal
-INDEX_HTML = """<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pole Prediction</title>
-    <link rel="icon" type="image/svg" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 16 16'><text x='0' y='14'>🏎️</text></svg>"/>
-    <link rel="stylesheet" href="/static/styles.css">
-    <script src="/static/main.js"></script>
-</head>
-<body>
-    <h1>Pole Prediction</h1>
-    <script> var app = Elm.Main.init({}); </script>
-</body>
-</html>"""
 
 # Configure logging based on config
 if config.get('prettyLogging', False):
@@ -179,8 +163,42 @@ def serve_static(filepath):
 @app.route('/')
 @app.route('/app')
 @app.route('/app/<path:path>')
-def serve_index(path=None):
-    return INDEX_HTML
+def serve_index(db, path=None):
+    user = None
+    user_id = get_user_id_from_cookie()
+    if user_id:
+        query = "SELECT id, username, fullname, password, admin FROM users WHERE id = ?"
+        user = db.execute(query, (user_id,)).fetchone()
+
+    flags_data = {}
+    if user:
+        flags_data['flags'] = {
+            'user': {
+                "id": user["id"],
+                "username": user["username"],
+                "fullname": user["fullname"],
+                "admin": bool(user["admin"])  # Ensure this is a proper boolean
+            }
+        }
+    
+    flags_json = json.dumps(flags_data)
+
+    index_html = f"""<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Pole Prediction</title>
+                <link rel="icon" type="image/svg" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 16 16'><text x='0' y='14'>🏎️</text></svg>"/>
+                <link rel="stylesheet" href="/static/styles.css">
+                <script src="/static/main.js"></script>
+            </head>
+            <body>
+                <h1>Pole Prediction</h1>
+                <script> var app = Elm.Main.init({flags_json}); </script>
+            </body>
+            </html>"""
+    return index_html
 
 # Authentication routes
 @app.route('/api/login', method='POST')

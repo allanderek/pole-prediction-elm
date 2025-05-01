@@ -6,10 +6,12 @@ module Main exposing
 import Browser
 import Browser.Navigation
 import Effect exposing (Effect)
-import Json.Decode as Decode
+import Helpers.Http
+import Json.Decode as Decode exposing (Decoder)
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Perform
+import Types.User exposing (User)
 import Update
 import Url
 import View
@@ -53,10 +55,27 @@ main =
 
 
 init : ProgramFlags -> Url.Url -> key -> ( Model key, Effect )
-init _ url key =
+init programFlags url key =
     let
+        decodeFlag : String -> Decoder a -> Result Decode.Error a
+        decodeFlag fieldName fieldDecoder =
+            Decode.decodeValue (Decode.field fieldName fieldDecoder) programFlags
+
+        userStatus : Helpers.Http.Status User
+        userStatus =
+            case decodeFlag "user" Types.User.decoder of
+                Ok user ->
+                    Helpers.Http.Succeeded user
+
+                Err _ ->
+                    -- We do not use the Failed status for this since we would need
+                    -- to translate the Decode.Error into an Http.Error, which could be done
+                    -- but what would we do differently? In fact this is normal behaviour
+                    -- if there *is* no user in the flags.
+                    Helpers.Http.Ready
+
         initialModel : Model key
         initialModel =
-            Model.initial key url
+            Model.initial key url userStatus
     in
     Update.initRoute initialModel
