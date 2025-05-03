@@ -1,4 +1,7 @@
-module Msg exposing (Msg(..))
+module Msg exposing
+    ( HttpResult
+    , Msg(..)
+    )
 
 import Browser
 import Http
