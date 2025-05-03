@@ -12,6 +12,7 @@ import Html.Events
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
+import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 
@@ -60,9 +61,27 @@ application model =
                     ]
 
                 Route.FormulaE ->
+                    let
+                        leaderboardStatus : Helpers.Http.Status Leaderboard
+                        leaderboardStatus =
+                            Dict.get Types.FormulaE.currentSeason model.formulaELeaderboards
+                                |> Maybe.withDefault Helpers.Http.Ready
+                    in
                     [ Html.h1
                         []
                         [ Html.text "Formula E" ]
+                    , case leaderboardStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the leaderboard"
+
+                        Helpers.Http.Succeeded leaderboard ->
+                            Components.Leaderboard.view leaderboard
                     ]
 
                 Route.Profile ->

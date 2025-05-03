@@ -73,3 +73,12 @@ perform model effect =
                         (Msg.FormulaOneLeaderboardResponse spec)
                         Types.Leaderboard.decoder
                 }
+
+        Effect.GetFormulaELeaderboard spec ->
+            Http.get
+                { url = apiUrl [ "formula-e", "leaderboard", spec.season ]
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaELeaderboardResponse spec)
+                        Types.Leaderboard.decoder
+                }

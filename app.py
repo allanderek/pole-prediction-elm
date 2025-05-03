@@ -289,7 +289,7 @@ def protected_resource(user_id):
 
 @app.route('/api/formula-one/leaderboard/<season>', method=['GET'])
 def get_formula_one_leaderboard(db, season):
-    query = f"""
+    query = """
 with
     predictions as (select * from formula_one_prediction_lines where user != "" and position <= 10),
     results as (select * from formula_one_prediction_lines where user == ""),
@@ -354,7 +354,50 @@ order by total desc
              'rows' : [ make_row(dict(row)) for row in rows ] 
             }
 
+@app.route('/api/formula-e/leaderboard/<season>', method=['GET'])
+def get_formula_e_leaderboard(db, season):
+    query = """with
+    scored_predictions
+    as ( select
+            users.id as user_id,
+            users.fullname as user_fullname,
+            case when predictions.first = results.first then 1 else 0 end as race_wins,
+            case when predictions.pole = results.pole then 10 else 0 end +
+            case when predictions.fam = results.fam then 10 else 0 end + 
+            case when predictions.fl = results.fl then 10 else 0 end +
+            case when predictions.hgc = results.hgc then 10 else 0 end +
+            case when predictions.first = results.first then 20 else 0 end +
+            case when predictions.second = results.second then 10 else 0 end +
+            case when predictions.third = results.third then 10 else 0 end +
+            case when predictions.fdnf = results.fdnf then 10 else 0 end +
+            case when predictions.safety_car = results.safety_car then 10 else 0 end
+            as total
+         from predictions
+         inner join races on predictions.race = races.id 
+         join results on predictions.race = results.race
+         join users on predictions.user = users.id
+         where races.season = @season and races.cancelled = 0
+        )
+    select 
+        user_id, 
+        user_fullname,
+        cast(coalesce(sum(total), 0) as integer) as 'Total score',
+        cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins'
+    from scored_predictions
+    group by user_id
+    order by sum(total) desc, sum(race_wins) desc
+;"""
 
+    rows = db.execute(query, (season,)).fetchall()
+    def make_row (d):
+        return { 'userId': d['user_id'],
+                'userName': d['user_fullname'],
+                'scores': list([ s for (name, s) in d.items() if name != 'user_id' and name != 'user_fullname' ])
+                }
+
+    return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
+             'rows' : [ make_row(dict(row)) for row in rows ] 
+            }
 
 
 

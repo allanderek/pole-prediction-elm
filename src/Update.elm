@@ -11,6 +11,7 @@ import Model exposing (Model)
 import Msg exposing (Msg)
 import Return
 import Route
+import Types.FormulaE
 import Types.FormulaOne
 import Types.Login
 import Url
@@ -34,7 +35,12 @@ initRoute model =
             )
 
         Route.FormulaE ->
-            Return.noEffect model
+            ( { model
+                | formulaELeaderboards =
+                    Dict.insert Types.FormulaE.currentSeason Helpers.Http.Inflight model.formulaELeaderboards
+              }
+            , Effect.GetFormulaELeaderboard { season = Types.FormulaE.currentSeason }
+            )
 
         Route.Profile ->
             Return.noEffect model
@@ -116,4 +122,11 @@ update msg model =
                 { model
                     | formulaOneLeaderboards =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneLeaderboards
+                }
+
+        Msg.FormulaELeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaELeaderboards =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaELeaderboards
                 }

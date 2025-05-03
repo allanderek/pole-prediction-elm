@@ -2,6 +2,7 @@ module Msg exposing (Msg(..))
 
 import Browser
 import Http
+import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 import Types.User exposing (User)
@@ -22,3 +23,4 @@ type Msg
     | Logout
     | LogoutResponse (HttpResult ())
     | FormulaOneLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
+    | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)
