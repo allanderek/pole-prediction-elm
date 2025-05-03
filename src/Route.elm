@@ -8,6 +8,7 @@ module Route exposing
 import Html
 import Html.Attributes
 import Types.FormulaE
+import Types.FormulaOne
 import Url
 import Url.Builder
 import Url.Parser as Parser exposing ((</>))
@@ -16,7 +17,7 @@ import Url.Parser as Parser exposing ((</>))
 type Route
     = Home
     | Login
-    | FormulaOne
+    | FormulaOne (Maybe Types.FormulaOne.Season)
     | FormulaE (Maybe Types.FormulaE.Season)
     | Profile
     | NotFound
@@ -37,7 +38,8 @@ parse url =
                 , Parser.s appPrefix
                     </> Parser.oneOf
                             [ Parser.top |> Parser.map Home
-                            , Parser.s "formula-one" |> Parser.map FormulaOne
+                            , Parser.s "formula-one" </> Parser.string |> Parser.map (FormulaOne << Just)
+                            , Parser.s "formula-one" |> Parser.map (FormulaOne Nothing)
                             , Parser.s "formula-e" </> Parser.string |> Parser.map (FormulaE << Just)
                             , Parser.s "formula-e" |> Parser.map (FormulaE Nothing)
                             , Parser.s "login" |> Parser.map Login
@@ -67,8 +69,11 @@ unparse route =
                 Login ->
                     [ "login" ]
 
-                FormulaOne ->
+                FormulaOne Nothing ->
                     [ "formula-one" ]
+
+                FormulaOne (Just season) ->
+                    [ "formula-one", season ]
 
                 FormulaE Nothing ->
                     [ "formula-e" ]

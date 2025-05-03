@@ -26,12 +26,18 @@ initRoute model =
         Route.Login ->
             Return.noEffect model
 
-        Route.FormulaOne ->
+        Route.FormulaOne mSeason ->
+            let
+                season : Types.FormulaE.Season
+                season =
+                    mSeason
+                        |> Maybe.withDefault Types.FormulaOne.currentSeason
+            in
             ( { model
                 | formulaOneLeaderboards =
-                    Dict.insert Types.FormulaOne.currentSeason Helpers.Http.Inflight model.formulaOneLeaderboards
+                    Dict.insert season Helpers.Http.Inflight model.formulaOneLeaderboards
               }
-            , Effect.GetFormulaOneLeaderboard { season = Types.FormulaOne.currentSeason }
+            , Effect.GetFormulaOneLeaderboard { season = season }
             )
 
         Route.FormulaE mSeason ->
