@@ -34,12 +34,18 @@ initRoute model =
             , Effect.GetFormulaOneLeaderboard { season = Types.FormulaOne.currentSeason }
             )
 
-        Route.FormulaE ->
+        Route.FormulaE mSeason ->
+            let
+                season : Types.FormulaE.Season
+                season =
+                    mSeason
+                        |> Maybe.withDefault Types.FormulaE.currentSeason
+            in
             ( { model
                 | formulaELeaderboards =
-                    Dict.insert Types.FormulaE.currentSeason Helpers.Http.Inflight model.formulaELeaderboards
+                    Dict.insert season Helpers.Http.Inflight model.formulaELeaderboards
               }
-            , Effect.GetFormulaELeaderboard { season = Types.FormulaE.currentSeason }
+            , Effect.GetFormulaELeaderboard { season = season }
             )
 
         Route.Profile ->

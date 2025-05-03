@@ -34,7 +34,7 @@ view model =
             [ Html.ul
                 []
                 [ viewLink "Formula One" Route.FormulaOne
-                , viewLink "Formula E" Route.FormulaE
+                , viewLink "Formula E" (Route.FormulaE Nothing)
                 , profileOrLoginLink
                 ]
             ]

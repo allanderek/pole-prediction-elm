@@ -60,16 +60,56 @@ application model =
                             Components.Leaderboard.view leaderboard
                     ]
 
-                Route.FormulaE ->
+                Route.FormulaE mSeason ->
                     let
+                        season : Types.FormulaE.Season
+                        season =
+                            mSeason
+                                |> Maybe.withDefault Types.FormulaE.currentSeason
+
                         leaderboardStatus : Helpers.Http.Status Leaderboard
                         leaderboardStatus =
-                            Dict.get Types.FormulaE.currentSeason model.formulaELeaderboards
+                            Dict.get season model.formulaELeaderboards
                                 |> Maybe.withDefault Helpers.Http.Ready
+
+                        viewLink : Types.FormulaE.Season -> Html Msg
+                        viewLink linkSeason =
+                            let
+                                seasonArg : Maybe Types.FormulaE.Season
+                                seasonArg =
+                                    case linkSeason == Types.FormulaE.currentSeason of
+                                        True ->
+                                            Nothing
+
+                                        False ->
+                                            Just linkSeason
+                            in
+                            Html.a
+                                [ Attributes.class "season-link"
+                                , Route.href (Route.FormulaE seasonArg)
+                                ]
+                                [ Html.text linkSeason ]
                     in
                     [ Html.h1
                         []
-                        [ Html.text "Formula E" ]
+                        [ Html.text "Formula E "
+                        , Html.text season
+                        ]
+                    , Html.nav
+                        []
+                        [ Html.ul
+                            []
+                            [ Html.li
+                                []
+                                [ viewLink "2024-25" ]
+                            , Html.li
+                                []
+                                [ viewLink "2023-24" ]
+                            , Html.li
+                                []
+                                [ viewLink "2022-23" ]
+                            ]
+                        ]
                     , case leaderboardStatus of
                         Helpers.Http.Inflight ->
                             Html.text "Loading..."
