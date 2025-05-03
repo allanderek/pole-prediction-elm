@@ -5,6 +5,7 @@ import Effect exposing (Effect)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Msg exposing (Msg)
+import Types.Leaderboard
 import Types.Login
 import Types.User exposing (User)
 
@@ -62,4 +63,13 @@ perform model effect =
                 { url = apiUrl [ "logout" ]
                 , body = Http.emptyBody
                 , expect = Http.expectWhatever Msg.LogoutResponse
+                }
+
+        Effect.GetFormulaOneLeaderboard spec ->
+            Http.get
+                { url = apiUrl [ "formula-one", "leaderboard", spec.season ]
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaOneLeaderboardResponse spec)
+                        Types.Leaderboard.decoder
                 }

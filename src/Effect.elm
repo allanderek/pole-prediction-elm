@@ -4,6 +4,7 @@ module Effect exposing
     )
 
 import Route exposing (Route)
+import Types.FormulaOne
 import Types.Login
 
 
@@ -14,6 +15,7 @@ type Effect
     | Reload
     | SubmitLogin Types.Login.Form
     | SubmitLogout
+    | GetFormulaOneLeaderboard { season : Types.FormulaOne.Season }
 
 
 goto : Route -> Effect

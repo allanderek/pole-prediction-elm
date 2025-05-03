@@ -4,12 +4,14 @@ module Update exposing
     )
 
 import Browser
+import Dict
 import Effect exposing (Effect)
 import Helpers.Http
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Return
 import Route
+import Types.FormulaOne
 import Types.Login
 import Url
 
@@ -21,6 +23,17 @@ initRoute model =
             Return.noEffect model
 
         Route.Login ->
+            Return.noEffect model
+
+        Route.FormulaOne ->
+            ( { model
+                | formulaOneLeaderboards =
+                    Dict.insert Types.FormulaOne.currentSeason Helpers.Http.Inflight model.formulaOneLeaderboards
+              }
+            , Effect.GetFormulaOneLeaderboard { season = Types.FormulaOne.currentSeason }
+            )
+
+        Route.FormulaE ->
             Return.noEffect model
 
         Route.Profile ->
@@ -97,3 +110,10 @@ update msg model =
             -- but then that would look like you were logged-out when maybe actually you weren't.
             -- So we just ignore the result and reload the page.
             ( model, Effect.Reload )
+
+        Msg.FormulaOneLeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneLeaderboards =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneLeaderboards
+                }

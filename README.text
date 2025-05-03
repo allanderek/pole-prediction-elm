@@ -1,0 +1,1 @@
+- [ ] Am I vulnerable to SQL-injection? See for example getting the leaderboard we just pass in the season.

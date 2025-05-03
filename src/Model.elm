@@ -3,8 +3,11 @@ module Model exposing
     , initial
     )
 
+import Dict exposing (Dict)
 import Helpers.Http
 import Route exposing (Route)
+import Types.FormulaOne
+import Types.Leaderboard exposing (Leaderboard)
 import Types.Login
 import Types.User exposing (User)
 import Url exposing (Url)
@@ -15,6 +18,7 @@ type alias Model key =
     , route : Route
     , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
+    , formulaOneLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
     }
 
 
@@ -24,4 +28,5 @@ initial key url userStatus =
     , route = Route.parse url
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
+    , formulaOneLeaderboards = Dict.empty
     }

@@ -285,6 +285,81 @@ def list_users(db, user_id):
 def protected_resource(user_id):
     return {'status': 'ok', 'data': 'This is protected data', 'user_id': user_id}
 
+
+
+@app.route('/api/formula-one/leaderboard/<season>', method=['GET'])
+def get_formula_one_leaderboard(db, season):
+    query = f"""
+with
+    predictions as (select * from formula_one_prediction_lines where user != "" and position <= 10),
+    results as (select * from formula_one_prediction_lines where user == ""),
+    scored_lines as (
+    select 
+        users.id as user_id,
+        users.fullname as user_fullname,
+        sessions.name as session_name,
+        case when predictions.position <= 10 and results.position <= 10 
+            then
+                case when predictions.position == results.position 
+                    then 4 
+                    else 
+                        case when predictions.position + 1 == results.position  or predictions.position - 1 == results.position
+                        then 2
+                        else 1
+                        end
+                    end +
+                case when sessions.fastest_lap == true and results.fastest_lap = "true" and predictions.fastest_lap = "true" 
+                    then 1
+                    else 0
+                    end
+            else
+                0
+            end
+            as score
+        from predictions
+        inner join results on results.session == predictions.session and results.entrant == predictions.entrant
+        inner join formula_one_sessions as sessions on predictions.session = sessions.id
+        inner join formula_one_events as events on sessions.event == events.id and events.season == ?
+        inner join users on predictions.user = users.id
+    )
+select 
+    user_id,
+    user_fullname,
+    cast( coalesce( sum(
+        case when session_name == "sprint-shootout" then score else 0 end
+    ), 0) as integer) as sprint_shootout,
+    cast( coalesce( sum(
+        case when session_name == "sprint" then score else 0 end
+    ), 0) as integer) as sprint,
+    cast( coalesce( sum(
+        case when session_name == "qualifying" then score else 0 end
+    ), 0) as integer) as qualifying,
+    cast( coalesce( sum(
+        case when session_name == "race" then score else 0 end
+    ), 0) as integer) as race,
+    cast( coalesce( sum(score), 0) as integer) as total
+from scored_lines
+group by user_id
+order by total desc
+;
+"""
+    rows = db.execute(query, (season,)).fetchall()
+    def make_row (d):
+        return { 'userId': d['user_id'],
+                'userName': d['user_fullname'],
+                'scores': list([ s for (name, s) in d.items() if name != 'user_id' and name != 'user_fullname' ])
+                }
+
+    return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
+             'rows' : [ make_row(dict(row)) for row in rows ] 
+            }
+
+
+
+
+
+
+
 # Make sure the static directory exists
 os.makedirs('./static', exist_ok=True)
 

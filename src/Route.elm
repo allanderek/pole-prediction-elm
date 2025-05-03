@@ -15,6 +15,8 @@ import Url.Parser as Parser exposing ((</>))
 type Route
     = Home
     | Login
+    | FormulaOne
+    | FormulaE
     | Profile
     | NotFound
 
@@ -34,6 +36,8 @@ parse url =
                 , Parser.s appPrefix
                     </> Parser.oneOf
                             [ Parser.top |> Parser.map Home
+                            , Parser.s "formula-one" |> Parser.map FormulaOne
+                            , Parser.s "formula-e" |> Parser.map FormulaE
                             , Parser.s "login" |> Parser.map Login
                             , Parser.s "profile" |> Parser.map Profile
                             ]
@@ -60,6 +64,12 @@ unparse route =
 
                 Login ->
                     [ "login" ]
+
+                FormulaOne ->
+                    [ "formula-one" ]
+
+                FormulaE ->
+                    [ "formula-e" ]
 
                 Profile ->
                     [ "profile" ]

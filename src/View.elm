@@ -1,8 +1,10 @@
 module View exposing (application)
 
 import Browser
+import Components.Leaderboard
 import Components.Login
 import Components.Navbar
+import Dict
 import Helpers.Http
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -10,6 +12,8 @@ import Html.Events
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
+import Types.FormulaOne
+import Types.Leaderboard exposing (Leaderboard)
 
 
 application : Model key -> Browser.Document Msg
@@ -29,6 +33,36 @@ application model =
                         []
                         [ Html.text "Login" ]
                     , Components.Login.view model.loginForm
+                    ]
+
+                Route.FormulaOne ->
+                    let
+                        leaderboardStatus : Helpers.Http.Status Leaderboard
+                        leaderboardStatus =
+                            Dict.get Types.FormulaOne.currentSeason model.formulaOneLeaderboards
+                                |> Maybe.withDefault Helpers.Http.Ready
+                    in
+                    [ Html.h1
+                        []
+                        [ Html.text "Formula One" ]
+                    , case leaderboardStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the leaderboard"
+
+                        Helpers.Http.Succeeded leaderboard ->
+                            Components.Leaderboard.view leaderboard
+                    ]
+
+                Route.FormulaE ->
+                    [ Html.h1
+                        []
+                        [ Html.text "Formula E" ]
                     ]
 
                 Route.Profile ->
