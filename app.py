@@ -344,15 +344,17 @@ order by total desc
 ;
 """
     rows = db.execute(query, (season,)).fetchall()
+    return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
+             'rows' : create_leaderboard_rows(rows)
+            }
+
+def create_leaderboard_rows(rows):
     def make_row (d):
         return { 'userId': d['user_id'],
                 'userName': d['user_fullname'],
                 'scores': list([ s for (name, s) in d.items() if name != 'user_id' and name != 'user_fullname' ])
                 }
-
-    return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
-             'rows' : [ make_row(dict(row)) for row in rows ] 
-            }
+    return [ make_row(dict(row)) for row in rows ]
 
 @app.route('/api/formula-e/leaderboard/<season>', method=['GET'])
 def get_formula_e_leaderboard(db, season):
@@ -389,14 +391,9 @@ def get_formula_e_leaderboard(db, season):
 ;"""
 
     rows = db.execute(query, (season,)).fetchall()
-    def make_row (d):
-        return { 'userId': d['user_id'],
-                'userName': d['user_fullname'],
-                'scores': list([ s for (name, s) in d.items() if name != 'user_id' and name != 'user_fullname' ])
-                }
 
     return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
-             'rows' : [ make_row(dict(row)) for row in rows ] 
+             'rows' : create_leaderboard_rows(rows)
             }
 
 
