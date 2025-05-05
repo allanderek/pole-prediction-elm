@@ -26,4 +26,5 @@ type Msg
     | Logout
     | LogoutResponse (HttpResult ())
     | FormulaOneLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
+    | FormulaOneEventsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.Event))
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)

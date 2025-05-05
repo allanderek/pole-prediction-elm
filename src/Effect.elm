@@ -11,12 +11,14 @@ import Types.Login
 
 type Effect
     = None
+    | Batch (List Effect)
     | PushUrl String
     | LoadUrl String
     | Reload
     | SubmitLogin Types.Login.Form
     | SubmitLogout
     | GetFormulaOneLeaderboard { season : Types.FormulaOne.Season }
+    | GetFormulaOneEvents { season : Types.FormulaOne.Season }
     | GetFormulaELeaderboard { season : Types.FormulaE.Season }
 
 

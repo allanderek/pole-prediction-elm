@@ -49,6 +49,11 @@ application model =
                             Dict.get season model.formulaOneLeaderboards
                                 |> Maybe.withDefault Helpers.Http.Ready
 
+                        eventsStatus : Helpers.Http.Status (List Types.FormulaOne.Event)
+                        eventsStatus =
+                            Dict.get season model.formulaOneEvents
+                                |> Maybe.withDefault Helpers.Http.Ready
+
                         viewLink : Types.FormulaOne.Season -> Html Msg
                         viewLink linkSeason =
                             let
@@ -93,6 +98,39 @@ application model =
 
                         Helpers.Http.Succeeded leaderboard ->
                             Components.Leaderboard.view leaderboard
+                    , case eventsStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the events"
+
+                        Helpers.Http.Succeeded events ->
+                            let
+                                viewEvent : Types.FormulaOne.Event -> Html Msg
+                                viewEvent event =
+                                    Html.li
+                                        []
+                                        [ Html.a
+                                            [ Attributes.class "event-link"
+                                            , Route.FormulaOneEvent season event.id
+                                                |> Route.href
+                                            ]
+                                            [ Html.text event.name ]
+                                        ]
+                            in
+                            Html.ul
+                                []
+                                (List.map viewEvent events)
+                    ]
+
+                Route.FormulaOneEvent mSeason mEvent ->
+                    [ Html.h1
+                        []
+                        [ Html.text "Formula One Event" ]
                     ]
 
                 Route.FormulaE mSeason ->

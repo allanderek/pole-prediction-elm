@@ -5,6 +5,7 @@ import Effect exposing (Effect)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Msg exposing (Msg)
+import Types.FormulaOne
 import Types.Leaderboard
 import Types.Login
 import Types.User exposing (User)
@@ -25,6 +26,10 @@ perform model effect =
     case effect of
         Effect.None ->
             Cmd.none
+
+        Effect.Batch effects ->
+            List.map (perform model) effects
+                |> Cmd.batch
 
         Effect.PushUrl url ->
             Browser.Navigation.pushUrl model.navigationKey url
@@ -72,6 +77,15 @@ perform model effect =
                     Http.expectJson
                         (Msg.FormulaOneLeaderboardResponse spec)
                         Types.Leaderboard.decoder
+                }
+
+        Effect.GetFormulaOneEvents spec ->
+            Http.get
+                { url = apiUrl [ "formula-one", "season-events", spec.season ]
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaOneEventsResponse spec)
+                        (Decode.list Types.FormulaOne.eventDecoder)
                 }
 
         Effect.GetFormulaELeaderboard spec ->

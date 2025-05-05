@@ -20,6 +20,7 @@ type alias Model key =
     , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
     , formulaOneLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
+    , formulaOneEvents : Dict Types.FormulaOne.Season (Helpers.Http.Status (List Types.FormulaOne.Event))
     , formulaELeaderboards : Dict Types.FormulaE.Season (Helpers.Http.Status Leaderboard)
     }
 
@@ -31,5 +32,6 @@ initial key url userStatus =
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
     , formulaOneLeaderboards = Dict.empty
+    , formulaOneEvents = Dict.empty
     , formulaELeaderboards = Dict.empty
     }

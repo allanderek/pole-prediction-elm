@@ -280,14 +280,80 @@ def list_users(db, user_id):
     return {'users': [dict(user) for user in users]}
 
 # Protected API routes
-@app.route('/api/protected-resource', method=['GET'])
+@app.route('/api/protected-resource', methods=['GET'])
 @require_auth
 def protected_resource(user_id):
     return {'status': 'ok', 'data': 'This is protected data', 'user_id': user_id}
 
 
+@app.route('/api/formula-one/season-events/<season>', methods=['GET'])
+def get_formula_one_events(db, season):
+    query = """ select * from formula_one_events_view
+where season = ?
+;"""
+    rows = db.execute(query, (season,)).fetchall()
+    bottle.response.content_type = 'application/json'
+    return json.dumps([ dict(row) for row in rows ])
+    
 
-@app.route('/api/formula-one/leaderboard/<season>', method=['GET'])
+@app.route('/api/formula-one/session-predictions/<session_id>', method='GET')
+def get_formula_one_session_predictions(db, session_id):
+    query = """WITH 
+    user_predictions AS (
+        SELECT 
+            user,
+            session,
+            entrant,
+            position,
+            fastest_lap
+        FROM formula_one_prediction_lines
+        WHERE user IS NOT NULL and user != ""
+        AND formula_one_prediction_lines.session = @session_id
+    ),
+    session_results AS (
+        SELECT 
+            entrant,
+            position,
+            fastest_lap
+        FROM formula_one_prediction_lines
+        WHERE user IS NULL or user = ""
+        AND session = @session_id
+    )
+SELECT 
+    up.user AS user_id,
+    u.fullname AS user_name,
+    up.position AS predicted_position,
+    sr.position AS actual_position,
+    d.name AS driver_name,
+    CASE 
+        WHEN up.position <= 10 AND sr.position <= 10 THEN
+            CASE 
+                WHEN up.position = sr.position THEN 4
+                WHEN ABS(up.position - sr.position) = 1 THEN 2
+                ELSE 1
+            END
+        ELSE 0
+    END + 
+    CASE 
+        WHEN s.fastest_lap = 1 
+        AND up.fastest_lap = 1
+        AND sr.fastest_lap = 1
+        AND sr.position <= 10 THEN 1
+        ELSE 0
+    END AS score
+FROM user_predictions up
+JOIN users u ON up.user = u.id
+JOIN session_results sr ON up.entrant = sr.entrant
+JOIN formula_one_entrants fe ON up.entrant = fe.id
+JOIN drivers d ON fe.driver = d.id
+JOIN formula_one_sessions s ON up.session = s.id
+ORDER BY u.fullname, up.position
+;"""
+    return
+
+
+
+@app.route('/api/formula-one/leaderboard/<season>', method='GET')
 def get_formula_one_leaderboard(db, season):
     query = """
 with
@@ -356,7 +422,7 @@ def create_leaderboard_rows(rows):
                 }
     return [ make_row(dict(row)) for row in rows ]
 
-@app.route('/api/formula-e/leaderboard/<season>', method=['GET'])
+@app.route('/api/formula-e/leaderboard/<season>', method='GET')
 def get_formula_e_leaderboard(db, season):
     query = """with
     scored_predictions

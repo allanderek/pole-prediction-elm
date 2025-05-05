@@ -36,8 +36,18 @@ initRoute model =
             ( { model
                 | formulaOneLeaderboards =
                     Dict.insert season Helpers.Http.Inflight model.formulaOneLeaderboards
+                , formulaOneEvents =
+                    Dict.insert season Helpers.Http.Inflight model.formulaOneEvents
               }
-            , Effect.GetFormulaOneLeaderboard { season = season }
+            , Effect.Batch
+                [ Effect.GetFormulaOneLeaderboard { season = season }
+                , Effect.GetFormulaOneEvents { season = season }
+                ]
+            )
+
+        Route.FormulaOneEvent mSeason eventId ->
+            ( model
+            , Effect.None
             )
 
         Route.FormulaE mSeason ->
@@ -134,6 +144,13 @@ update msg model =
                 { model
                     | formulaOneLeaderboards =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneLeaderboards
+                }
+
+        Msg.FormulaOneEventsResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneEvents =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneEvents
                 }
 
         Msg.FormulaELeaderboardResponse spec result ->
