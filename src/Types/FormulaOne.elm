@@ -2,8 +2,11 @@ module Types.FormulaOne exposing
     ( Event
     , EventId
     , Season
+    , Session
+    , SessionId
     , currentSeason
     , eventDecoder
+    , sessionDecoder
     )
 
 import Helpers.Decode
@@ -39,3 +42,29 @@ eventDecoder =
         |> Pipeline.required "round" Decode.int
         |> Pipeline.required "name" Decode.string
         |> Pipeline.required "isSprint" Helpers.Decode.intAsBool
+
+
+type alias SessionId =
+    Int
+
+
+type alias Session =
+    { id : SessionId
+    , name : String
+    , half_points : Bool
+
+    -- , startTime : String
+    , cancelled : Bool
+    , fastestLap : Bool
+    }
+
+
+sessionDecoder : Decoder Session
+sessionDecoder =
+    Decode.succeed Session
+        |> Pipeline.required "id" Decode.int
+        |> Pipeline.required "name" Decode.string
+        |> Pipeline.required "half_points" Helpers.Decode.intAsBool
+        -- |> Pipeline.required "start_time" Decode.string
+        |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
+        |> Pipeline.required "fastest_lap" Helpers.Decode.intAsBool

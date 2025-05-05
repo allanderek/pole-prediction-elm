@@ -88,6 +88,15 @@ perform model effect =
                         (Decode.list Types.FormulaOne.eventDecoder)
                 }
 
+        Effect.GetFormulaOneEventSessions spec ->
+            Http.get
+                { url = apiUrl [ "formula-one", "event-sessions", String.fromInt spec.eventId ]
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaOneEventSessionsResponse spec)
+                        (Decode.list Types.FormulaOne.sessionDecoder)
+                }
+
         Effect.GetFormulaELeaderboard spec ->
             Http.get
                 { url = apiUrl [ "formula-e", "leaderboard", spec.season ]

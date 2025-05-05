@@ -286,7 +286,7 @@ def protected_resource(user_id):
     return {'status': 'ok', 'data': 'This is protected data', 'user_id': user_id}
 
 
-@app.route('/api/formula-one/season-events/<season>', methods=['GET'])
+@app.route('/api/formula-one/season-events/<season>', method='GET')
 def get_formula_one_events(db, season):
     query = """ select * from formula_one_events_view
 where season = ?
@@ -295,6 +295,25 @@ where season = ?
     bottle.response.content_type = 'application/json'
     return json.dumps([ dict(row) for row in rows ])
     
+@app.route('/api/formula-one/event-sessions/<event_id>', method='GET')
+def get_formula_one_sessions_by_event(db, event_id):
+    query = """select 
+    s.id, 
+    s.name, 
+    s.half_points, 
+    s.start_time, 
+    s.cancelled, 
+    s.event, 
+    s.fastest_lap
+from formula_one_sessions s
+where s.event = ?
+order BY s.start_time
+;"""
+    rows = db.execute(query, (event_id,)).fetchall()
+    bottle.response.content_type = 'application/json'
+    return json.dumps([ dict(row) for row in rows ])
+
+
 
 @app.route('/api/formula-one/session-predictions/<session_id>', method='GET')
 def get_formula_one_session_predictions(db, session_id):

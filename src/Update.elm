@@ -45,9 +45,9 @@ initRoute model =
                 ]
             )
 
-        Route.FormulaOneEvent mSeason eventId ->
+        Route.FormulaOneEvent _ eventId ->
             ( model
-            , Effect.None
+            , Effect.GetFormulaOneEventSessions { eventId = eventId }
             )
 
         Route.FormulaE mSeason ->
@@ -158,4 +158,11 @@ update msg model =
                 { model
                     | formulaELeaderboards =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaELeaderboards
+                }
+
+        Msg.FormulaOneEventSessionsResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneSessions =
+                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaOneSessions
                 }

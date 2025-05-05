@@ -19,6 +19,7 @@ type Effect
     | SubmitLogout
     | GetFormulaOneLeaderboard { season : Types.FormulaOne.Season }
     | GetFormulaOneEvents { season : Types.FormulaOne.Season }
+    | GetFormulaOneEventSessions { eventId : Types.FormulaOne.EventId }
     | GetFormulaELeaderboard { season : Types.FormulaE.Season }
 
 

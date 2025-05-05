@@ -128,9 +128,43 @@ application model =
                     ]
 
                 Route.FormulaOneEvent mSeason mEvent ->
+                    let
+                        sessionsStatus : Helpers.Http.Status (List Types.FormulaOne.Session)
+                        sessionsStatus =
+                            Dict.get mEvent model.formulaOneSessions
+                                |> Maybe.withDefault Helpers.Http.Ready
+                    in
                     [ Html.h1
                         []
                         [ Html.text "Formula One Event" ]
+                    , case sessionsStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the sessions"
+
+                        Helpers.Http.Succeeded sessions ->
+                            let
+                                viewSession : Types.FormulaOne.Session -> Html Msg
+                                viewSession session =
+                                    Html.li
+                                        []
+                                        [ Html.a
+                                            [ Attributes.class "session-link"
+
+                                            -- , Route.FormulaOneEventSession mSeason mEvent session.id
+                                            -- |> Route.href
+                                            ]
+                                            [ Html.text session.name ]
+                                        ]
+                            in
+                            Html.ul
+                                []
+                                (List.map viewSession sessions)
                     ]
 
                 Route.FormulaE mSeason ->
