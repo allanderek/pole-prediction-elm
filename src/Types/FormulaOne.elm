@@ -1,10 +1,13 @@
 module Types.FormulaOne exposing
-    ( Event
+    ( Entrant
+    , EntrantId
+    , Event
     , EventId
     , Season
     , Session
     , SessionId
     , currentSeason
+    , entrantDecoder
     , eventDecoder
     , sessionDecoder
     )
@@ -68,3 +71,30 @@ sessionDecoder =
         -- |> Pipeline.required "start_time" Decode.string
         |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
         |> Pipeline.required "fastest_lap" Helpers.Decode.intAsBool
+
+
+type alias EntrantId =
+    Int
+
+
+type alias Entrant =
+    { id : EntrantId
+    , number : Int
+    , driver : String
+    , teamFullName : String
+    , teamShortName : String
+    , teamPrimaryColor : String
+    , teamSecondaryColor : String
+    }
+
+
+entrantDecoder : Decoder Entrant
+entrantDecoder =
+    Decode.succeed Entrant
+        |> Pipeline.required "id" Decode.int
+        |> Pipeline.required "number" Decode.int
+        |> Pipeline.required "driver_name" Decode.string
+        |> Pipeline.required "team_full_name" Decode.string
+        |> Pipeline.required "team_short_name" Decode.string
+        |> Pipeline.required "team_primary_color" Decode.string
+        |> Pipeline.required "team_secondary_color" Decode.string

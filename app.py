@@ -313,6 +313,30 @@ order BY s.start_time
     bottle.response.content_type = 'application/json'
     return json.dumps([ dict(row) for row in rows ])
 
+@app.route('/api/formula-one/session-entrants/<session_id>', method='GET')
+def get_formula_one_session_entrants(db, session_id):
+    query = """select
+    e.id,
+    e.number,
+    e.driver,
+    e.team,
+    e.session,
+    coalesce(e.participating, 0) as participating,
+    e.rank,
+    d.name as driver_name,
+    t.fullname as team_full_name,
+    t.shortname as team_short_name,
+    coalesce(t.color, '#000000') as team_primary_color,
+    coalesce(t.secondary_color, '#000000') as team_secondary_color
+from formula_one_entrants e
+join drivers d on e.driver = d.id
+join formula_one_teams t on e.team = t.id
+where e.session = @session_id
+order by e.rank desc, e.number
+;"""
+    rows = db.execute(query, (session_id,)).fetchall()
+    bottle.response.content_type = 'application/json'
+    return json.dumps([ dict(row) for row in rows ])
 
 
 @app.route('/api/formula-one/session-predictions/<session_id>', method='GET')

@@ -13,4 +13,4 @@ watch-frontend:
 	@watchexec -w src -e elm "echo 'Elm file changed, rebuilding frontend...' && make elm" 
 
 watch-backend:
-	@watchexec -w . -e py "echo 'Python file changed, rebuilding backend...' && python app.py config.dev.json"
+	@watchexec -r -e py "echo 'Python file changed, rebuilding backend...' && python app.py config.dev.json"

@@ -19,6 +19,7 @@ type Route
     | Login
     | FormulaOne (Maybe Types.FormulaOne.Season)
     | FormulaOneEvent Types.FormulaOne.Season Types.FormulaOne.EventId
+    | FormulaOneSession Types.FormulaOne.Season Types.FormulaOne.EventId Types.FormulaOne.SessionId
     | FormulaE (Maybe Types.FormulaE.Season)
     | Profile
     | NotFound
@@ -49,6 +50,12 @@ parse url =
                                 </> Parser.string
                                 </> Parser.int
                                 |> Parser.map FormulaOneEvent
+                            , Parser.s "formula-one"
+                                </> Parser.s "session"
+                                </> Parser.string
+                                </> Parser.int
+                                </> Parser.int
+                                |> Parser.map FormulaOneSession
                             , Parser.s "formula-e" </> Parser.string |> Parser.map (FormulaE << Just)
                             , Parser.s "formula-e" |> Parser.map (FormulaE Nothing)
                             , Parser.s "login" |> Parser.map Login
@@ -86,6 +93,14 @@ unparse route =
 
                 FormulaOneEvent season eventId ->
                     [ "formula-one", "event", season, String.fromInt eventId ]
+
+                FormulaOneSession season eventId sessionId ->
+                    [ "formula-one"
+                    , "session"
+                    , season
+                    , String.fromInt eventId
+                    , String.fromInt sessionId
+                    ]
 
                 FormulaE Nothing ->
                     [ "formula-e" ]
