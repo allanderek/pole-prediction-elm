@@ -139,6 +139,15 @@ perform model effect =
                         Types.Leaderboard.decoder
                 }
 
+        Effect.GetFormulaOneDriverStandings spec ->
+            Http.get
+                { url = apiUrl [ "formula-one", "driver-standings", spec.season ]
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaOneDriverStandingsResponse spec)
+                        Types.Leaderboard.decoder
+                }
+
         Effect.GetFormulaELeaderboard spec ->
             Http.get
                 { url = apiUrl [ "formula-e", "leaderboard", spec.season ]

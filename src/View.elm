@@ -60,6 +60,11 @@ application model =
                             Dict.get season model.formulaOneConstructorStandings
                                 |> Maybe.withDefault Helpers.Http.Ready
 
+                        driverStandingsStatus : Helpers.Http.Status Leaderboard
+                        driverStandingsStatus =
+                            Dict.get season model.formulaOneDriverStandings
+                                |> Maybe.withDefault Helpers.Http.Ready
+
                         eventsStatus : Helpers.Http.Status (List Types.FormulaOne.Event)
                         eventsStatus =
                             Dict.get season model.formulaOneEvents
@@ -110,6 +115,19 @@ application model =
 
                         Helpers.Http.Succeeded leaderboard ->
                             Components.Leaderboard.view { firstColumn = "User" } leaderboard
+                    , Html.h2 [] [ Html.text "Driver standings" ]
+                    , case driverStandingsStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the driver standings"
+
+                        Helpers.Http.Succeeded driverStandings ->
+                            Components.Leaderboard.view { firstColumn = "Driver" } driverStandings
                     , Html.h2 [] [ Html.text "Constructor standings" ]
                     , case constructorStandingsStatus of
                         Helpers.Http.Inflight ->
