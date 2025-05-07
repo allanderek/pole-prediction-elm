@@ -32,6 +32,10 @@ initRoute model =
                 season =
                     mSeason
                         |> Maybe.withDefault Types.FormulaOne.currentSeason
+
+                spec : { season : Types.FormulaOne.Season }
+                spec =
+                    { season = season }
             in
             ( { model
                 | formulaOneLeaderboards =
@@ -40,8 +44,9 @@ initRoute model =
                     Dict.insert season Helpers.Http.Inflight model.formulaOneEvents
               }
             , Effect.Batch
-                [ Effect.GetFormulaOneLeaderboard { season = season }
-                , Effect.GetFormulaOneEvents { season = season }
+                [ Effect.GetFormulaOneLeaderboard spec
+                , Effect.GetFormulaOneSeasonLeaderboard spec
+                , Effect.GetFormulaOneEvents spec
                 ]
             )
 
@@ -187,4 +192,11 @@ update msg model =
                 { model
                     | formulaOneSessionLeaderboards =
                         Dict.insert spec.sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
+                }
+
+        Msg.FormulaOneSeasonLeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneSeasonLeaderboards =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneSeasonLeaderboards
                 }

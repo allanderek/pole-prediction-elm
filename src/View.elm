@@ -1,10 +1,10 @@
 module View exposing (application)
 
-import Components.UserName
 import Browser
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
+import Components.UserName
 import Dict
 import Helpers.Classes
 import Helpers.Http
@@ -50,6 +50,11 @@ application model =
                             Dict.get season model.formulaOneLeaderboards
                                 |> Maybe.withDefault Helpers.Http.Ready
 
+                        seasonLeaderboardStatus : Helpers.Http.Status Types.FormulaOne.SeasonLeaderboard
+                        seasonLeaderboardStatus =
+                            Dict.get season model.formulaOneSeasonLeaderboards
+                                |> Maybe.withDefault Helpers.Http.Ready
+
                         eventsStatus : Helpers.Http.Status (List Types.FormulaOne.Event)
                         eventsStatus =
                             Dict.get season model.formulaOneEvents
@@ -87,6 +92,7 @@ application model =
                             []
                             (List.map viewLink [ "2025", "2024" ])
                         ]
+                    , Html.h2 [] [ Html.text "Leaderboard" ]
                     , case leaderboardStatus of
                         Helpers.Http.Inflight ->
                             Html.text "Loading..."
@@ -99,6 +105,61 @@ application model =
 
                         Helpers.Http.Succeeded leaderboard ->
                             Components.Leaderboard.view leaderboard
+                    , Html.h2 [] [ Html.text "Season Leaderboard" ]
+                    , case seasonLeaderboardStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the season leaderboard"
+
+                        Helpers.Http.Succeeded seasonLeaderboard ->
+                            let
+                                viewRow : Types.FormulaOne.SeasonLeaderboardRow -> Html Msg
+                                viewRow leaderboardRow =
+                                    let
+                                        viewScoredRow : Types.FormulaOne.SeasonPredictionRow -> Html Msg
+                                        viewScoredRow scoredRow =
+                                            Html.tr
+                                                []
+                                                [ Html.td
+                                                    [ Attributes.class "scored-row-position" ]
+                                                    [ Html.text (String.fromInt scoredRow.predictedPosition) ]
+                                                , Html.td
+                                                    [ Attributes.class "scored-row-driver" ]
+                                                    [ Html.text scoredRow.teamName ]
+                                                , Html.td
+                                                    [ Attributes.class "scored-row-score" ]
+                                                    [ Html.text (String.fromInt scoredRow.difference) ]
+                                                ]
+                                    in
+                                    Html.li
+                                        []
+                                        [ Html.details
+                                            []
+                                            [ Html.summary
+                                                []
+                                                [ Html.span
+                                                    [ Attributes.class "user-name" ]
+                                                    [ Components.UserName.formulaOne
+                                                        leaderboardRow.userId
+                                                        leaderboardRow.userName
+                                                    ]
+                                                , Html.span
+                                                    [ Attributes.class "total-score" ]
+                                                    [ Html.text (String.fromInt leaderboardRow.total) ]
+                                                ]
+                                            , Html.table
+                                                []
+                                                (List.map viewScoredRow leaderboardRow.rows)
+                                            ]
+                                        ]
+                            in
+                            Html.ul [] (List.map viewRow seasonLeaderboard)
+                    , Html.h2 [] [ Html.text "Events" ]
                     , case eventsStatus of
                         Helpers.Http.Inflight ->
                             Html.text "Loading..."
@@ -250,7 +311,7 @@ application model =
                                                 []
                                                 [ Html.span
                                                     [ Attributes.class "user-name" ]
-                                                    [ Components.UserName.formulaOne 
+                                                    [ Components.UserName.formulaOne
                                                         leaderboardRow.userId
                                                         leaderboardRow.userName
                                                     ]
@@ -264,8 +325,7 @@ application model =
                                             ]
                                         ]
                             in
-                            Html.ul  [] (List.map viewRow leaderboard)
-                            
+                            Html.ul [] (List.map viewRow leaderboard)
                     ]
 
                 Route.FormulaE mSeason ->

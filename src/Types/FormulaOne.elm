@@ -5,6 +5,9 @@ module Types.FormulaOne exposing
     , EventId
     , ScoredPredictionRow
     , Season
+    , SeasonLeaderboard
+    , SeasonLeaderboardRow
+    , SeasonPredictionRow
     , Session
     , SessionId
     , SessionLeaderboard
@@ -15,6 +18,8 @@ module Types.FormulaOne exposing
     , eventDecoder
     , scoredPredictionRowDecoder
     , scoredPredictionRowsToSessionLeaderboard
+    , seasonLeaderboardFromSeasonPredictionRows
+    , seasonPredictionRowDecoder
     , sessionDecoder
     )
 
@@ -176,3 +181,70 @@ scoredPredictionRowsToSessionLeaderboard rows =
         |> Dict.values
         |> List.sortBy .total
         |> List.reverse
+
+
+type alias SeasonPredictionRow =
+    { userId : Types.User.Id
+    , userName : String
+    , predictedPosition : Int
+    , teamName : String
+    , teamPrimaryColor : String
+    , teamSecondaryColor : String
+    , difference : Int
+    }
+
+
+seasonPredictionRowDecoder : Decoder SeasonPredictionRow
+seasonPredictionRowDecoder =
+    Decode.succeed SeasonPredictionRow
+        |> Pipeline.required "user_id" Decode.int
+        |> Pipeline.required "fullname" Decode.string
+        |> Pipeline.required "position" Decode.int
+        |> Pipeline.required "team" Decode.string
+        |> Pipeline.required "team_primary_color" Decode.string
+        |> Pipeline.required "team_secondary_color" Decode.string
+        |> Pipeline.required "difference" Decode.int
+
+
+type alias SeasonLeaderboard =
+    List SeasonLeaderboardRow
+
+
+type alias SeasonLeaderboardRow =
+    { userId : Types.User.Id
+    , userName : String
+    , total : Int
+    , rows : List SeasonPredictionRow
+    }
+
+
+seasonLeaderboardFromSeasonPredictionRows : List SeasonPredictionRow -> SeasonLeaderboard
+seasonLeaderboardFromSeasonPredictionRows rows =
+    let
+        processRow : SeasonPredictionRow -> Dict Types.User.Id SeasonLeaderboardRow -> Dict Types.User.Id SeasonLeaderboardRow
+        processRow row accumulator =
+            let
+                updateLeaderboardRow : Maybe SeasonLeaderboardRow -> Maybe SeasonLeaderboardRow
+                updateLeaderboardRow mRow =
+                    case mRow of
+                        Just leaderboardRow ->
+                            Just
+                                { leaderboardRow
+                                    | total = leaderboardRow.total + row.difference
+                                    , rows = List.append leaderboardRow.rows [ row ]
+                                }
+
+                        Nothing ->
+                            Just
+                                { userId = row.userId
+                                , userName = row.userName
+                                , total = row.difference
+                                , rows = [ row ]
+                                }
+            in
+            Dict.update row.userId updateLeaderboardRow accumulator
+    in
+    List.foldl processRow Dict.empty rows
+        |> Dict.values
+        -- We do not reverse this because actually the lower the difference the better.
+        |> List.sortBy .total
