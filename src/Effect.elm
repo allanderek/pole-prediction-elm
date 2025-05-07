@@ -21,6 +21,7 @@ type Effect
     | GetFormulaOneEvents { season : Types.FormulaOne.Season }
     | GetFormulaOneEventSessions { eventId : Types.FormulaOne.EventId }
     | GetFormulaOneEntrants { sessionId : Types.FormulaOne.SessionId }
+    | GetFormulaOneSessionLeaderboard { sessionId : Types.FormulaOne.SessionId }
     | GetFormulaELeaderboard { season : Types.FormulaE.Season }
 
 

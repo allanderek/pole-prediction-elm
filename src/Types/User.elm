@@ -1,10 +1,15 @@
 module Types.User exposing
-    ( User
+    ( Id
+    , User
     , decoder
     )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
+
+
+type alias Id =
+    Int
 
 
 type alias User =

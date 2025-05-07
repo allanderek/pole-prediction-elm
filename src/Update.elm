@@ -52,7 +52,10 @@ initRoute model =
 
         Route.FormulaOneSession _ _ sessionId ->
             ( model
-            , Effect.GetFormulaOneEntrants { sessionId = sessionId }
+            , Effect.Batch
+                [ Effect.GetFormulaOneEntrants { sessionId = sessionId }
+                , Effect.GetFormulaOneSessionLeaderboard { sessionId = sessionId }
+                ]
             )
 
         Route.FormulaE mSeason ->
@@ -177,4 +180,11 @@ update msg model =
                 { model
                     | formulaOneEntrants =
                         Dict.insert spec.sessionId (Helpers.Http.fromResult result) model.formulaOneEntrants
+                }
+
+        Msg.FormulaOneSessionLeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneSessionLeaderboards =
+                        Dict.insert spec.sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
                 }

@@ -289,9 +289,9 @@ def protected_resource(user_id):
 @app.route('/api/formula-one/season-events/<season>', method='GET')
 def get_formula_one_events(db, season):
     query = """ select * from formula_one_events_view
-where season = ?
+where season = :season
 ;"""
-    rows = db.execute(query, (season,)).fetchall()
+    rows = db.execute(query, { 'season': season}).fetchall()
     bottle.response.content_type = 'application/json'
     return json.dumps([ dict(row) for row in rows ])
     
@@ -306,10 +306,10 @@ def get_formula_one_sessions_by_event(db, event_id):
     s.event, 
     s.fastest_lap
 from formula_one_sessions s
-where s.event = ?
+where s.event = :event_id
 order BY s.start_time
 ;"""
-    rows = db.execute(query, (event_id,)).fetchall()
+    rows = db.execute(query, { 'event_id': event_id}).fetchall()
     bottle.response.content_type = 'application/json'
     return json.dumps([ dict(row) for row in rows ])
 
@@ -331,15 +331,15 @@ def get_formula_one_session_entrants(db, session_id):
 from formula_one_entrants e
 join drivers d on e.driver = d.id
 join formula_one_teams t on e.team = t.id
-where e.session = @session_id
+where e.session = :session_id
 order by e.rank desc, e.number
 ;"""
-    rows = db.execute(query, (session_id,)).fetchall()
+    rows = db.execute(query, {'session_id': session_id}).fetchall()
     bottle.response.content_type = 'application/json'
     return json.dumps([ dict(row) for row in rows ])
 
 
-@app.route('/api/formula-one/session-predictions/<session_id>', method='GET')
+@app.route('/api/formula-one/session-leaderboard/<session_id>', method='GET')
 def get_formula_one_session_predictions(db, session_id):
     query = """WITH 
     user_predictions AS (
@@ -351,7 +351,7 @@ def get_formula_one_session_predictions(db, session_id):
             fastest_lap
         FROM formula_one_prediction_lines
         WHERE user IS NOT NULL and user != ""
-        AND formula_one_prediction_lines.session = @session_id
+        AND formula_one_prediction_lines.session = :session_id
     ),
     session_results AS (
         SELECT 
@@ -360,7 +360,7 @@ def get_formula_one_session_predictions(db, session_id):
             fastest_lap
         FROM formula_one_prediction_lines
         WHERE user IS NULL or user = ""
-        AND session = @session_id
+        AND session = :session_id
     )
 SELECT 
     up.user AS user_id,
@@ -392,7 +392,9 @@ JOIN drivers d ON fe.driver = d.id
 JOIN formula_one_sessions s ON up.session = s.id
 ORDER BY u.fullname, up.position
 ;"""
-    return
+    rows = db.execute(query, {'session_id': session_id}).fetchall()
+
+    return json.dumps([ dict(row) for row in rows])
 
 
 
@@ -428,7 +430,7 @@ with
         from predictions
         inner join results on results.session == predictions.session and results.entrant == predictions.entrant
         inner join formula_one_sessions as sessions on predictions.session = sessions.id
-        inner join formula_one_events as events on sessions.event == events.id and events.season == ?
+        inner join formula_one_events as events on sessions.event == events.id and events.season == :season
         inner join users on predictions.user = users.id
     )
 select 
@@ -452,7 +454,7 @@ group by user_id
 order by total desc
 ;
 """
-    rows = db.execute(query, (season,)).fetchall()
+    rows = db.execute(query, {'season': season}).fetchall()
     return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
              'rows' : create_leaderboard_rows(rows)
             }
@@ -487,7 +489,7 @@ def get_formula_e_leaderboard(db, season):
          inner join races on predictions.race = races.id 
          join results on predictions.race = results.race
          join users on predictions.user = users.id
-         where races.season = @season and races.cancelled = 0
+         where races.season = :season and races.cancelled = 0
         )
     select 
         user_id, 
@@ -499,7 +501,7 @@ def get_formula_e_leaderboard(db, season):
     order by sum(total) desc, sum(race_wins) desc
 ;"""
 
-    rows = db.execute(query, (season,)).fetchall()
+    rows = db.execute(query, {'season': season}).fetchall()
 
     return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
              'rows' : create_leaderboard_rows(rows)

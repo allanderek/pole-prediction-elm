@@ -106,6 +106,18 @@ perform model effect =
                         (Decode.list Types.FormulaOne.entrantDecoder)
                 }
 
+        Effect.GetFormulaOneSessionLeaderboard spec ->
+            let
+                decoder : Decoder Types.FormulaOne.SessionLeaderboard
+                decoder =
+                    Decode.list Types.FormulaOne.scoredPredictionRowDecoder
+                        |> Decode.map Types.FormulaOne.scoredPredictionRowsToSessionLeaderboard
+            in
+            Http.get
+                { url = apiUrl [ "formula-one", "session-leaderboard", String.fromInt spec.sessionId ]
+                , expect = Http.expectJson (Msg.FormulaOneSessionLeaderboardResponse spec) decoder
+                }
+
         Effect.GetFormulaELeaderboard spec ->
             Http.get
                 { url = apiUrl [ "formula-e", "leaderboard", spec.season ]
