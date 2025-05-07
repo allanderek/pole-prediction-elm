@@ -175,3 +175,4 @@ scoredPredictionRowsToSessionLeaderboard rows =
     List.foldl processRow Dict.empty rows
         |> Dict.values
         |> List.sortBy .total
+        |> List.reverse

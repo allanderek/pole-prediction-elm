@@ -503,7 +503,7 @@ def get_formula_e_leaderboard(db, season):
 
     rows = db.execute(query, {'season': season}).fetchall()
 
-    return { 'columns' : [ 'sprint-shootout', 'sprint', 'qualifying', 'race', 'total' ],
+    return { 'columns' : [ 'Total', 'Race wins'],
              'rows' : create_leaderboard_rows(rows)
             }
 

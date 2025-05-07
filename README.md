@@ -24,5 +24,6 @@ $ source venv/bin/activate.fish
 
 - [ ] You have authentication but no way to register at the moment.
 - [ ] I may do 'event' leaderboard which is just get the leaderboard for the season but restrict it to sessions within a given event, and show it on the event page?
+- [ ] Can I do something cool with testing, i.e. run elm test by actually using the database from python?
 
 
