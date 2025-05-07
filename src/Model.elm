@@ -25,6 +25,7 @@ type alias Model key =
     , formulaOneEntrants : Dict Types.FormulaOne.SessionId (Helpers.Http.Status (List Types.FormulaOne.Entrant))
     , formulaOneSessionLeaderboards : Dict Types.FormulaOne.SessionId (Helpers.Http.Status Types.FormulaOne.SessionLeaderboard)
     , formulaOneSeasonLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Types.FormulaOne.SeasonLeaderboard)
+    , formulaOneConstructorStandings : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
     , formulaELeaderboards : Dict Types.FormulaE.Season (Helpers.Http.Status Leaderboard)
     }
 
@@ -41,5 +42,6 @@ initial key url userStatus =
     , formulaOneEntrants = Dict.empty
     , formulaOneSessionLeaderboards = Dict.empty
     , formulaOneSeasonLeaderboards = Dict.empty
+    , formulaOneConstructorStandings = Dict.empty
     , formulaELeaderboards = Dict.empty
     }

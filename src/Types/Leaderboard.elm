@@ -15,8 +15,8 @@ type alias Leaderboard =
 
 
 type alias LeaderboardRow =
-    { userId : Int
-    , userName : String
+    { id : Int
+    , name : String
     , scores : List Int
     }
 
@@ -27,8 +27,8 @@ decoder =
         rowDecoder : Decoder LeaderboardRow
         rowDecoder =
             Decode.succeed LeaderboardRow
-                |> Pipeline.required "userId" Decode.int
-                |> Pipeline.required "userName" Decode.string
+                |> Pipeline.required "id" Decode.int
+                |> Pipeline.required "name" Decode.string
                 |> Pipeline.required "scores" (Decode.list Decode.int)
     in
     Decode.succeed Leaderboard

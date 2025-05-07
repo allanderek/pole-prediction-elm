@@ -31,4 +31,5 @@ type Msg
     | FormulaOneEntrantsResponse { sessionId : Types.FormulaOne.SessionId } (HttpResult (List Types.FormulaOne.Entrant))
     | FormulaOneSessionLeaderboardResponse { sessionId : Types.FormulaOne.SessionId } (HttpResult Types.FormulaOne.SessionLeaderboard)
     | FormulaOneSeasonLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Types.FormulaOne.SeasonLeaderboard)
+    | FormulaOneConstructorStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)

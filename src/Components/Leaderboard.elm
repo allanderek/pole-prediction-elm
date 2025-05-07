@@ -7,8 +7,12 @@ import List.Extra
 import Types.Leaderboard exposing (Leaderboard)
 
 
-view : Leaderboard -> Html msg
-view leaderboard =
+type alias Config =
+    { firstColumn : String }
+
+
+view : Config -> Leaderboard -> Html msg
+view config leaderboard =
     let
         viewHeaderCell : String -> Html msg
         viewHeaderCell column =
@@ -63,7 +67,7 @@ view leaderboard =
                 userCell =
                     Html.td
                         []
-                        [ Html.text row.userName ]
+                        [ Html.text row.name ]
             in
             Html.tr [] (userCell :: scoreCells)
     in
@@ -73,7 +77,7 @@ view leaderboard =
             []
             [ Html.tr
                 []
-                (List.map viewHeaderCell ("User" :: leaderboard.columns))
+                (List.map viewHeaderCell (config.firstColumn :: leaderboard.columns))
             ]
         , Html.tbody
             []

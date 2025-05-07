@@ -459,6 +459,74 @@ order by total desc
              'rows' : create_leaderboard_rows(rows)
             }
 
+@app.route('/api/formula-one/constructor-standings/<season>', method='GET')
+def get_formula_one_constructor_standings(db, season):
+    query = """with
+    results as (
+        select * from formula_one_prediction_lines where (user is null or user = "") and session in (
+            select id from formula_one_sessions where event in (
+                select id from formula_one_events where season = :season
+            )
+        )
+    ),
+    -- Only process constructor standings if we have results
+    scored_lines as (
+        select 
+            sessions.name as session_name,
+            case 
+                when sessions.name = 'race' then
+                    case 
+                        when results.position = 1 then 25
+                        when results.position = 2 then 18
+                        when results.position = 3 then 15
+                        when results.position = 4 then 12
+                        when results.position = 5 then 10
+                        when results.position = 6 then 8
+                        when results.position = 7 then 6
+                        when results.position = 8 then 4
+                        when results.position = 9 then 2
+                        when results.position = 10 then 1
+                    else 0
+                    end 
+                when sessions.name = 'sprint' then
+                    case 
+                        when results.position = 1 then 8
+                        when results.position = 2 then 7
+                        when results.position = 3 then 6
+                        when results.position = 4 then 5
+                        when results.position = 5 then 4
+                        when results.position = 6 then 3
+                        when results.position = 7 then 2
+                        when results.position = 8 then 1
+                    else 0
+                    end 
+            end
+            +
+            case when results.fastest_lap = 'true' and sessions.fastest_lap = 1 then 1 else 0 end
+                as score,
+            teams.shortname as team_name,
+            teams.id as team_id
+        from results
+        inner join formula_one_sessions as sessions on results.session = sessions.id
+        inner join formula_one_events as events on sessions.event = events.id and events.season = :season
+        inner join formula_one_entrants as entrants on results.entrant = entrants.id
+        inner join formula_one_teams as teams on entrants.team = teams.id
+        where (select count(*) from results) > 0  -- Only include if results exist
+    )
+
+select 
+    team_name,
+    team_id,
+    sum(score) as total
+from scored_lines
+group by team_id
+order by total desc
+;"""
+    rows = db.execute(query, {'season': season}).fetchall()
+    return { 'columns' : [ 'total' ],
+             'rows' : create_leaderboard_rows(rows, id='team_id', name='team_name')
+            }
+
 @app.route('/api/formula-one/season-leaderboard/<season>', method='GET')
 def get_formula_one_season_leaderboard(db, season):
     query = """with
@@ -565,11 +633,11 @@ order by up.user, up.position
     return json.dumps([ dict(row) for row in rows])
 
 
-def create_leaderboard_rows(rows):
+def create_leaderboard_rows(rows, id='user_id', name='user_fullname'):
     def make_row (d):
-        return { 'userId': d['user_id'],
-                'userName': d['user_fullname'],
-                'scores': list([ s for (name, s) in d.items() if name != 'user_id' and name != 'user_fullname' ])
+        return { 'id': d[id],
+                'name': d[name],
+                'scores': list([ s for (field_name, s) in d.items() if field_name != id and field_name != name])
                 }
     return [ make_row(dict(row)) for row in rows ]
 

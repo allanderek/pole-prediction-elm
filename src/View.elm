@@ -55,6 +55,11 @@ application model =
                             Dict.get season model.formulaOneSeasonLeaderboards
                                 |> Maybe.withDefault Helpers.Http.Ready
 
+                        constructorStandingsStatus : Helpers.Http.Status Leaderboard
+                        constructorStandingsStatus =
+                            Dict.get season model.formulaOneConstructorStandings
+                                |> Maybe.withDefault Helpers.Http.Ready
+
                         eventsStatus : Helpers.Http.Status (List Types.FormulaOne.Event)
                         eventsStatus =
                             Dict.get season model.formulaOneEvents
@@ -104,7 +109,20 @@ application model =
                             Html.text "Error obtaining the leaderboard"
 
                         Helpers.Http.Succeeded leaderboard ->
-                            Components.Leaderboard.view leaderboard
+                            Components.Leaderboard.view { firstColumn = "User" } leaderboard
+                    , Html.h2 [] [ Html.text "Constructor standings" ]
+                    , case constructorStandingsStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the constructor standings"
+
+                        Helpers.Http.Succeeded constructorStandings ->
+                            Components.Leaderboard.view { firstColumn = "Constructor" } constructorStandings
                     , Html.h2 [] [ Html.text "Season Leaderboard" ]
                     , case seasonLeaderboardStatus of
                         Helpers.Http.Inflight ->
@@ -383,7 +401,7 @@ application model =
                             Html.text "Error obtaining the leaderboard"
 
                         Helpers.Http.Succeeded leaderboard ->
-                            Components.Leaderboard.view leaderboard
+                            Components.Leaderboard.view { firstColumn = "User" } leaderboard
                     ]
 
                 Route.Profile ->

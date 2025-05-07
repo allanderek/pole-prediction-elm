@@ -47,6 +47,7 @@ initRoute model =
                 [ Effect.GetFormulaOneLeaderboard spec
                 , Effect.GetFormulaOneSeasonLeaderboard spec
                 , Effect.GetFormulaOneEvents spec
+                , Effect.GetFormulaOneConstructorStandings spec
                 ]
             )
 
@@ -192,6 +193,13 @@ update msg model =
                 { model
                     | formulaOneSessionLeaderboards =
                         Dict.insert spec.sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
+                }
+
+        Msg.FormulaOneConstructorStandingsResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneConstructorStandings =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneConstructorStandings
                 }
 
         Msg.FormulaOneSeasonLeaderboardResponse spec result ->
