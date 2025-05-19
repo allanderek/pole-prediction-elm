@@ -1,10 +1,13 @@
 module Model exposing
     ( Model
+    , getFormulaOneCurrentSessionPrediction
     , initial
     )
 
 import Dict exposing (Dict)
 import Helpers.Http
+import Helpers.List
+import Maybe.Extra
 import Route exposing (Route)
 import Types.FormulaE
 import Types.FormulaOne
@@ -51,3 +54,24 @@ initial key url userStatus =
     , formulaOneDriverStandings = Dict.empty
     , formulaELeaderboards = Dict.empty
     }
+
+
+getFormulaOneCurrentSessionPrediction : Model key -> Types.FormulaOne.SessionId -> Maybe (List Types.FormulaOne.Entrant)
+getFormulaOneCurrentSessionPrediction model sessionId =
+    case Helpers.Http.toMaybe model.userStatus of
+        Nothing ->
+            Nothing
+
+        Just user ->
+            let
+                storedPrediction : Maybe (List Types.FormulaOne.Entrant)
+                storedPrediction =
+                    Dict.get sessionId model.formulaOneSessionLeaderboards
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.toMaybe
+                        |> Maybe.withDefault []
+                        |> Helpers.List.findWith user.id .userId
+                        |> Maybe.map (.rows >> List.map .entrant)
+            in
+            Dict.get sessionId model.formulaOneSessionEntries
+                |> Maybe.Extra.orElse storedPrediction

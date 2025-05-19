@@ -159,7 +159,7 @@ update msg model =
             let
                 mCurrentOrder : Maybe (List Types.FormulaOne.Entrant)
                 mCurrentOrder =
-                    case Dict.get sessionId model.formulaOneSessionEntries of
+                    case Model.getFormulaOneCurrentSessionPrediction model sessionId of
                         Just order ->
                             Just order
 

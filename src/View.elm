@@ -313,19 +313,9 @@ application model =
                                 Just user ->
                                     -- TODO: Technically here we have to merge the entrants available with the current entry
                                     let
-                                        storedPrediction : Maybe (List Types.FormulaOne.Entrant)
-                                        storedPrediction =
-                                            Dict.get sessionId model.formulaOneSessionLeaderboards
-                                                |> Maybe.withDefault Helpers.Http.Ready
-                                                |> Helpers.Http.toMaybe
-                                                |> Maybe.withDefault []
-                                                |> Helpers.List.findWith user.id .userId
-                                                |> Maybe.map (.rows >> List.map .entrant)
-
                                         currentPrediction : List Types.FormulaOne.Entrant
                                         currentPrediction =
-                                            Dict.get sessionId model.formulaOneSessionEntries
-                                                |> Maybe.Extra.orElse storedPrediction
+                                            Model.getFormulaOneCurrentSessionPrediction model sessionId
                                                 |> Maybe.withDefault entrants
                                     in
                                     Html.div
