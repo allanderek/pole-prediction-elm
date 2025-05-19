@@ -29,5 +29,6 @@ $ source venv/bin/activate.fish
 - [ ] There is some duplication in the constructor standings and the season leaderboard, precisely to calculate the constructor standings. I should be able to factor out some of this.
 - [ ] In the season leaderboard it would be nice to have the *actual* constructor in the the correct place along side the user's prediction for each line.
 - [ ] Not sure what happens when teams/drivers are on equal points? This is mostly for the constructor and driver standings.
+- [ ] Setup ty a lsp for python: https://github.com/astral-sh/ty
 
 

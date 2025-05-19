@@ -1,6 +1,7 @@
 module View exposing (application)
 
 import Browser
+import Components.FormulaOneSessionEntry
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
@@ -306,9 +307,34 @@ application model =
                                             [ Html.text entrant.teamShortName ]
                                         ]
                             in
-                            Html.ul
-                                []
-                                (List.map viewEntrant entrants)
+                            case Helpers.Http.toMaybe model.userStatus of
+                                Just user ->
+                                    -- TODO: Technically here we have to merge the entrants available with the current entry
+                                    let
+                                        currentPrediction : List Types.FormulaOne.Entrant
+                                        currentPrediction =
+                                            Dict.get sessionId model.formulaOneSessionEntries
+                                                |> Maybe.withDefault entrants
+                                    in
+                                    Html.div
+                                        []
+                                        [ Html.h2
+                                            []
+                                            [ Html.text "Sortable" ]
+                                        , Components.FormulaOneSessionEntry.view
+                                            { kind = Components.FormulaOneSessionEntry.Prediction
+                                            , user = user
+                                            , entrants = currentPrediction
+                                            , toMessage = Msg.ReorderFormulaOneSessionEntry sessionId
+                                            }
+                                        , Html.h2 [] [ Html.text "What the model sees" ]
+                                        , Html.ol [] (List.map viewEntrant currentPrediction)
+                                        ]
+
+                                Nothing ->
+                                    Html.ul
+                                        []
+                                        (List.map viewEntrant entrants)
                     , case leaderboardStatus of
                         Helpers.Http.Inflight ->
                             Html.text "Loading..."

@@ -25,6 +25,7 @@ type Msg
     | LoginSubmitResponse (HttpResult User)
     | Logout
     | LogoutResponse (HttpResult ())
+    | ReorderFormulaOneSessionEntry Types.FormulaOne.SessionId Types.FormulaOne.EntrantId Int Int
     | FormulaOneLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneEventsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.Event))
     | FormulaOneEventSessionsResponse { eventId : Types.FormulaOne.EventId } (HttpResult (List Types.FormulaOne.Session))

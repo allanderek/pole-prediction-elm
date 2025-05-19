@@ -7,6 +7,7 @@ import Browser
 import Dict
 import Effect exposing (Effect)
 import Helpers.Http
+import Helpers.List
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Return
@@ -153,6 +154,34 @@ update msg model =
             -- but then that would look like you were logged-out when maybe actually you weren't.
             -- So we just ignore the result and reload the page.
             ( model, Effect.Reload )
+
+        Msg.ReorderFormulaOneSessionEntry sessionId entrantId oldIndex newIndex ->
+            let
+                mCurrentOrder : Maybe (List Types.FormulaOne.Entrant)
+                mCurrentOrder =
+                    case Dict.get sessionId model.formulaOneSessionEntries of
+                        Just order ->
+                            Just order
+
+                        Nothing ->
+                            Dict.get sessionId model.formulaOneEntrants
+                                |> Maybe.withDefault Helpers.Http.Ready
+                                |> Helpers.Http.toMaybe
+            in
+            case mCurrentOrder of
+                Nothing ->
+                    Return.noEffect model
+
+                Just currentOrder ->
+                    let
+                        newOrder : List Types.FormulaOne.Entrant
+                        newOrder =
+                            Helpers.List.moveByIndex oldIndex newIndex currentOrder
+                    in
+                    Return.noEffect
+                        { model
+                            | formulaOneSessionEntries = Dict.insert sessionId newOrder model.formulaOneSessionEntries
+                        }
 
         Msg.FormulaOneLeaderboardResponse spec result ->
             Return.noEffect

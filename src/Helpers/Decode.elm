@@ -1,4 +1,7 @@
-module Helpers.Decode exposing (intAsBool)
+module Helpers.Decode exposing
+    ( intAsBool
+    , stringAsInt
+    )
 
 import Json.Decode as Decode exposing (Decoder)
 
@@ -12,3 +15,20 @@ intAsBool =
     in
     Decode.int
         |> Decode.map asBool
+
+
+stringAsInt : Decoder Int
+stringAsInt =
+    let
+        interpret : String -> Decoder Int
+        interpret string =
+            case String.toInt string of
+                Just n ->
+                    Decode.succeed n
+
+                Nothing ->
+                    String.append "Expected an integer, but got: " string
+                        |> Decode.fail
+    in
+    Decode.string
+        |> Decode.andThen interpret
