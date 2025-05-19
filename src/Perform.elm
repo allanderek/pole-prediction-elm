@@ -4,6 +4,7 @@ import Browser.Navigation
 import Effect exposing (Effect)
 import Http
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import Msg exposing (Msg)
 import Types.FormulaOne
 import Types.Leaderboard
@@ -155,4 +156,16 @@ perform model effect =
                     Http.expectJson
                         (Msg.FormulaELeaderboardResponse spec)
                         Types.Leaderboard.decoder
+                }
+
+        Effect.SubmitFormulaOneSessionPrediction spec entrantIds ->
+            Http.post
+                { url = apiUrl [ "formula-one", "session-prediction", String.fromInt spec.sessionId ]
+                , body =
+                    [ ( "positions", Encode.list Encode.int entrantIds ) ]
+                        |> Encode.object
+                        |> Http.jsonBody
+                , expect =
+                    Http.expectWhatever
+                        (Msg.SubmitFormulaOneSessionEntryResponse spec.sessionId)
                 }

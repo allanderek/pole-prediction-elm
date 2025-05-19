@@ -325,7 +325,10 @@ application model =
                                             { kind = Components.FormulaOneSessionEntry.Prediction
                                             , user = user
                                             , entrants = currentPrediction
-                                            , toMessage = Msg.ReorderFormulaOneSessionEntry sessionId
+                                            , reorderMessage = Msg.ReorderFormulaOneSessionEntry sessionId
+                                            , submitMessage =
+                                                Msg.SubmitFormulaOneSessionEntry sessionId
+                                                    (List.map .id currentPrediction)
                                             }
                                         , Html.h2 [] [ Html.text "What the model sees" ]
                                         , Html.ol [] (List.map viewEntrant currentPrediction)

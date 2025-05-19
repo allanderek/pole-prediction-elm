@@ -26,6 +26,7 @@ type Effect
     | GetFormulaOneConstructorStandings { season : Types.FormulaOne.Season }
     | GetFormulaOneDriverStandings { season : Types.FormulaOne.Season }
     | GetFormulaELeaderboard { season : Types.FormulaE.Season }
+    | SubmitFormulaOneSessionPrediction { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
 
 
 goto : Route -> Effect

@@ -31,4 +31,6 @@ $ source venv/bin/activate.fish
 - [ ] Not sure what happens when teams/drivers are on equal points? This is mostly for the constructor and driver standings.
 - [ ] Setup ty a lsp for python: https://github.com/astral-sh/ty
 
-
+- [ ] Create an effect for sending predictions to the server
+- [ ] On response, the entry in the formulaOneSessionEntries should be removed, and when there is no such entry, the 'submit' button can be disabled. Question, what to do if the user re-orders back to what we *think* is the same order? I suggest that it is still enabled so that the user can make certain they are changing it to what they want.
+- [ ] Can we prevent the user from re-ordering the predictions whilst they are being submitted?

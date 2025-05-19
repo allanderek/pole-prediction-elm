@@ -1,6 +1,7 @@
 import bottle
 import os
 import jwt
+import contextlib
 import datetime
 import hashlib
 import binascii
@@ -58,6 +59,33 @@ if config.get('prettyLogging', False):
     )
     logger = logging.getLogger(__name__)
     logger.info(f"Starting application with config: {config['dbFilepath']}")
+
+@contextlib.contextmanager
+def db_transaction():
+    """Context manager for SQLite database transactions."""
+    db = sqlite3.connect(config['dbFilepath'])  # Replace with your actual DB file path
+    db.row_factory = sqlite3.Row  # Enable dictionary-like access
+
+    try:
+        yield db
+        db.commit()
+    except sqlite3.IntegrityError as e:
+        db.rollback()
+        bottle.response.status = 500
+        raise bottle.HTTPError(500, f"Database integrity error: {str(e)}")
+    except bottle.HTTPError:
+        db.rollback()
+        raise
+    except bottle.HTTPResponse as e:
+        db.commit()
+        raise
+    except Exception as e:
+        db.rollback()
+        bottle.response.status = 500
+        raise bottle.HTTPError(500, f"Database error: {str(e)}")
+    finally:
+        db.close()
+
 
 # Authentication decorator
 def require_auth(func):
@@ -398,6 +426,50 @@ ORDER BY u.fullname, up.position
 
     return json.dumps([ dict(row) for row in rows])
 
+@app.route('/api/formula-one/session-prediction/<session_id>', method='POST')
+@require_auth
+def save_formula_one_prediction(user_id, session_id):
+    with db_transaction() as db:
+        prediction_data = bottle.request.json
+        
+        # Validate we have all required data
+        if not prediction_data.get('positions') or len(prediction_data['positions']) != 20:
+            bottle.response.status = 400
+            return {'error': 'Prediction must include positions for all 20 drivers'}
+        
+        # Get fastest lap prediction, could be None
+        fastest_lap = prediction_data.get('fastest_lap')
+        
+        # First delete any existing predictions for this user and session
+        db.execute(
+            "delete from formula_one_prediction_lines where user = ? and session = ?",
+            (user_id, session_id)
+        )
+        
+        # Prepare batch insert data
+        rows_to_insert = []
+        
+        for position, entrant_id in enumerate(prediction_data['positions'], start=1):
+            # Only set fastest_lap to "true" if it's specified and matches this entrant
+            is_fastest_lap = "true" if fastest_lap is not None and entrant_id == fastest_lap else "false"
+            rows_to_insert.append({
+                'user': user_id,
+                'session': session_id,
+                'fastest_lap': is_fastest_lap,
+                'position': position,
+                'entrant': entrant_id
+            })
+        
+        # Perform batch insert
+        query = """
+        insert into formula_one_prediction_lines 
+            (user, session, fastest_lap, position, entrant)
+        values
+            (:user, :session, :fastest_lap, :position, :entrant)
+        """
+        
+        db.executemany(query, rows_to_insert)
+        return {'status': 'success'}
 
 
 @app.route('/api/formula-one/leaderboard/<season>', method='GET')

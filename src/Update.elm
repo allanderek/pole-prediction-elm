@@ -155,7 +155,7 @@ update msg model =
             -- So we just ignore the result and reload the page.
             ( model, Effect.Reload )
 
-        Msg.ReorderFormulaOneSessionEntry sessionId entrantId oldIndex newIndex ->
+        Msg.ReorderFormulaOneSessionEntry sessionId oldIndex newIndex ->
             let
                 mCurrentOrder : Maybe (List Types.FormulaOne.Entrant)
                 mCurrentOrder =
@@ -182,6 +182,21 @@ update msg model =
                         { model
                             | formulaOneSessionEntries = Dict.insert sessionId newOrder model.formulaOneSessionEntries
                         }
+
+        Msg.SubmitFormulaOneSessionEntry sessionId entrantIds ->
+            ( { model
+                | formulaOneSessionPredictionSubmitStatus =
+                    Dict.insert sessionId Helpers.Http.Inflight model.formulaOneSessionPredictionSubmitStatus
+              }
+            , Effect.SubmitFormulaOneSessionPrediction { sessionId = sessionId } entrantIds
+            )
+
+        Msg.SubmitFormulaOneSessionEntryResponse sessionId result ->
+            Return.noEffect
+                { model
+                    | formulaOneSessionPredictionSubmitStatus =
+                        Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionPredictionSubmitStatus
+                }
 
         Msg.FormulaOneLeaderboardResponse spec result ->
             Return.noEffect

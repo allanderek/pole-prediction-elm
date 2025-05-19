@@ -3,7 +3,6 @@ module Components.FormulaOneSessionEntry exposing
     , view
     )
 
-import Helpers.Decode
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
@@ -22,7 +21,8 @@ type alias Config msg =
     { kind : Kind
     , user : User
     , entrants : List Types.FormulaOne.Entrant
-    , toMessage : Types.FormulaOne.EntrantId -> Int -> Int -> msg
+    , reorderMessage : Int -> Int -> msg
+    , submitMessage : msg
     }
 
 
@@ -37,13 +37,18 @@ view config =
 
         decodeReorderEvent : Decoder msg
         decodeReorderEvent =
-            Decode.succeed config.toMessage
-                |> Pipeline.required "itemId" Helpers.Decode.stringAsInt
+            Decode.succeed config.reorderMessage
                 |> Pipeline.required "oldIndex" Decode.int
                 |> Pipeline.required "newIndex" Decode.int
                 |> Decode.field "detail"
     in
-    Html.node
-        "sortable-list"
-        [ Html.Events.on "item-reordered" decodeReorderEvent ]
-        (List.map viewEntrant config.entrants)
+    Html.div
+        []
+        [ Html.node
+            "sortable-list"
+            [ Html.Events.on "item-reordered" decodeReorderEvent ]
+            (List.map viewEntrant config.entrants)
+        , Html.button
+            [ Html.Events.onClick config.submitMessage ]
+            [ Html.text "Submit" ]
+        ]
