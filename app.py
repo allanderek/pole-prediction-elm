@@ -371,56 +371,65 @@ order by e.rank desc, e.number
 
 @app.route('/api/formula-one/session-leaderboard/<session_id>', method='GET')
 def get_formula_one_session_predictions(db, session_id):
-    query = """WITH 
-    user_predictions AS (
-        SELECT 
+    query = """with 
+    user_predictions as (
+        select 
             user,
             session,
             entrant,
             position,
             fastest_lap
-        FROM formula_one_prediction_lines
-        WHERE user IS NOT NULL and user != ""
-        AND formula_one_prediction_lines.session = :session_id
+        from formula_one_prediction_lines
+        where user is not null and user != ""
+        and formula_one_prediction_lines.session = :session_id
     ),
-    session_results AS (
-        SELECT 
+    session_results as (
+        select 
             entrant,
             position,
             fastest_lap
-        FROM formula_one_prediction_lines
-        WHERE user IS NULL or user = ""
-        AND session = :session_id
+        from formula_one_prediction_lines
+        where (user is null or user = "")
+        and session = :session_id
     )
-SELECT 
-    up.user AS user_id,
-    u.fullname AS user_name,
-    up.position AS predicted_position,
-    sr.position AS actual_position,
-    d.name AS driver_name,
-    CASE 
-        WHEN up.position <= 10 AND sr.position <= 10 THEN
-            CASE 
-                WHEN up.position = sr.position THEN 4
-                WHEN ABS(up.position - sr.position) = 1 THEN 2
-                ELSE 1
-            END
-        ELSE 0
-    END + 
-    CASE 
-        WHEN s.fastest_lap = 1 
-        AND up.fastest_lap = 1
-        AND sr.fastest_lap = 1
-        AND sr.position <= 10 THEN 1
-        ELSE 0
-    END AS score
-FROM user_predictions up
-JOIN users u ON up.user = u.id
-JOIN session_results sr ON up.entrant = sr.entrant
-JOIN formula_one_entrants fe ON up.entrant = fe.id
-JOIN drivers d ON fe.driver = d.id
-JOIN formula_one_sessions s ON up.session = s.id
-ORDER BY u.fullname, up.position
+select 
+    up.user as user_id,
+    u.fullname as user_name,
+    up.position as predicted_position,
+    sr.position as actual_position,
+    fe.id,
+    fe.number,
+    d.name as driver_name,
+    t.fullname as team_full_name,
+    t.shortname as team_short_name,
+    coalesce(t.color, '#000000') as team_primary_color,
+    coalesce(t.secondary_color, '#000000') as team_secondary_color,
+    case 
+        when sr.position is null then 0
+        when up.position <= 10 and sr.position <= 10 then
+            case 
+                when up.position = sr.position then 4
+                when abs(up.position - sr.position) = 1 then 2
+                else 1
+            end
+        else 0
+    end + 
+    case 
+        when sr.position is null then 0
+        when s.fastest_lap = 1 
+        and up.fastest_lap = 1
+        and sr.fastest_lap = 1
+        and sr.position <= 10 then 1
+        else 0
+    end as score
+from user_predictions up
+join users u on up.user = u.id
+left join session_results sr on up.entrant = sr.entrant
+join formula_one_entrants fe on up.entrant = fe.id
+join drivers d on fe.driver = d.id
+join formula_one_teams t on fe.team = t.id
+join formula_one_sessions s on up.session = s.id
+order by u.fullname, up.position
 ;"""
     rows = db.execute(query, {'session_id': session_id}).fetchall()
 

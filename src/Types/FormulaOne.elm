@@ -122,8 +122,8 @@ type alias ScoredPredictionRow =
     { userId : Types.User.Id
     , userName : String
     , predictedPosition : Int
-    , actualPosition : Int
-    , driverName : String
+    , actualPosition : Maybe Int
+    , entrant : Entrant
     , score : Int
     }
 
@@ -134,8 +134,8 @@ scoredPredictionRowDecoder =
         |> Pipeline.required "user_id" Decode.int
         |> Pipeline.required "user_name" Decode.string
         |> Pipeline.required "predicted_position" Decode.int
-        |> Pipeline.required "actual_position" Decode.int
-        |> Pipeline.required "driver_name" Decode.string
+        |> Pipeline.required "actual_position" (Decode.nullable Decode.int)
+        |> Pipeline.custom entrantDecoder
         |> Pipeline.required "score" Decode.int
 
 

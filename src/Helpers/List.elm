@@ -1,6 +1,16 @@
-module Helpers.List exposing (moveByIndex)
+module Helpers.List exposing
+    ( findWith
+    , moveByIndex
+    )
 
 import List.Extra
+
+
+findWith : a -> (b -> a) -> List b -> Maybe b
+findWith itemToFind getter items =
+    List.Extra.find
+        (\item -> getter item == itemToFind)
+        items
 
 
 insertAt : Int -> a -> List a -> List a

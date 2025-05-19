@@ -13,7 +13,8 @@ type alias Id =
 
 
 type alias User =
-    { username : String
+    { id : Id
+    , username : String
     , fullname : String
     , isAdmin : Bool
     }
@@ -22,6 +23,7 @@ type alias User =
 decoder : Decoder User
 decoder =
     Decode.succeed User
+        |> Pipeline.required "id" Decode.int
         |> Pipeline.required "username" Decode.string
         |> Pipeline.required "fullname" Decode.string
         |> Pipeline.required "admin" Decode.bool

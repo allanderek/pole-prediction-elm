@@ -9,9 +9,11 @@ import Components.UserName
 import Dict
 import Helpers.Classes
 import Helpers.Http
+import Helpers.List
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events
+import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
@@ -311,9 +313,19 @@ application model =
                                 Just user ->
                                     -- TODO: Technically here we have to merge the entrants available with the current entry
                                     let
+                                        storedPrediction : Maybe (List Types.FormulaOne.Entrant)
+                                        storedPrediction =
+                                            Dict.get sessionId model.formulaOneSessionLeaderboards
+                                                |> Maybe.withDefault Helpers.Http.Ready
+                                                |> Helpers.Http.toMaybe
+                                                |> Maybe.withDefault []
+                                                |> Helpers.List.findWith user.id .userId
+                                                |> Maybe.map (.rows >> List.map .entrant)
+
                                         currentPrediction : List Types.FormulaOne.Entrant
                                         currentPrediction =
                                             Dict.get sessionId model.formulaOneSessionEntries
+                                                |> Maybe.Extra.orElse storedPrediction
                                                 |> Maybe.withDefault entrants
                                     in
                                     Html.div
@@ -362,7 +374,7 @@ application model =
                                                     [ Html.text (String.fromInt scoredRow.predictedPosition) ]
                                                 , Html.td
                                                     [ Attributes.class "scored-row-driver" ]
-                                                    [ Html.text scoredRow.driverName ]
+                                                    [ Html.text scoredRow.entrant.driver ]
                                                 , Html.td
                                                     [ Attributes.class "scored-row-score" ]
                                                     [ Html.text (String.fromInt scoredRow.score) ]
