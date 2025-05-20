@@ -119,7 +119,7 @@ entrantDecoder =
 
 
 type alias ScoredPredictionRow =
-    { userId : Types.User.Id
+    { userId : Maybe Types.User.Id
     , userName : String
     , predictedPosition : Int
     , actualPosition : Maybe Int
@@ -130,8 +130,16 @@ type alias ScoredPredictionRow =
 
 scoredPredictionRowDecoder : Decoder ScoredPredictionRow
 scoredPredictionRowDecoder =
+    let
+        userId : Decoder (Maybe Types.User.Id)
+        userId =
+            Decode.oneOf
+                [ Helpers.Decode.emptyString Nothing
+                , Decode.map Just Decode.int
+                ]
+    in
     Decode.succeed ScoredPredictionRow
-        |> Pipeline.required "user_id" Decode.int
+        |> Pipeline.required "user_id" userId
         |> Pipeline.required "user_name" Decode.string
         |> Pipeline.required "predicted_position" Decode.int
         |> Pipeline.required "actual_position" (Decode.nullable Decode.int)
@@ -140,7 +148,9 @@ scoredPredictionRowDecoder =
 
 
 type alias SessionLeaderboard =
-    List SessionLeaderboardRow
+    { results : List Entrant
+    , predictions : List SessionLeaderboardRow
+    }
 
 
 type alias SessionLeaderboardRow =
@@ -156,31 +166,43 @@ scoredPredictionRowsToSessionLeaderboard rows =
     let
         processRow : ScoredPredictionRow -> Dict Types.User.Id SessionLeaderboardRow -> Dict Types.User.Id SessionLeaderboardRow
         processRow row accumulator =
-            let
-                updateLeaderboardRow : Maybe SessionLeaderboardRow -> Maybe SessionLeaderboardRow
-                updateLeaderboardRow mRow =
-                    case mRow of
-                        Just leaderboardRow ->
-                            Just
-                                { leaderboardRow
-                                    | total = leaderboardRow.total + row.score
-                                    , rows = List.append leaderboardRow.rows [ row ]
-                                }
+            case row.userId of
+                Nothing ->
+                    accumulator
 
-                        Nothing ->
-                            Just
-                                { userId = row.userId
-                                , userName = row.userName
-                                , total = row.score
-                                , rows = [ row ]
-                                }
-            in
-            Dict.update row.userId updateLeaderboardRow accumulator
+                Just userId ->
+                    let
+                        updateLeaderboardRow : Maybe SessionLeaderboardRow -> Maybe SessionLeaderboardRow
+                        updateLeaderboardRow mRow =
+                            case mRow of
+                                Just leaderboardRow ->
+                                    Just
+                                        { leaderboardRow
+                                            | total = leaderboardRow.total + row.score
+                                            , rows = List.append leaderboardRow.rows [ row ]
+                                        }
+
+                                Nothing ->
+                                    Just
+                                        { userId = userId
+                                        , userName = row.userName
+                                        , total = row.score
+                                        , rows = [ row ]
+                                        }
+                    in
+                    Dict.update userId updateLeaderboardRow accumulator
     in
-    List.foldl processRow Dict.empty rows
-        |> Dict.values
-        |> List.sortBy .total
-        |> List.reverse
+    { results =
+        List.filter (\row -> row.userId == Nothing) rows
+            -- Should be in the correct order already
+            |> List.sortBy .predictedPosition
+            |> List.map .entrant
+    , predictions =
+        List.foldl processRow Dict.empty rows
+            |> Dict.values
+            |> List.sortBy .total
+            |> List.reverse
+    }
 
 
 type alias SeasonPredictionRow =

@@ -35,3 +35,5 @@ $ source venv/bin/activate.fish
 - [ ] On response, the entry in the formulaOneSessionEntries should be removed, and when there is no such entry, the 'submit' button can be disabled. Question, what to do if the user re-orders back to what we *think* is the same order? I suggest that it is still enabled so that the user can make certain they are changing it to what they want.
 - [ ] Can we prevent the user from re-ordering the predictions whilst they are being submitted?
 - [ ] Should we just get rid of the entire SQLItePlugin thing and just use the context manager? It seems more hassle than it's worth particularly if it's not going to work with require_auth.
+- [ ] Next step is to allow updating with Results, a little tricky since it's difficult to get the current result from the leaderboard, unless we also download that at the same time.
+- [ ] We may wish to allow entering results even if the session leaderboard fails to download

@@ -1,9 +1,26 @@
 module Helpers.Decode exposing
-    ( intAsBool
+    ( emptyString
+    , intAsBool
     , stringAsInt
     )
 
 import Json.Decode as Decode exposing (Decoder)
+
+
+emptyString : a -> Decoder a
+emptyString value =
+    let
+        interpret : String -> Decoder a
+        interpret s =
+            case String.isEmpty s of
+                True ->
+                    Decode.succeed value
+
+                False ->
+                    Decode.fail "Expected an empty string"
+    in
+    Decode.string
+        |> Decode.andThen interpret
 
 
 intAsBool : Decoder Bool

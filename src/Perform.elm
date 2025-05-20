@@ -169,3 +169,15 @@ perform model effect =
                     Http.expectWhatever
                         (Msg.SubmitFormulaOneSessionEntryResponse spec.sessionId)
                 }
+
+        Effect.SubmitFormulaOneSessionResult spec entrantIds ->
+            Http.post
+                { url = apiUrl [ "formula-one", "session-result", String.fromInt spec.sessionId ]
+                , body =
+                    [ ( "positions", Encode.list Encode.int entrantIds ) ]
+                        |> Encode.object
+                        |> Http.jsonBody
+                , expect =
+                    Http.expectWhatever
+                        (Msg.SubmitFormulaOneSessionResultResponse spec.sessionId)
+                }

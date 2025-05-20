@@ -25,9 +25,12 @@ type Msg
     | LoginSubmitResponse (HttpResult User)
     | Logout
     | LogoutResponse (HttpResult ())
-    | ReorderFormulaOneSessionEntry Types.FormulaOne.SessionId Int Int
+    | ReorderFormulaOneSessionPredictionEntry Types.FormulaOne.SessionId Int Int
+    | ReorderFormulaOneSessionResultEntry Types.FormulaOne.SessionId Int Int
     | SubmitFormulaOneSessionEntry Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSessionEntryResponse Types.FormulaOne.SessionId (HttpResult ())
+    | SubmitFormulaOneSessionResult Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)
+    | SubmitFormulaOneSessionResultResponse Types.FormulaOne.SessionId (HttpResult ())
     | FormulaOneLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneEventsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.Event))
     | FormulaOneEventSessionsResponse { eventId : Types.FormulaOne.EventId } (HttpResult (List Types.FormulaOne.Session))

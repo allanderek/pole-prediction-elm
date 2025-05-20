@@ -322,17 +322,17 @@ application model =
                                         []
                                         [ Html.h2
                                             []
-                                            [ Html.text "Sortable" ]
+                                            [ Html.text "Sortable for prediction entry" ]
                                         , Components.FormulaOneSessionEntry.view
                                             { kind = Components.FormulaOneSessionEntry.Prediction
                                             , user = user
                                             , entrants = currentPrediction
-                                            , reorderMessage = Msg.ReorderFormulaOneSessionEntry sessionId
+                                            , reorderMessage = Msg.ReorderFormulaOneSessionPredictionEntry sessionId
                                             , submitMessage =
                                                 Msg.SubmitFormulaOneSessionEntry sessionId
                                                     (List.map .id currentPrediction)
                                             }
-                                        , Html.h2 [] [ Html.text "What the model sees" ]
+                                        , Html.h2 [] [ Html.text "What the model sees for prediction entry" ]
                                         , Html.ol [] (List.map viewEntrant currentPrediction)
                                         ]
 
@@ -340,6 +340,66 @@ application model =
                                     Html.ul
                                         []
                                         (List.map viewEntrant entrants)
+                    , case entrantsStatus of
+                        Helpers.Http.Inflight ->
+                            Html.text "Loading..."
+
+                        Helpers.Http.Ready ->
+                            Html.text "Ready"
+
+                        Helpers.Http.Failed _ ->
+                            Html.text "Error obtaining the session entrants"
+
+                        Helpers.Http.Succeeded entrants ->
+                            let
+                                viewEntrant : Types.FormulaOne.Entrant -> Html Msg
+                                viewEntrant entrant =
+                                    Html.li
+                                        []
+                                        [ Html.span
+                                            [ Attributes.class "entrant-number" ]
+                                            [ Html.text (String.fromInt entrant.number) ]
+                                        , Html.span
+                                            [ Attributes.class "entrant-driver" ]
+                                            [ Html.text entrant.driver ]
+                                        , Html.span
+                                            [ Attributes.class "entrant-team" ]
+                                            [ Html.text entrant.teamShortName ]
+                                        ]
+                            in
+                            case Helpers.Http.toMaybe model.userStatus of
+                                Nothing ->
+                                    Html.text "You must be a logged in admin to enter the results."
+
+                                Just user ->
+                                    case user.isAdmin of
+                                        False ->
+                                            Html.text "You must be an admin user to enter the results."
+
+                                        True ->
+                                            let
+                                                currentResults : List Types.FormulaOne.Entrant
+                                                currentResults =
+                                                    Model.getFormulaOneCurrentSessionResults model sessionId
+                                                        |> Maybe.withDefault entrants
+                                            in
+                                            Html.div
+                                                []
+                                                [ Html.h2
+                                                    []
+                                                    [ Html.text "Sortable Results Entry" ]
+                                                , Components.FormulaOneSessionEntry.view
+                                                    { kind = Components.FormulaOneSessionEntry.Result
+                                                    , user = user
+                                                    , entrants = currentResults
+                                                    , reorderMessage = Msg.ReorderFormulaOneSessionResultEntry sessionId
+                                                    , submitMessage =
+                                                        Msg.SubmitFormulaOneSessionResult sessionId
+                                                            (List.map .id currentResults)
+                                                    }
+                                                , Html.ol [] (List.map viewEntrant currentResults)
+                                                , Html.h2 [] [ Html.text "What the model sees for results entry" ]
+                                                ]
                     , case leaderboardStatus of
                         Helpers.Http.Inflight ->
                             Html.text "Loading..."
@@ -392,7 +452,7 @@ application model =
                                             ]
                                         ]
                             in
-                            Html.ul [] (List.map viewRow leaderboard)
+                            Html.ul [] (List.map viewRow leaderboard.predictions)
                     ]
 
                 Route.FormulaE mSeason ->

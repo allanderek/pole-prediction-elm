@@ -1,6 +1,7 @@
 module Model exposing
     ( Model
     , getFormulaOneCurrentSessionPrediction
+    , getFormulaOneCurrentSessionResults
     , initial
     )
 
@@ -26,8 +27,10 @@ type alias Model key =
     , formulaOneEvents : Dict Types.FormulaOne.Season (Helpers.Http.Status (List Types.FormulaOne.Event))
     , formulaOneSessions : Dict Types.FormulaOne.EventId (Helpers.Http.Status (List Types.FormulaOne.Session))
     , formulaOneEntrants : Dict Types.FormulaOne.SessionId (Helpers.Http.Status (List Types.FormulaOne.Entrant))
-    , formulaOneSessionEntries : Dict Types.FormulaOne.SessionId (List Types.FormulaOne.Entrant)
+    , formulaOneSessionPredictionEntries : Dict Types.FormulaOne.SessionId (List Types.FormulaOne.Entrant)
+    , formulaOneSessionResultEntries : Dict Types.FormulaOne.SessionId (List Types.FormulaOne.Entrant)
     , formulaOneSessionPredictionSubmitStatus : Dict Types.FormulaOne.SessionId (Helpers.Http.Status ())
+    , formulaOneSessionResultSubmitStatus : Dict Types.FormulaOne.SessionId (Helpers.Http.Status ())
     , formulaOneSessionLeaderboards : Dict Types.FormulaOne.SessionId (Helpers.Http.Status Types.FormulaOne.SessionLeaderboard)
     , formulaOneSeasonLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Types.FormulaOne.SeasonLeaderboard)
     , formulaOneConstructorStandings : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
@@ -46,8 +49,10 @@ initial key url userStatus =
     , formulaOneEvents = Dict.empty
     , formulaOneSessions = Dict.empty
     , formulaOneEntrants = Dict.empty
-    , formulaOneSessionEntries = Dict.empty
+    , formulaOneSessionPredictionEntries = Dict.empty
+    , formulaOneSessionResultEntries = Dict.empty
     , formulaOneSessionPredictionSubmitStatus = Dict.empty
+    , formulaOneSessionResultSubmitStatus = Dict.empty
     , formulaOneSessionLeaderboards = Dict.empty
     , formulaOneSeasonLeaderboards = Dict.empty
     , formulaOneConstructorStandings = Dict.empty
@@ -56,22 +61,43 @@ initial key url userStatus =
     }
 
 
+andThenWithUser : (User -> Maybe a) -> Model key -> Maybe a
+andThenWithUser f model =
+    Helpers.Http.toMaybe model.userStatus
+        |> Maybe.andThen f
+
+
 getFormulaOneCurrentSessionPrediction : Model key -> Types.FormulaOne.SessionId -> Maybe (List Types.FormulaOne.Entrant)
 getFormulaOneCurrentSessionPrediction model sessionId =
-    case Helpers.Http.toMaybe model.userStatus of
-        Nothing ->
-            Nothing
-
-        Just user ->
+    let
+        calculateWithUser : User -> Maybe (List Types.FormulaOne.Entrant)
+        calculateWithUser user =
             let
                 storedPrediction : Maybe (List Types.FormulaOne.Entrant)
                 storedPrediction =
                     Dict.get sessionId model.formulaOneSessionLeaderboards
                         |> Maybe.withDefault Helpers.Http.Ready
                         |> Helpers.Http.toMaybe
+                        |> Maybe.map .predictions
                         |> Maybe.withDefault []
                         |> Helpers.List.findWith user.id .userId
                         |> Maybe.map (.rows >> List.map .entrant)
             in
-            Dict.get sessionId model.formulaOneSessionEntries
+            Dict.get sessionId model.formulaOneSessionPredictionEntries
                 |> Maybe.Extra.orElse storedPrediction
+    in
+    andThenWithUser calculateWithUser model
+
+
+getFormulaOneCurrentSessionResults : Model key -> Types.FormulaOne.SessionId -> Maybe (List Types.FormulaOne.Entrant)
+getFormulaOneCurrentSessionResults model sessionId =
+    let
+        storedResult : Maybe (List Types.FormulaOne.Entrant)
+        storedResult =
+            Dict.get sessionId model.formulaOneSessionLeaderboards
+                |> Maybe.withDefault Helpers.Http.Ready
+                |> Helpers.Http.toMaybe
+                |> Maybe.map .results
+    in
+    Dict.get sessionId model.formulaOneSessionResultEntries
+        |> Maybe.Extra.orElse storedResult

@@ -99,32 +99,27 @@ def require_auth(func):
         return func(*args, **kwargs)
     return wrapper
 
-# Admin authentication decorator
-def require_admin(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        user_id = get_user_id_from_cookie()
-        if not user_id:
-            bottle.response.status = 401
-            return {"error": "Authentication required"}
+## Note, no longer a decorator
+def require_admin(db):
+    user_id = get_user_id_from_cookie()
+    if not user_id:
+        bottle.response.status = 401
+        return {"error": "Authentication required"}
             
-        # Get db from kwargs if passed by SQLite plugin
-        db = kwargs.get('db')
-        if not db:
-            bottle.response.status = 500
-            return {"error": "Database connection error"}
+    if not db:
+        bottle.response.status = 500
+        return {"error": "Database connection error"}
             
-        # Check if user is admin
-        query = "SELECT admin FROM users WHERE id = ?"
-        result = db.execute(query, (user_id,)).fetchone()
-        
-        if not result or result['admin'] != 1:
-            bottle.response.status = 403
-            return {"error": "Admin privileges required"}
+    # Check if user is admin
+    query = "SELECT admin FROM users WHERE id = ?"
+    result = db.execute(query, (user_id,)).fetchone()
+    
+    if not result or result['admin'] != 1:
+        bottle.response.status = 403
+        return {"error": "Admin privileges required"}
+
+    return user_id
             
-        kwargs['user_id'] = user_id
-        return func(*args, **kwargs)
-    return wrapper
 
 # Extract user_id from cookie
 def get_user_id_from_cookie():
@@ -302,12 +297,6 @@ def get_current_user(db, user_id):
         'admin': bool(user['admin'])
     }
 
-# Admin-only route example
-@app.route('/api/admin/users', method='GET')
-@require_admin
-def list_users(db, user_id):
-    users = db.execute("SELECT id, username, fullname, admin FROM users").fetchall()
-    return {'users': [dict(user) for user in users]}
 
 # Protected API routes
 @app.route('/api/protected-resource', methods=['GET'])
@@ -372,7 +361,7 @@ order by e.rank desc, e.number
 @app.route('/api/formula-one/session-leaderboard/<session_id>', method='GET')
 def get_formula_one_session_predictions(db, session_id):
     query = """with 
-    user_predictions as (
+    all_predictions as (
         select 
             user,
             session,
@@ -380,8 +369,7 @@ def get_formula_one_session_predictions(db, session_id):
             position,
             fastest_lap
         from formula_one_prediction_lines
-        where user is not null and user != ""
-        and formula_one_prediction_lines.session = :session_id
+        where formula_one_prediction_lines.session = :session_id
     ),
     session_results as (
         select 
@@ -393,9 +381,9 @@ def get_formula_one_session_predictions(db, session_id):
         and session = :session_id
     )
 select 
-    up.user as user_id,
-    u.fullname as user_name,
-    up.position as predicted_position,
+    coalesce(ap.user, '') as user_id,
+    coalesce(u.fullname, 'Official Result') as user_name,
+    ap.position as predicted_position,
     sr.position as actual_position,
     fe.id,
     fe.number,
@@ -405,31 +393,34 @@ select
     coalesce(t.color, '#000000') as team_primary_color,
     coalesce(t.secondary_color, '#000000') as team_secondary_color,
     case 
-        when sr.position is null then 0
-        when up.position <= 10 and sr.position <= 10 then
+        when sr.position is null or ap.user is null or ap.user = "" then 0
+        when ap.position <= 10 and sr.position <= 10 then
             case 
-                when up.position = sr.position then 4
-                when abs(up.position - sr.position) = 1 then 2
+                when ap.position = sr.position then 4
+                when abs(ap.position - sr.position) = 1 then 2
                 else 1
             end
         else 0
     end + 
     case 
-        when sr.position is null then 0
+        when sr.position is null or ap.user is null or ap.user = "" then 0
         when s.fastest_lap = 1 
-        and up.fastest_lap = 1
+        and ap.fastest_lap = 1
         and sr.fastest_lap = 1
         and sr.position <= 10 then 1
         else 0
     end as score
-from user_predictions up
-join users u on up.user = u.id
-left join session_results sr on up.entrant = sr.entrant
-join formula_one_entrants fe on up.entrant = fe.id
+from all_predictions ap
+left join users u on ap.user = u.id
+left join session_results sr on ap.entrant = sr.entrant
+join formula_one_entrants fe on ap.entrant = fe.id
 join drivers d on fe.driver = d.id
 join formula_one_teams t on fe.team = t.id
-join formula_one_sessions s on up.session = s.id
-order by u.fullname, up.position
+join formula_one_sessions s on ap.session = s.id
+order by 
+    case when ap.user is null or ap.user = "" then 0 else 1 end,
+    user_name,
+    ap.position
 ;"""
     rows = db.execute(query, {'session_id': session_id}).fetchall()
 
@@ -480,6 +471,53 @@ def save_formula_one_prediction(user_id, session_id):
         db.executemany(query, rows_to_insert)
         return {'status': 'success'}
 
+@app.route('/api/formula-one/session-result/<session_id>', method='POST')
+def save_formula_one_session_result(session_id):
+    with db_transaction() as db:
+        admin_user_id = require_admin(db)
+        if hasattr(admin_user_id, 'error'):
+            return admin_user_id 
+
+        prediction_data = bottle.request.json
+        
+        # Validate we have all required data
+        if not prediction_data.get('positions') or len(prediction_data['positions']) != 20:
+            bottle.response.status = 400
+            return {'error': 'Prediction must include positions for all 20 drivers'}
+        
+        # Get fastest lap prediction, could be None
+        fastest_lap = prediction_data.get('fastest_lap')
+        
+        # First delete any existing predictions for this user and session
+        db.execute(
+                "delete from formula_one_prediction_lines where (user = '' or user is null) and session = :session_id",
+                { "session_id": session_id }
+        )
+        
+        # Prepare batch insert data
+        rows_to_insert = []
+        
+        for position, entrant_id in enumerate(prediction_data['positions'], start=1):
+            # Only set fastest_lap to "true" if it's specified and matches this entrant
+            is_fastest_lap = "true" if fastest_lap is not None and entrant_id == fastest_lap else "false"
+            rows_to_insert.append({
+                'user': '',
+                'session': session_id,
+                'fastest_lap': is_fastest_lap,
+                'position': position,
+                'entrant': entrant_id
+            })
+        
+        # Perform batch insert
+        query = """
+        insert into formula_one_prediction_lines 
+            (user, session, fastest_lap, position, entrant)
+        values
+            (:user, :session, :fastest_lap, :position, :entrant)
+        """
+        
+        db.executemany(query, rows_to_insert)
+        return {'status': 'success'}
 
 @app.route('/api/formula-one/leaderboard/<season>', method='GET')
 def get_formula_one_leaderboard(db, season):
