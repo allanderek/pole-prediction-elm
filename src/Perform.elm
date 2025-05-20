@@ -6,6 +6,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Msg exposing (Msg)
+import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard
 import Types.Login
@@ -156,6 +157,15 @@ perform model effect =
                     Http.expectJson
                         (Msg.FormulaELeaderboardResponse spec)
                         Types.Leaderboard.decoder
+                }
+
+        Effect.GetFormulaEEvents spec ->
+            Http.get
+                { url = apiUrl [ "formula-e", "season-events", spec.season ]
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaEEventsResponse spec)
+                        (Decode.list Types.FormulaE.eventDecoder)
                 }
 
         Effect.SubmitFormulaOneSessionPrediction spec entrantIds ->

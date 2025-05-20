@@ -887,7 +887,67 @@ def get_formula_e_leaderboard(season):
                  'rows' : create_leaderboard_rows(rows)
                 }
 
+@app.route('/api/formula-e/season-events/<season>', method='GET')
+def get_formula_one_events(season):
+    with db_transaction() as db:
+        query = """select * from races where season = :season ;"""
+        rows = db.execute(query, { 'season': season}).fetchall()
+        bottle.response.content_type = 'application/json'
+        return json.dumps([ dict(row) for row in rows ])
 
+
+@app.route('/api/formula-e/race-prediction/<race_id>', method='POST')
+def save_formula_e_race_prediction(race_id):
+    with db_transaction() as db:
+        admin_user_id = require_admin(db)
+        if hasattr(admin_user_id, 'error'):
+            return admin_user_id 
+
+        prediction_data = bottle.request.json
+        
+        # Validate we have all required fields
+        required_fields = ['pole', 'fam', 'fl', 'hgc', 'first', 'second', 'third', 'fdnf', 'safety_car']
+        missing_fields = [field for field in required_fields if field not in prediction_data]
+        
+        if missing_fields:
+            bottle.response.status = 400
+            return {'error': f'Prediction missing required fields: {", ".join(missing_fields)}'}
+        
+        # Validate safety_car is either "yes" or "no"
+        if prediction_data['safety_car'] not in ["yes", "no"]:
+            bottle.response.status = 400
+            return {'error': 'safety_car must be either "yes" or "no"'}
+        
+        # First delete any existing prediction for this race
+        db.execute(
+            "delete from predictions where (user = '' or user is null) and race = :race_id",
+            {"race_id": race_id}
+        )
+        
+        # Insert the new prediction
+        query = """
+        insert into predictions
+            (user, race, pole, fam, fl, hgc, first, second, third, fdnf, safety_car)
+        values
+            (:user, :race, :pole, :fam, :fl, :hgc, :first, :second, :third, :fdnf, :safety_car)
+        """
+        
+        db.execute(query, {
+            'user': '',
+            'race': race_id,
+            'pole': prediction_data['pole'],
+            'fam': prediction_data['fam'],
+            'fl': prediction_data['fl'],
+            'hgc': prediction_data['hgc'],
+            'first': prediction_data['first'],
+            'second': prediction_data['second'],
+            'third': prediction_data['third'],
+            'fdnf': prediction_data['fdnf'],
+            'safety_car': prediction_data['safety_car']
+        })
+        
+        # Return the predictions for this race
+        return get_formula_e_race_predictions(db, race_id)
 
 
 

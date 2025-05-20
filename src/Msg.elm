@@ -40,3 +40,4 @@ type Msg
     | FormulaOneConstructorStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneDriverStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)
+    | FormulaEEventsResponse { season : Types.FormulaE.Season } (HttpResult (List Types.FormulaE.Event))

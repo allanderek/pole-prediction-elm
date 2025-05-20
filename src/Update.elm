@@ -87,12 +87,21 @@ initRoute model =
                 season =
                     mSeason
                         |> Maybe.withDefault Types.FormulaE.currentSeason
+
+                spec : { season : Types.FormulaE.Season }
+                spec =
+                    { season = season }
             in
             ( { model
                 | formulaELeaderboards =
                     Dict.insert season Helpers.Http.Inflight model.formulaELeaderboards
+                , formulaEEvents =
+                    Dict.insert season Helpers.Http.Inflight model.formulaEEvents
               }
-            , Effect.GetFormulaELeaderboard { season = season }
+            , Effect.Batch
+                [ Effect.GetFormulaELeaderboard spec
+                , Effect.GetFormulaEEvents spec
+                ]
             )
 
         Route.Profile ->
@@ -285,6 +294,13 @@ update msg model =
                 { model
                     | formulaELeaderboards =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaELeaderboards
+                }
+
+        Msg.FormulaEEventsResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaEEvents =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaEEvents
                 }
 
         Msg.FormulaOneEventSessionsResponse spec result ->
