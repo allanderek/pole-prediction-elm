@@ -9,6 +9,8 @@ import Time
 decoder : Decoder Time.Posix
 decoder =
     let
+        -- This uses wolfadex's parser, I'm not entirely sure if actually using a parser
+        -- library isn't a bit overkill for Rfc3339, we could just use split etc.
         parse : String -> Decoder Time.Posix
         parse input =
             case Parser.Advanced.run Rfc3339.dateTimeOffsetParser input of

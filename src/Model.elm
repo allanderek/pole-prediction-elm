@@ -10,6 +10,7 @@ import Helpers.Http
 import Helpers.List
 import Maybe.Extra
 import Route exposing (Route)
+import Time
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
@@ -21,6 +22,7 @@ import Url exposing (Url)
 type alias Model key =
     { navigationKey : key
     , route : Route
+    , now : Time.Posix
     , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
     , formulaOneLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
@@ -39,10 +41,11 @@ type alias Model key =
     }
 
 
-initial : key -> Url -> Helpers.Http.Status User -> Model key
-initial key url userStatus =
+initial : key -> Url -> Time.Posix -> Helpers.Http.Status User -> Model key
+initial key url now userStatus =
     { navigationKey = key
     , route = Route.parse url
+    , now = now
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
     , formulaOneLeaderboards = Dict.empty

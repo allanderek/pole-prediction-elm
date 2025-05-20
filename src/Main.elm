@@ -11,6 +11,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Perform
+import Time
 import Types.User exposing (User)
 import Update
 import Url
@@ -74,8 +75,14 @@ init programFlags url key =
                     -- if there *is* no user in the flags.
                     Helpers.Http.Ready
 
+        now : Time.Posix
+        now =
+            decodeFlag "now" Decode.int
+                |> Result.withDefault 0
+                |> Time.millisToPosix
+
         initialModel : Model key
         initialModel =
-            Model.initial key url userStatus
+            Model.initial key url now userStatus
     in
     Update.initRoute initialModel

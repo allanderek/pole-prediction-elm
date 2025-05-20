@@ -4,26 +4,25 @@ import Components.FormulaOneSessionEntry
 import Components.UserName
 import Dict
 import Helpers.Http
-import Helpers.List
+import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes as Attributes
-import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Types.FormulaOne
 
 
-view : Model key -> Types.FormulaOne.SessionId -> List (Html Msg)
-view model sessionId =
+view : Model key -> Types.FormulaOne.Session -> List (Html Msg)
+view model session =
     let
         entrantsStatus : Helpers.Http.Status (List Types.FormulaOne.Entrant)
         entrantsStatus =
-            Dict.get sessionId model.formulaOneEntrants
+            Dict.get session.id model.formulaOneEntrants
                 |> Maybe.withDefault Helpers.Http.Ready
 
         leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
         leaderboardStatus =
-            Dict.get sessionId model.formulaOneSessionLeaderboards
+            Dict.get session.id model.formulaOneSessionLeaderboards
                 |> Maybe.withDefault Helpers.Http.Ready
 
         viewEntrant : Types.FormulaOne.Entrant -> Html Msg
@@ -40,6 +39,74 @@ view model sessionId =
                     [ Attributes.class "entrant-team" ]
                     [ Html.text entrant.teamShortName ]
                 ]
+
+        viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
+        viewPredictionEntry entrants =
+            case Helpers.Http.toMaybe model.userStatus of
+                Just user ->
+                    -- TODO: Technically here we have to merge the entrants available with the current entry
+                    let
+                        currentPrediction : List Types.FormulaOne.Entrant
+                        currentPrediction =
+                            Model.getFormulaOneCurrentSessionPrediction model session.id
+                                |> Maybe.withDefault entrants
+                    in
+                    Html.div
+                        []
+                        [ Html.h2
+                            []
+                            [ Html.text "Sortable for prediction entry" ]
+                        , Components.FormulaOneSessionEntry.view
+                            { kind = Components.FormulaOneSessionEntry.Prediction
+                            , user = user
+                            , entrants = currentPrediction
+                            , reorderMessage = Msg.ReorderFormulaOneSessionPredictionEntry session.id
+                            , submitMessage =
+                                Msg.SubmitFormulaOneSessionEntry session.id
+                                    (List.map .id currentPrediction)
+                            }
+                        , Html.h2 [] [ Html.text "What the model sees for prediction entry" ]
+                        , Html.ol [] (List.map viewEntrant currentPrediction)
+                        ]
+
+                Nothing ->
+                    Html.ul
+                        []
+                        (List.map viewEntrant entrants)
+
+        viewResultEntry : List Types.FormulaOne.Entrant -> Html Msg
+        viewResultEntry entrants =
+            case Helpers.Http.toMaybe model.userStatus of
+                Nothing ->
+                    Html.text "You must be a logged in admin to enter the results."
+
+                Just user ->
+                    case user.isAdmin of
+                        False ->
+                            Html.text "You must be an admin user to enter the results."
+
+                        True ->
+                            let
+                                currentResults : List Types.FormulaOne.Entrant
+                                currentResults =
+                                    Model.getFormulaOneCurrentSessionResults model session.id
+                                        |> Maybe.withDefault entrants
+                            in
+                            Html.div
+                                []
+                                [ Html.h2 [] [ Html.text "Sortable Results Entry" ]
+                                , Components.FormulaOneSessionEntry.view
+                                    { kind = Components.FormulaOneSessionEntry.Result
+                                    , user = user
+                                    , entrants = currentResults
+                                    , reorderMessage = Msg.ReorderFormulaOneSessionResultEntry session.id
+                                    , submitMessage =
+                                        Msg.SubmitFormulaOneSessionResult session.id
+                                            (List.map .id currentResults)
+                                    }
+                                , Html.h2 [] [ Html.text "What the model sees for results entry" ]
+                                , Html.ol [] (List.map viewEntrant currentResults)
+                                ]
     in
     [ Html.h1
         []
@@ -55,79 +122,12 @@ view model sessionId =
             Html.text "Error obtaining the session entrants"
 
         Helpers.Http.Succeeded entrants ->
-            case Helpers.Http.toMaybe model.userStatus of
-                Just user ->
-                    -- TODO: Technically here we have to merge the entrants available with the current entry
-                    let
-                        currentPrediction : List Types.FormulaOne.Entrant
-                        currentPrediction =
-                            Model.getFormulaOneCurrentSessionPrediction model sessionId
-                                |> Maybe.withDefault entrants
-                    in
-                    Html.div
-                        []
-                        [ Html.h2
-                            []
-                            [ Html.text "Sortable for prediction entry" ]
-                        , Components.FormulaOneSessionEntry.view
-                            { kind = Components.FormulaOneSessionEntry.Prediction
-                            , user = user
-                            , entrants = currentPrediction
-                            , reorderMessage = Msg.ReorderFormulaOneSessionPredictionEntry sessionId
-                            , submitMessage =
-                                Msg.SubmitFormulaOneSessionEntry sessionId
-                                    (List.map .id currentPrediction)
-                            }
-                        , Html.h2 [] [ Html.text "What the model sees for prediction entry" ]
-                        , Html.ol [] (List.map viewEntrant currentPrediction)
-                        ]
+            case Helpers.Time.isEarlier model.now session.startTime of
+                True ->
+                    viewPredictionEntry entrants
 
-                Nothing ->
-                    Html.ul
-                        []
-                        (List.map viewEntrant entrants)
-    , case entrantsStatus of
-        Helpers.Http.Inflight ->
-            Html.text "Loading..."
-
-        Helpers.Http.Ready ->
-            Html.text "Ready"
-
-        Helpers.Http.Failed _ ->
-            Html.text "Error obtaining the session entrants"
-
-        Helpers.Http.Succeeded entrants ->
-            case Helpers.Http.toMaybe model.userStatus of
-                Nothing ->
-                    Html.text "You must be a logged in admin to enter the results."
-
-                Just user ->
-                    case user.isAdmin of
-                        False ->
-                            Html.text "You must be an admin user to enter the results."
-
-                        True ->
-                            let
-                                currentResults : List Types.FormulaOne.Entrant
-                                currentResults =
-                                    Model.getFormulaOneCurrentSessionResults model sessionId
-                                        |> Maybe.withDefault entrants
-                            in
-                            Html.div
-                                []
-                                [ Html.h2 [] [ Html.text "Sortable Results Entry" ]
-                                , Components.FormulaOneSessionEntry.view
-                                    { kind = Components.FormulaOneSessionEntry.Result
-                                    , user = user
-                                    , entrants = currentResults
-                                    , reorderMessage = Msg.ReorderFormulaOneSessionResultEntry sessionId
-                                    , submitMessage =
-                                        Msg.SubmitFormulaOneSessionResult sessionId
-                                            (List.map .id currentResults)
-                                    }
-                                , Html.h2 [] [ Html.text "What the model sees for results entry" ]
-                                , Html.ol [] (List.map viewEntrant currentResults)
-                                ]
+                False ->
+                    viewResultEntry entrants
     , case leaderboardStatus of
         Helpers.Http.Inflight ->
             Html.text "Loading..."

@@ -25,8 +25,10 @@ module Types.FormulaOne exposing
 
 import Dict exposing (Dict)
 import Helpers.Decode
+import Helpers.Rfc3339
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
+import Time
 import Types.User
 
 
@@ -73,8 +75,7 @@ type alias Session =
     { id : SessionId
     , name : String
     , half_points : Bool
-
-    -- , startTime : String
+    , startTime : Time.Posix
     , cancelled : Bool
     , fastestLap : Bool
     }
@@ -86,7 +87,7 @@ sessionDecoder =
         |> Pipeline.required "id" Decode.int
         |> Pipeline.required "name" Decode.string
         |> Pipeline.required "half_points" Helpers.Decode.intAsBool
-        -- |> Pipeline.required "start_time" Decode.string
+        |> Pipeline.required "start_time" Helpers.Rfc3339.decoder
         |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
         |> Pipeline.required "fastest_lap" Helpers.Decode.intAsBool
 

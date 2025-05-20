@@ -191,9 +191,10 @@ def serve_index(path=None):
             query = "SELECT id, username, fullname, password, admin FROM users WHERE id = ?"
             user = db.execute(query, (user_id,)).fetchone()
 
-        flags_data = {}
+        
+        user_flags = {}
         if user:
-            flags_data['flags'] = {
+            user_flags = {
                 'user': {
                     "id": user["id"],
                     "username": user["username"],
@@ -202,7 +203,7 @@ def serve_index(path=None):
                 }
             }
         
-        flags_json = json.dumps(flags_data)
+        user_flags_json = json.dumps(user_flags)
 
         index_html = f"""<!DOCTYPE html>
                 <html>
@@ -218,7 +219,11 @@ def serve_index(path=None):
                 </head>
                 <body>
                     <h1>Pole Prediction</h1>
-                    <script> var app = Elm.Main.init({flags_json}); </script>
+                    <script> 
+                        const user_flags = {user_flags_json};
+                        const flags = {{ "flags" : {{ "now": Date.now(), ...user_flags }} }}; 
+                        var app = Elm.Main.init(flags); 
+                    </script>
                 </body>
                 </html>"""
         return index_html

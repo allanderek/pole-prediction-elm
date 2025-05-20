@@ -58,11 +58,26 @@ initRoute model =
             , Effect.GetFormulaOneEventSessions { eventId = eventId }
             )
 
-        Route.FormulaOneSession _ _ sessionId ->
+        Route.FormulaOneSession _ eventId sessionId ->
+            let
+                haveSessionInfo : Bool
+                haveSessionInfo =
+                    Dict.get eventId model.formulaOneSessions
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.toMaybe
+                        |> Maybe.withDefault []
+                        |> List.any (\session -> session.id == sessionId)
+            in
             ( model
             , Effect.Batch
                 [ Effect.GetFormulaOneEntrants { sessionId = sessionId }
                 , Effect.GetFormulaOneSessionLeaderboard { sessionId = sessionId }
+                , case haveSessionInfo of
+                    True ->
+                        Effect.None
+
+                    False ->
+                        Effect.GetFormulaOneEventSessions { eventId = eventId }
                 ]
             )
 

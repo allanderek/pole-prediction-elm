@@ -8,6 +8,7 @@ import Components.UserName
 import Dict
 import Helpers.Classes
 import Helpers.Http
+import Helpers.List
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events
@@ -265,8 +266,21 @@ application model =
                                 (List.map viewSession sessions)
                     ]
 
-                Route.FormulaOneSession _ _ sessionId ->
-                    Pages.FormulaOneSession.view model sessionId
+                Route.FormulaOneSession _ eventId sessionId ->
+                    let
+                        mSession : Maybe Types.FormulaOne.Session
+                        mSession =
+                            Dict.get eventId model.formulaOneSessions
+                                |> Maybe.withDefault Helpers.Http.Ready
+                                |> Helpers.Http.toMaybe
+                                |> Maybe.andThen (Helpers.List.findWith sessionId .id)
+                    in
+                    case mSession of
+                        Nothing ->
+                            [ Html.text "Session not found" ]
+
+                        Just session ->
+                            Pages.FormulaOneSession.view model session
 
                 Route.FormulaE mSeason ->
                     let
