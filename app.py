@@ -359,7 +359,10 @@ order by e.rank desc, e.number
 
 
 @app.route('/api/formula-one/session-leaderboard/<session_id>', method='GET')
-def get_formula_one_session_predictions(db, session_id):
+def get_formula_one_session_leaderboard(db, session_id):
+    return get_formula_one_session_scored_predictions(db, session_id)
+
+def get_formula_one_session_scored_predictions(db, session_id):
     query = """with 
     all_predictions as (
         select 
@@ -517,7 +520,8 @@ def save_formula_one_session_result(session_id):
         """
         
         db.executemany(query, rows_to_insert)
-        return {'status': 'success'}
+        # Now we do not wish to return the new session leaderboard 
+        return get_formula_one_session_scored_predictions(db, session_id)
 
 @app.route('/api/formula-one/leaderboard/<season>', method='GET')
 def get_formula_one_leaderboard(db, season):

@@ -385,9 +385,7 @@ application model =
                                             in
                                             Html.div
                                                 []
-                                                [ Html.h2
-                                                    []
-                                                    [ Html.text "Sortable Results Entry" ]
+                                                [ Html.h2 [] [ Html.text "Sortable Results Entry" ]
                                                 , Components.FormulaOneSessionEntry.view
                                                     { kind = Components.FormulaOneSessionEntry.Result
                                                     , user = user
@@ -397,8 +395,8 @@ application model =
                                                         Msg.SubmitFormulaOneSessionResult sessionId
                                                             (List.map .id currentResults)
                                                     }
-                                                , Html.ol [] (List.map viewEntrant currentResults)
                                                 , Html.h2 [] [ Html.text "What the model sees for results entry" ]
+                                                , Html.ol [] (List.map viewEntrant currentResults)
                                                 ]
                     , case leaderboardStatus of
                         Helpers.Http.Inflight ->

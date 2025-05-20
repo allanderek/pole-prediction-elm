@@ -30,7 +30,7 @@ type Msg
     | SubmitFormulaOneSessionEntry Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSessionEntryResponse Types.FormulaOne.SessionId (HttpResult ())
     | SubmitFormulaOneSessionResult Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)
-    | SubmitFormulaOneSessionResultResponse Types.FormulaOne.SessionId (HttpResult ())
+    | SubmitFormulaOneSessionResultResponse Types.FormulaOne.SessionId (HttpResult Types.FormulaOne.SessionLeaderboard)
     | FormulaOneLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneEventsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.Event))
     | FormulaOneEventSessionsResponse { eventId : Types.FormulaOne.EventId } (HttpResult (List Types.FormulaOne.Session))

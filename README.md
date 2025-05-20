@@ -37,3 +37,4 @@ $ source venv/bin/activate.fish
 - [ ] Should we just get rid of the entire SQLItePlugin thing and just use the context manager? It seems more hassle than it's worth particularly if it's not going to work with require_auth.
 - [ ] Next step is to allow updating with Results, a little tricky since it's difficult to get the current result from the leaderboard, unless we also download that at the same time.
 - [ ] We may wish to allow entering results even if the session leaderboard fails to download
+- [ ] We may not really need model.formulaOneSessionResultSubmitStatus since we can just use the  leaderboard status since it returns that.

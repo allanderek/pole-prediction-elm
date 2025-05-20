@@ -171,6 +171,12 @@ perform model effect =
                 }
 
         Effect.SubmitFormulaOneSessionResult spec entrantIds ->
+            let
+                decoder : Decoder Types.FormulaOne.SessionLeaderboard
+                decoder =
+                    Decode.list Types.FormulaOne.scoredPredictionRowDecoder
+                        |> Decode.map Types.FormulaOne.scoredPredictionRowsToSessionLeaderboard
+            in
             Http.post
                 { url = apiUrl [ "formula-one", "session-result", String.fromInt spec.sessionId ]
                 , body =
@@ -178,6 +184,7 @@ perform model effect =
                         |> Encode.object
                         |> Http.jsonBody
                 , expect =
-                    Http.expectWhatever
+                    Http.expectJson
                         (Msg.SubmitFormulaOneSessionResultResponse spec.sessionId)
+                        decoder
                 }

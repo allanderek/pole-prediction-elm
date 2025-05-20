@@ -237,10 +237,18 @@ update msg model =
             )
 
         Msg.SubmitFormulaOneSessionResultResponse sessionId result ->
+            let
+                newStatus : Helpers.Http.Status ()
+                newStatus =
+                    Helpers.Http.fromResult result
+                        |> Helpers.Http.map (\_ -> ())
+            in
             Return.noEffect
                 { model
                     | formulaOneSessionResultSubmitStatus =
-                        Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionResultSubmitStatus
+                        Dict.insert sessionId newStatus model.formulaOneSessionResultSubmitStatus
+                    , formulaOneSessionLeaderboards =
+                        Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
                 }
 
         Msg.FormulaOneLeaderboardResponse spec result ->
