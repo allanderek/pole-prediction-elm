@@ -1,9 +1,20 @@
 module Helpers.List exposing
-    ( findWith
+    ( emptyAsNothing
+    , findWith
     , moveByIndex
     )
 
 import List.Extra
+
+
+emptyAsNothing : List a -> Maybe (List a)
+emptyAsNothing items =
+    case List.isEmpty items of
+        True ->
+            Nothing
+
+        False ->
+            Just items
 
 
 findWith : a -> (b -> a) -> List b -> Maybe b

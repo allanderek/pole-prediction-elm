@@ -98,6 +98,7 @@ getFormulaOneCurrentSessionResults model sessionId =
                 |> Maybe.withDefault Helpers.Http.Ready
                 |> Helpers.Http.toMaybe
                 |> Maybe.map .results
+                |> Maybe.andThen Helpers.List.emptyAsNothing
     in
     Dict.get sessionId model.formulaOneSessionResultEntries
         |> Maybe.Extra.orElse storedResult
