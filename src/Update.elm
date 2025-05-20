@@ -104,6 +104,9 @@ initRoute model =
                 ]
             )
 
+        Route.FormulaEEvent _ _ ->
+            Return.noEffect model
+
         Route.Profile ->
             Return.noEffect model
 

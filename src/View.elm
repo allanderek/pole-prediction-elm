@@ -361,9 +361,8 @@ application model =
                                         []
                                         [ Html.a
                                             [ Attributes.class "event-link"
-
-                                            -- , Route.FormulaEEvent season event.id
-                                            --     |> Route.href
+                                            , Route.FormulaEEvent season event.id
+                                                |> Route.href
                                             ]
                                             [ Html.text event.name ]
                                         ]
@@ -372,6 +371,9 @@ application model =
                                 []
                                 (List.map viewEvent events)
                     ]
+
+                Route.FormulaEEvent season eventId ->
+                    [ Html.text "Formula E event not yet done" ]
 
                 Route.Profile ->
                     [ Html.h1
