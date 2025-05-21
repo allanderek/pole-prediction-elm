@@ -1,9 +1,12 @@
 module Types.FormulaE exposing
-    ( Event
+    ( Entrant
+    , EntrantId
+    , Event
     , EventId
     , Season
     , currentChampion
     , currentSeason
+    , entrantDecoder
     , eventDecoder
     )
 
@@ -54,3 +57,28 @@ eventDecoder =
         |> Pipeline.required "circuit" Decode.string
         |> Pipeline.required "date" Helpers.Rfc3339.decoder
         |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
+
+
+type alias EntrantId =
+    Int
+
+
+type alias Entrant =
+    { id : EntrantId
+    , number : Int
+    , driver : String
+    , teamFullName : String
+    , teamShortName : String
+    , teamPrimaryColor : String
+    }
+
+
+entrantDecoder : Decoder Entrant
+entrantDecoder =
+    Decode.succeed Entrant
+        |> Pipeline.required "id" Decode.int
+        |> Pipeline.required "number" Decode.int
+        |> Pipeline.required "driver_name" Decode.string
+        |> Pipeline.required "team_full_name" Decode.string
+        |> Pipeline.required "team_short_name" Decode.string
+        |> Pipeline.required "team_primary_color" Decode.string

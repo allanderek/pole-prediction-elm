@@ -123,7 +123,12 @@ initRoute model =
                         False ->
                             Effect.GetFormulaEEvents { season = season }
             in
-            ( model, eventsEffect )
+            ( model
+            , Effect.Batch
+                [ eventsEffect
+                , Effect.GetFormulaEEventEntrants { eventId = eventId }
+                ]
+            )
 
         Route.Profile ->
             Return.noEffect model
@@ -322,6 +327,13 @@ update msg model =
                 { model
                     | formulaEEvents =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaEEvents
+                }
+
+        Msg.FormulaEEventEntrantsResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaEEventEntrants =
+                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventEntrants
                 }
 
         Msg.FormulaOneEventSessionsResponse spec result ->

@@ -895,6 +895,29 @@ def get_formula_one_events(season):
         bottle.response.content_type = 'application/json'
         return json.dumps([ dict(row) for row in rows ])
 
+@app.route('/api/formula-e/event-entrants/<race_id>', method='GET')
+def get_formula_e_event_entrants(race_id):
+    with db_transaction() as db:
+        query = """select
+        e.id,
+        e.number,
+        e.driver,
+        e.team,
+        e.race,
+        coalesce(e.participating, 0) as participating,
+        d.name as driver_name,
+        t.fullname as team_full_name,
+        t.shortname as team_short_name,
+        coalesce(t.color, '#000000') as team_primary_color
+    from entrants e
+    join drivers d on e.driver = d.id
+    join teams t on e.team = t.id
+    where e.race = :race_id
+    order by t.shortname, e.number
+    ;"""
+        rows = db.execute(query, {'race_id': race_id}).fetchall()
+        bottle.response.content_type = 'application/json'
+        return json.dumps([ dict(row) for row in rows ])
 
 @app.route('/api/formula-e/race-prediction/<race_id>', method='POST')
 def save_formula_e_race_prediction(race_id):
