@@ -11,6 +11,7 @@ module Types.FormulaE exposing
     , currentChampion
     , currentSeason
     , emptyPrediction
+    , encodePrediction
     , entrantDecoder
     , eventDecoder
     , eventLeaderboardDecoder
@@ -20,6 +21,7 @@ import Helpers.Decode
 import Helpers.Rfc3339
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
+import Json.Encode as Encode
 import Time
 import Types.User
 
@@ -115,6 +117,34 @@ emptyPrediction =
     , fdnf = 0
     , safetyCar = Nothing
     }
+
+
+encodePrediction : Prediction -> Encode.Value
+encodePrediction prediction =
+    let
+        safetyCar : String
+        safetyCar =
+            case prediction.safetyCar of
+                Just True ->
+                    "yes"
+
+                Just False ->
+                    "no"
+
+                Nothing ->
+                    ""
+    in
+    Encode.object
+        [ ( "pole", Encode.int prediction.pole )
+        , ( "fam", Encode.int prediction.fam )
+        , ( "fl", Encode.int prediction.fastestLap )
+        , ( "hgc", Encode.int prediction.hgc )
+        , ( "first", Encode.int prediction.first )
+        , ( "second", Encode.int prediction.second )
+        , ( "third", Encode.int prediction.third )
+        , ( "fdnf", Encode.int prediction.fdnf )
+        , ( "safety_car", Encode.string safetyCar )
+        ]
 
 
 type alias Result =

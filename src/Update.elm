@@ -385,6 +385,36 @@ update msg model =
                         Dict.insert spec.eventId newResult model.formulaEResultInputs
                 }
 
+        Msg.SubmitFormulaEPrediction spec prediction ->
+            ( { model
+                | formulaEEventLeaderboards =
+                    Dict.insert spec.eventId Helpers.Http.Inflight model.formulaEEventLeaderboards
+              }
+            , Effect.SubmitFormulaEPrediction spec prediction
+            )
+
+        Msg.SubmitFormulaEResult spec result ->
+            ( { model
+                | formulaEEventLeaderboards =
+                    Dict.insert spec.eventId Helpers.Http.Inflight model.formulaEEventLeaderboards
+              }
+            , Effect.SubmitFormulaEResult spec result
+            )
+
+        Msg.SubmitFormulaEPredictionResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaEEventLeaderboards =
+                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
+                }
+
+        Msg.SubmitFormulaEResultResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaEEventLeaderboards =
+                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
+                }
+
         Msg.FormulaOneEventSessionsResponse spec result ->
             Return.noEffect
                 { model

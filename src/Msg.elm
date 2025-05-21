@@ -46,6 +46,10 @@ type Msg
     | FormulaEEventLeaderboardResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
     | UpdateFormulaEPrediction { eventId : Types.FormulaE.EventId } UpdateFormulaEPredictionMsg
     | UpdateFormulaEResult { eventId : Types.FormulaE.EventId } UpdateFormulaEPredictionMsg
+    | SubmitFormulaEPrediction { eventId : Types.FormulaE.EventId } Types.FormulaE.Prediction
+    | SubmitFormulaEResult { eventId : Types.FormulaE.EventId } Types.FormulaE.Result
+    | SubmitFormulaEPredictionResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
+    | SubmitFormulaEResultResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
 
 
 

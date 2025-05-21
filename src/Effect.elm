@@ -29,6 +29,8 @@ type Effect
     | GetFormulaEEvents { season : Types.FormulaE.Season }
     | GetFormulaEEventEntrants { eventId : Types.FormulaE.EventId }
     | GetFormulaEEventLeaderboard { eventId : Types.FormulaE.EventId }
+    | SubmitFormulaEPrediction { eventId : Types.FormulaE.EventId } Types.FormulaE.Prediction
+    | SubmitFormulaEResult { eventId : Types.FormulaE.EventId } Types.FormulaE.Result
     | SubmitFormulaOneSessionPrediction { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSessionResult { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
 

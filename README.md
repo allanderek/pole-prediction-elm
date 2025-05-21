@@ -43,7 +43,9 @@ $ source venv/bin/activate.fish
 
 ## Formula E input
 
-- [ ] Allow submitting a prediction/result and saving it to the database.
-- [ ] Allow downloading the current predictions/results from the database to pre-populate the form.
+- [x] Allow submitting a prediction/result and saving it to the database.
+- [x] Allow downloading the current predictions/results from the database to pre-populate the form.
 - [ ] Validate the prediction, so that all things should be set, and, for example you cannot select the same entrant for 1st, 2nd, and 3rd.
 - [ ] Results however, can be partial, and we do not need to worry about validation because if that is really the result then that's the result.
+- [ ] Figure out how to input safety car.
+- [ ] Perhaps just use a native alert for confirmation/failure or submission.

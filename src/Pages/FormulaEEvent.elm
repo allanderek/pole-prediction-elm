@@ -3,10 +3,10 @@ module Pages.FormulaEEvent exposing (view)
 import Components.Selector
 import Dict
 import Helpers.Http
-import Helpers.List
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes
+import Html.Events
 import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
@@ -105,14 +105,27 @@ type alias EntrantSelectorConfig =
 viewInput : Model key -> Types.FormulaE.EventId -> User -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
 viewInput model eventId user kind entrants =
     let
+        spec : { eventId : Types.FormulaE.EventId }
+        spec =
+            { eventId = eventId }
+
         toMessage : Msg.UpdateFormulaEPredictionMsg -> Msg
         toMessage =
             case kind of
                 Prediction ->
-                    Msg.UpdateFormulaEPrediction { eventId = eventId }
+                    Msg.UpdateFormulaEPrediction spec
 
                 Result ->
-                    Msg.UpdateFormulaEResult { eventId = eventId }
+                    Msg.UpdateFormulaEResult spec
+
+        submitMessage : Msg
+        submitMessage =
+            case kind of
+                Prediction ->
+                    Msg.SubmitFormulaEPrediction spec current
+
+                Result ->
+                    Msg.SubmitFormulaEResult spec current
 
         current : Types.FormulaE.Prediction
         current =
@@ -165,6 +178,18 @@ viewInput model eventId user kind entrants =
                     [ Html.text config.label ]
                 , Components.Selector.view selectorConfig
                 ]
+
+        safetyCarRadio : Bool -> Html Msg
+        safetyCarRadio yes =
+            Html.input
+                [ Html.Attributes.type_ "radio"
+                , Html.Attributes.name "safety_car"
+                , Html.Attributes.checked (current.safetyCar == Just yes)
+                , Msg.SetSafetyCar yes
+                    |> toMessage
+                    |> Html.Events.onClick
+                ]
+                []
     in
     Html.fieldset
         []
@@ -176,4 +201,21 @@ viewInput model eventId user kind entrants =
         , viewSelector { label = "Second", current = current.second, onInput = Msg.SetSecond }
         , viewSelector { label = "Third", current = current.third, onInput = Msg.SetThird }
         , viewSelector { label = "FDNF", current = current.fdnf, onInput = Msg.SetFdnf }
+        , Html.div
+            []
+            [ Html.label [] [ Html.text "Safety car: " ]
+            , Html.label
+                []
+                [ Html.text "no"
+                , safetyCarRadio False
+                ]
+            , Html.label
+                []
+                [ safetyCarRadio True
+                , Html.text "yes"
+                ]
+            ]
+        , Html.button
+            [ Html.Events.onClick submitMessage ]
+            [ Html.text "Submit" ]
         ]

@@ -183,6 +183,24 @@ perform model effect =
                 , expect = Http.expectJson (Msg.FormulaEEventLeaderboardResponse spec) Types.FormulaE.eventLeaderboardDecoder
                 }
 
+        Effect.SubmitFormulaEPrediction spec prediction ->
+            Http.post
+                { url = apiUrl [ "formula-e", "race-prediction", String.fromInt spec.eventId ]
+                , body =
+                    Types.FormulaE.encodePrediction prediction
+                        |> Http.jsonBody
+                , expect = Http.expectJson (Msg.SubmitFormulaEPredictionResponse spec) Types.FormulaE.eventLeaderboardDecoder
+                }
+
+        Effect.SubmitFormulaEResult spec result ->
+            Http.post
+                { url = apiUrl [ "formula-e", "race-result", String.fromInt spec.eventId ]
+                , body =
+                    Types.FormulaE.encodePrediction result
+                        |> Http.jsonBody
+                , expect = Http.expectJson (Msg.SubmitFormulaEResultResponse spec) Types.FormulaE.eventLeaderboardDecoder
+                }
+
         Effect.SubmitFormulaOneSessionPrediction spec entrantIds ->
             Http.post
                 { url = apiUrl [ "formula-one", "session-prediction", String.fromInt spec.sessionId ]

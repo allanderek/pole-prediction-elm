@@ -986,11 +986,9 @@ def get_scored_formula_e_race_predictions(db, race_id):
     return json.dumps(response_data)
 
 @app.route('/api/formula-e/race-prediction/<race_id>', method='POST')
-def save_formula_e_race_prediction(race_id):
+@require_auth
+def save_formula_e_race_prediction(user_id, race_id):
     with db_transaction() as db:
-        admin_user_id = require_admin(db)
-        if hasattr(admin_user_id, 'error'):
-            return admin_user_id 
 
         prediction_data = bottle.request.json
         
@@ -1009,8 +1007,8 @@ def save_formula_e_race_prediction(race_id):
         
         # First delete any existing prediction for this race
         db.execute(
-            "delete from predictions where (user = '' or user is null) and race = :race_id",
-            {"race_id": race_id}
+                "delete from predictions where user = :user_id and race = :race_id",
+                {"user_id": user_id, "race_id": race_id}
         )
         
         # Insert the new prediction
@@ -1022,7 +1020,51 @@ def save_formula_e_race_prediction(race_id):
         """
         
         db.execute(query, {
-            'user': '',
+            'user': user_id,
+            'race': race_id,
+            'pole': prediction_data['pole'],
+            'fam': prediction_data['fam'],
+            'fl': prediction_data['fl'],
+            'hgc': prediction_data['hgc'],
+            'first': prediction_data['first'],
+            'second': prediction_data['second'],
+            'third': prediction_data['third'],
+            'fdnf': prediction_data['fdnf'],
+            'safety_car': prediction_data['safety_car']
+        })
+        
+        # Return the predictions for this race, even if that is only the current user's prediction
+        # Arguably, it must be otherwise we wouldn't be allowing them to save it, so we could probably
+        # save work here by just returning the new prediction.
+        return get_scored_formula_e_race_predictions(db, race_id)
+
+@app.route('/api/formula-e/race-result/<race_id>', method='POST')
+def save_formula_e_race_result(race_id):
+    with db_transaction() as db:
+        admin_user_id = require_admin(db)
+        if hasattr(admin_user_id, 'error'):
+            return admin_user_id 
+
+        prediction_data = bottle.request.json
+       
+        # No validation, none of the fields are required because you can input a partial result
+        # for example after qualifying.
+        
+        # First delete any existing result for this race
+        db.execute(
+            "delete from results where race = :race_id",
+            {"race_id": race_id}
+        )
+        
+        # Insert the new prediction
+        query = """
+        insert into results
+            (race, pole, fam, fl, hgc, first, second, third, fdnf, safety_car)
+        values
+            (:race, :pole, :fam, :fl, :hgc, :first, :second, :third, :fdnf, :safety_car)
+        """
+        
+        db.execute(query, {
             'race': race_id,
             'pole': prediction_data['pole'],
             'fam': prediction_data['fam'],
