@@ -919,6 +919,72 @@ def get_formula_e_event_entrants(race_id):
         bottle.response.content_type = 'application/json'
         return json.dumps([ dict(row) for row in rows ])
 
+@app.route('/api/formula-e/race-predictions/<race_id>', method='GET')
+def get_formula_e_race_predictions(race_id):
+    with db_transaction() as db:
+        return get_scored_formula_e_race_predictions(db, race_id)
+
+def get_scored_formula_e_race_predictions(db, race_id):
+    query = """select
+    user as user_id,
+    users.fullname as user_name, 
+    pole,
+    fam,
+    fl,
+    hgc,
+    first,
+    second,
+    third,
+    fdnf,
+    safety_car
+    from predictions
+    join users on predictions.user = users.id
+    where race = :race_id
+    """
+    prediction_rows = db.execute(query, {'race_id': race_id}).fetchall()
+
+
+    query = """select
+    pole,
+    fam,
+    fl,
+    hgc,
+    first,
+    second,
+    third,
+    fdnf,
+    safety_car
+    from results
+    where race = :race_id
+    """
+    result_row = db.execute(query, {'race_id': race_id}).fetchone()
+
+    def transform_prediction(prediction):
+        if result_row is not None:
+            total = 0
+            for key in ['fam', 'fl', 'hgc', 'first', 'second', 'third', 'fdnf']:
+                if prediction[key] == result_row[key]:
+                    total = 10
+            if prediction['first'] == result_row['first']:
+                total += 20
+            if prediction['safety_car'] == result_row['safety_car'] and prediction['safety_car'] in ['yes', 'no']:
+                total += 10
+            prediction['score'] = total
+        else:
+            prediction['score'] = 0
+        return prediction
+
+    predictions = [ transform_prediction(dict(row)) for row in prediction_rows ]    
+
+    response_data = { 
+        'predictions' : predictions,
+        'result' : dict(result_row) if result_row else None
+        }
+
+
+    bottle.response.content_type = 'application/json'
+    return json.dumps(response_data)
+
 @app.route('/api/formula-e/race-prediction/<race_id>', method='POST')
 def save_formula_e_race_prediction(race_id):
     with db_transaction() as db:
@@ -970,7 +1036,7 @@ def save_formula_e_race_prediction(race_id):
         })
         
         # Return the predictions for this race
-        return get_formula_e_race_predictions(db, race_id)
+        return get_scored_formula_e_race_predictions(db, race_id)
 
 
 

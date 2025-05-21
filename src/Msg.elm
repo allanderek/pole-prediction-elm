@@ -43,8 +43,14 @@ type Msg
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)
     | FormulaEEventsResponse { season : Types.FormulaE.Season } (HttpResult (List Types.FormulaE.Event))
     | FormulaEEventEntrantsResponse { eventId : Types.FormulaE.EventId } (HttpResult (List Types.FormulaE.Entrant))
+    | FormulaEEventLeaderboardResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
     | UpdateFormulaEPrediction { eventId : Types.FormulaE.EventId } UpdateFormulaEPredictionMsg
     | UpdateFormulaEResult { eventId : Types.FormulaE.EventId } UpdateFormulaEPredictionMsg
+
+
+
+-- | SubmitFormulaEPrediction { eventId : Types.FormulaE.EventId } Types.FormulaE.Prediction
+-- | SubmitFormulaEResult { eventId : Types.FormulaE.EventId } Types.FormulaE.Prediction
 
 
 type UpdateFormulaEPredictionMsg

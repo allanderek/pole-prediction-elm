@@ -177,6 +177,12 @@ perform model effect =
                         (Decode.list Types.FormulaE.entrantDecoder)
                 }
 
+        Effect.GetFormulaEEventLeaderboard spec ->
+            Http.get
+                { url = apiUrl [ "formula-e", "race-predictions", String.fromInt spec.eventId ]
+                , expect = Http.expectJson (Msg.FormulaEEventLeaderboardResponse spec) Types.FormulaE.eventLeaderboardDecoder
+                }
+
         Effect.SubmitFormulaOneSessionPrediction spec entrantIds ->
             Http.post
                 { url = apiUrl [ "formula-one", "session-prediction", String.fromInt spec.sessionId ]

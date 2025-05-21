@@ -122,11 +122,16 @@ initRoute model =
 
                         False ->
                             Effect.GetFormulaEEvents { season = season }
+
+                spec : { eventId : Types.FormulaE.EventId }
+                spec =
+                    { eventId = eventId }
             in
             ( model
             , Effect.Batch
                 [ eventsEffect
-                , Effect.GetFormulaEEventEntrants { eventId = eventId }
+                , Effect.GetFormulaEEventEntrants spec
+                , Effect.GetFormulaEEventLeaderboard spec
                 ]
             )
 
@@ -334,6 +339,13 @@ update msg model =
                 { model
                     | formulaEEventEntrants =
                         Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventEntrants
+                }
+
+        Msg.FormulaEEventLeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaEEventLeaderboards =
+                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
                 }
 
         Msg.UpdateFormulaEPrediction spec updateMessage ->

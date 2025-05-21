@@ -3,14 +3,17 @@ module Types.FormulaE exposing
     , EntrantId
     , Event
     , EventId
+    , EventLeaderboard
     , Prediction
     , Result
+    , ScoredPrediction
     , Season
     , currentChampion
     , currentSeason
     , emptyPrediction
     , entrantDecoder
     , eventDecoder
+    , eventLeaderboardDecoder
     )
 
 import Helpers.Decode
@@ -97,6 +100,7 @@ type alias Prediction =
     , third : EntrantId
     , fdnf : EntrantId
     , safetyCar : Bool
+    , score : Int
     }
 
 
@@ -111,8 +115,54 @@ emptyPrediction =
     , third = 0
     , fdnf = 0
     , safetyCar = False
+    , score = 0
     }
 
 
 type alias Result =
     Prediction
+
+
+type alias ScoredPrediction =
+    { userId : Types.User.Id
+    , userName : String
+    , prediction : Prediction
+    , score : Int
+    }
+
+
+predictionDecoder : Decoder Prediction
+predictionDecoder =
+    Decode.succeed Prediction
+        |> Pipeline.required "pole" Decode.int
+        |> Pipeline.required "fam" Decode.int
+        |> Pipeline.required "fastest_lap" Decode.int
+        |> Pipeline.required "hgc" Decode.int
+        |> Pipeline.required "first" Decode.int
+        |> Pipeline.required "second" Decode.int
+        |> Pipeline.required "third" Decode.int
+        |> Pipeline.required "fdnf" Decode.int
+        |> Pipeline.required "safety_car" Helpers.Decode.intAsBool
+        |> Pipeline.required "score" Decode.int
+
+
+scoredPredictionDecoder : Decoder ScoredPrediction
+scoredPredictionDecoder =
+    Decode.succeed ScoredPrediction
+        |> Pipeline.required "user_id" Decode.int
+        |> Pipeline.required "user_name" Decode.string
+        |> Pipeline.custom predictionDecoder
+        |> Pipeline.required "score" Decode.int
+
+
+type alias EventLeaderboard =
+    { result : Maybe Result
+    , predictions : List ScoredPrediction
+    }
+
+
+eventLeaderboardDecoder : Decoder EventLeaderboard
+eventLeaderboardDecoder =
+    Decode.succeed EventLeaderboard
+        |> Pipeline.required "result" (Decode.nullable predictionDecoder)
+        |> Pipeline.required "predictions" (Decode.list scoredPredictionDecoder)
