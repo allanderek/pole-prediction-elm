@@ -104,8 +104,26 @@ initRoute model =
                 ]
             )
 
-        Route.FormulaEEvent _ _ ->
-            Return.noEffect model
+        Route.FormulaEEvent season eventId ->
+            let
+                haveEventInfo : Bool
+                haveEventInfo =
+                    Dict.get season model.formulaEEvents
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.toMaybe
+                        |> Maybe.withDefault []
+                        |> List.any (\event -> event.id == eventId)
+
+                eventsEffect : Effect
+                eventsEffect =
+                    case haveEventInfo of
+                        True ->
+                            Effect.None
+
+                        False ->
+                            Effect.GetFormulaEEvents { season = season }
+            in
+            ( model, eventsEffect )
 
         Route.Profile ->
             Return.noEffect model

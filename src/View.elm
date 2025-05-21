@@ -14,6 +14,7 @@ import Html.Attributes as Attributes
 import Html.Events
 import Model exposing (Model)
 import Msg exposing (Msg)
+import Pages.FormulaEEvent
 import Pages.FormulaOneSession
 import Route
 import Types.FormulaE
@@ -373,7 +374,20 @@ application model =
                     ]
 
                 Route.FormulaEEvent season eventId ->
-                    [ Html.text "Formula E event not yet done" ]
+                    let
+                        mEvent : Maybe Types.FormulaE.Event
+                        mEvent =
+                            Dict.get season model.formulaEEvents
+                                |> Maybe.withDefault Helpers.Http.Ready
+                                |> Helpers.Http.toMaybe
+                                |> Maybe.andThen (Helpers.List.findWith eventId .id)
+                    in
+                    case mEvent of
+                        Nothing ->
+                            [ Html.text "Event not found" ]
+
+                        Just event ->
+                            Pages.FormulaEEvent.view model event
 
                 Route.Profile ->
                     [ Html.h1
