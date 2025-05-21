@@ -102,8 +102,29 @@ view model event =
                                                 viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
                                                 viewRow scoredPrediction =
                                                     let
-                                                        entrantCell : Types.FormulaE.EntrantId -> Html Msg
-                                                        entrantCell entrantId =
+                                                        boldIf : Bool -> Html Msg -> Html Msg
+                                                        boldIf condition content =
+                                                            case condition of
+                                                                True ->
+                                                                    Html.b [] [ content ]
+
+                                                                False ->
+                                                                    content
+
+                                                        matchesResult : (Types.FormulaE.Prediction -> a) -> a -> Bool
+                                                        matchesResult getResultValue predictionValue =
+                                                            leaderboard.result
+                                                                |> Maybe.map getResultValue
+                                                                |> Maybe.map ((==) predictionValue)
+                                                                |> Maybe.withDefault False
+
+                                                        entrantCell : (Types.FormulaE.Prediction -> Types.FormulaE.EntrantId) -> Html Msg
+                                                        entrantCell getEntrantId =
+                                                            let
+                                                                entrantId : Types.FormulaE.EntrantId
+                                                                entrantId =
+                                                                    getEntrantId prediction
+                                                            in
                                                             case Helpers.List.findWith entrantId .id entrants of
                                                                 Just entrant ->
                                                                     [ entrant.driver
@@ -112,6 +133,7 @@ view model event =
                                                                     ]
                                                                         |> String.concat
                                                                         |> Html.text
+                                                                        |> boldIf (matchesResult getEntrantId entrantId)
                                                                         |> Helpers.Table.cell
 
                                                                 Nothing ->
@@ -120,31 +142,44 @@ view model event =
                                                         prediction : Types.FormulaE.Prediction
                                                         prediction =
                                                             scoredPrediction.prediction
+
+                                                        safetyCar : Html Msg
+                                                        safetyCar =
+                                                            let
+                                                                value : String
+                                                                value =
+                                                                    case prediction.safetyCar of
+                                                                        Just True ->
+                                                                            "Yes"
+
+                                                                        Just False ->
+                                                                            "No"
+
+                                                                        Nothing ->
+                                                                            "-"
+
+                                                                scoresPoints : Bool
+                                                                scoresPoints =
+                                                                    (prediction.safetyCar /= Nothing)
+                                                                        && matchesResult .safetyCar prediction.safetyCar
+                                                            in
+                                                            Html.text value
+                                                                |> boldIf scoresPoints
+                                                                |> Helpers.Table.cell
                                                     in
                                                     Html.tr
                                                         []
                                                         [ Helpers.Table.stringCell scoredPrediction.userName
                                                         , Helpers.Table.intCell scoredPrediction.score
-                                                        , entrantCell prediction.pole
-                                                        , entrantCell prediction.fam
-                                                        , entrantCell prediction.fastestLap
-                                                        , entrantCell prediction.hgc
-                                                        , entrantCell prediction.first
-                                                        , entrantCell prediction.second
-                                                        , entrantCell prediction.third
-                                                        , entrantCell prediction.fdnf
-                                                        , Html.td
-                                                            []
-                                                            [ case prediction.safetyCar of
-                                                                Just True ->
-                                                                    Html.text "Yes"
-
-                                                                Just False ->
-                                                                    Html.text "No"
-
-                                                                Nothing ->
-                                                                    Html.text "-"
-                                                            ]
+                                                        , entrantCell .pole
+                                                        , entrantCell .fam
+                                                        , entrantCell .fastestLap
+                                                        , entrantCell .hgc
+                                                        , entrantCell .first
+                                                        , entrantCell .second
+                                                        , entrantCell .third
+                                                        , entrantCell .fdnf
+                                                        , safetyCar
                                                         ]
                                             in
                                             Html.table

@@ -962,9 +962,9 @@ def get_scored_formula_e_race_predictions(db, race_id):
     def transform_prediction(prediction):
         if result_row is not None:
             total = 0
-            for key in ['fam', 'fl', 'hgc', 'first', 'second', 'third', 'fdnf']:
+            for key in ['pole', 'fam', 'fl', 'hgc','second', 'third', 'fdnf']:
                 if prediction[key] == result_row[key]:
-                    total = 10
+                    total += 10
             if prediction['first'] == result_row['first']:
                 total += 20
             if prediction['safety_car'] == result_row['safety_car'] and prediction['safety_car'] in ['yes', 'no']:
