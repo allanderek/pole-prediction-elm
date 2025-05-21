@@ -42,7 +42,7 @@ type alias Event =
     , name : String
     , country : String
     , circuit : String
-    , date : Time.Posix
+    , startTime : Time.Posix
     , cancelled : Bool
     }
 
