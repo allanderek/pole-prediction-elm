@@ -211,6 +211,12 @@ type alias EventLeaderboard =
 
 eventLeaderboardDecoder : Decoder EventLeaderboard
 eventLeaderboardDecoder =
+    let
+        predictions : Decoder (List ScoredPrediction)
+        predictions =
+            Decode.list scoredPredictionDecoder
+                |> Decode.map (List.sortBy .score >> List.reverse)
+    in
     Decode.succeed EventLeaderboard
         |> Pipeline.required "result" (Decode.nullable predictionDecoder)
-        |> Pipeline.required "predictions" (Decode.list scoredPredictionDecoder)
+        |> Pipeline.required "predictions" predictions

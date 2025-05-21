@@ -3,11 +3,12 @@ module Pages.FormulaEEvent exposing (view)
 import Components.Selector
 import Dict
 import Helpers.Http
+import Helpers.List
+import Helpers.Table
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
-import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Types.FormulaE
@@ -77,16 +78,116 @@ view model event =
                                 ]
 
                         False ->
+                            let
+                                leaderboardStatus : Helpers.Http.Status Types.FormulaE.EventLeaderboard
+                                leaderboardStatus =
+                                    Dict.get event.id model.formulaEEventLeaderboards
+                                        |> Maybe.withDefault Helpers.Http.Ready
+
+                                viewLeaderboard : List (Html Msg)
+                                viewLeaderboard =
+                                    [ Html.h3 [] [ Html.text "Scores" ]
+                                    , case leaderboardStatus of
+                                        Helpers.Http.Inflight ->
+                                            Html.text "Loading..."
+
+                                        Helpers.Http.Ready ->
+                                            Html.text "Ready"
+
+                                        Helpers.Http.Failed _ ->
+                                            Html.text "Error obtaining the leaderboard"
+
+                                        Helpers.Http.Succeeded leaderboard ->
+                                            let
+                                                viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
+                                                viewRow scoredPrediction =
+                                                    let
+                                                        entrantCell : Types.FormulaE.EntrantId -> Html Msg
+                                                        entrantCell entrantId =
+                                                            case Helpers.List.findWith entrantId .id entrants of
+                                                                Just entrant ->
+                                                                    [ entrant.driver
+                                                                    , " - "
+                                                                    , entrant.teamShortName
+                                                                    ]
+                                                                        |> String.concat
+                                                                        |> Html.text
+                                                                        |> Helpers.Table.cell
+
+                                                                Nothing ->
+                                                                    Helpers.Table.stringCell "Unknown - driver"
+
+                                                        prediction : Types.FormulaE.Prediction
+                                                        prediction =
+                                                            scoredPrediction.prediction
+                                                    in
+                                                    Html.tr
+                                                        []
+                                                        [ Helpers.Table.stringCell scoredPrediction.userName
+                                                        , Helpers.Table.intCell scoredPrediction.score
+                                                        , entrantCell prediction.pole
+                                                        , entrantCell prediction.fam
+                                                        , entrantCell prediction.fastestLap
+                                                        , entrantCell prediction.hgc
+                                                        , entrantCell prediction.first
+                                                        , entrantCell prediction.second
+                                                        , entrantCell prediction.third
+                                                        , entrantCell prediction.fdnf
+                                                        , Html.td
+                                                            []
+                                                            [ case prediction.safetyCar of
+                                                                Just True ->
+                                                                    Html.text "Yes"
+
+                                                                Just False ->
+                                                                    Html.text "No"
+
+                                                                Nothing ->
+                                                                    Html.text "-"
+                                                            ]
+                                                        ]
+                                            in
+                                            Html.table
+                                                []
+                                                [ Html.thead
+                                                    []
+                                                    [ Helpers.Table.headerRow
+                                                        [ "User"
+                                                        , "Score"
+                                                        , "Pole"
+                                                        , "FAM"
+                                                        , "FL"
+                                                        , "HGC"
+                                                        , "First"
+                                                        , "Second"
+                                                        , "Third"
+                                                        , "FDNF"
+                                                        , "Safety car"
+                                                        ]
+                                                    ]
+                                                , Html.tbody
+                                                    []
+                                                    (List.map viewRow leaderboard.predictions)
+                                                ]
+                                    ]
+                            in
                             case user.isAdmin of
                                 False ->
-                                    Html.Extra.nothing
-
-                                True ->
                                     Html.div
                                         []
-                                        [ Html.h3 [] [ Html.text "Result Entry" ]
-                                        , viewInput model event.id user Result entrants
-                                        ]
+                                        viewLeaderboard
+
+                                True ->
+                                    let
+                                        resultsEntry : List (Html Msg)
+                                        resultsEntry =
+                                            [ Html.h3 [] [ Html.text "Results Entry" ]
+                                            , viewInput model event.id user Result entrants
+                                            ]
+                                    in
+                                    Html.div
+                                        []
+                                        (List.append resultsEntry viewLeaderboard)
     ]
 
 

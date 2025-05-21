@@ -4,6 +4,7 @@ module Model exposing
     , getFormulaEEventResult
     , getFormulaOneCurrentSessionPrediction
     , getFormulaOneCurrentSessionResults
+    , getFromStatusDict
     , initial
     )
 
@@ -76,6 +77,13 @@ initial key url now userStatus =
     }
 
 
+getFromStatusDict : comparable -> Dict comparable (Helpers.Http.Status a) -> Maybe a
+getFromStatusDict key dict =
+    Dict.get key dict
+        |> Maybe.withDefault Helpers.Http.Ready
+        |> Helpers.Http.toMaybe
+
+
 andThenWithUser : (User -> Maybe a) -> Model key -> Maybe a
 andThenWithUser f model =
     Helpers.Http.toMaybe model.userStatus
@@ -90,9 +98,7 @@ getFormulaOneCurrentSessionPrediction model sessionId =
             let
                 storedPrediction : Maybe (List Types.FormulaOne.Entrant)
                 storedPrediction =
-                    Dict.get sessionId model.formulaOneSessionLeaderboards
-                        |> Maybe.withDefault Helpers.Http.Ready
-                        |> Helpers.Http.toMaybe
+                    getFromStatusDict sessionId model.formulaOneSessionLeaderboards
                         |> Maybe.map .predictions
                         |> Maybe.withDefault []
                         |> Helpers.List.findWith user.id .userId
@@ -109,9 +115,7 @@ getFormulaOneCurrentSessionResults model sessionId =
     let
         storedResult : Maybe (List Types.FormulaOne.Entrant)
         storedResult =
-            Dict.get sessionId model.formulaOneSessionLeaderboards
-                |> Maybe.withDefault Helpers.Http.Ready
-                |> Helpers.Http.toMaybe
+            getFromStatusDict sessionId model.formulaOneSessionLeaderboards
                 |> Maybe.map .results
                 |> Maybe.andThen Helpers.List.emptyAsNothing
     in
@@ -126,9 +130,7 @@ getFormulaEEventPrediction model user eventId =
             prediction
 
         Nothing ->
-            Dict.get eventId model.formulaEEventLeaderboards
-                |> Maybe.withDefault Helpers.Http.Ready
-                |> Helpers.Http.toMaybe
+            getFromStatusDict eventId model.formulaEEventLeaderboards
                 |> Maybe.map .predictions
                 |> Maybe.withDefault []
                 |> Helpers.List.findWith user.id .userId
@@ -143,8 +145,6 @@ getFormulaEEventResult model eventId =
             result
 
         Nothing ->
-            Dict.get eventId model.formulaEEventLeaderboards
-                |> Maybe.withDefault Helpers.Http.Ready
-                |> Helpers.Http.toMaybe
+            getFromStatusDict eventId model.formulaEEventLeaderboards
                 |> Maybe.andThen .result
                 |> Maybe.withDefault Types.FormulaE.emptyPrediction
