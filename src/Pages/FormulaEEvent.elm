@@ -3,6 +3,7 @@ module Pages.FormulaEEvent exposing (view)
 import Components.Selector
 import Dict
 import Helpers.Http
+import Helpers.List
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes
@@ -10,6 +11,7 @@ import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Types.FormulaE
+import Types.User exposing (User)
 
 
 view : Model key -> Types.FormulaE.Event -> List (Html Msg)
@@ -32,21 +34,6 @@ view model event =
                 -- , Html.p
                 --     [ Html.Attributes.class "event-date" ]
                 --     [ Html.text (Time.toString event.date) ]
-                ]
-
-        viewEntrant : Types.FormulaE.Entrant -> Html Msg
-        viewEntrant entrant =
-            Html.li
-                []
-                [ Html.span
-                    [ Html.Attributes.class "entrant-number" ]
-                    [ Html.text (String.fromInt entrant.number) ]
-                , Html.span
-                    [ Html.Attributes.class "entrant-driver" ]
-                    [ Html.text entrant.driver ]
-                , Html.span
-                    [ Html.Attributes.class "entrant-team" ]
-                    [ Html.text entrant.teamShortName ]
                 ]
 
         entrantsStatus : Helpers.Http.Status (List Types.FormulaE.Entrant)
@@ -83,7 +70,11 @@ view model event =
                 Just user ->
                     case Helpers.Time.isEarlier model.now event.startTime of
                         True ->
-                            viewInput event.id Prediction entrants
+                            Html.div
+                                []
+                                [ Html.h3 [] [ Html.text "Prediction Entry" ]
+                                , viewInput model event.id user Prediction entrants
+                                ]
 
                         False ->
                             case user.isAdmin of
@@ -91,7 +82,11 @@ view model event =
                                     Html.Extra.nothing
 
                                 True ->
-                                    viewInput event.id Result entrants
+                                    Html.div
+                                        []
+                                        [ Html.h3 [] [ Html.text "Result Entry" ]
+                                        , viewInput model event.id user Result entrants
+                                        ]
     ]
 
 
@@ -101,13 +96,14 @@ type InputKind
 
 
 type alias EntrantSelectorConfig =
-    { current : Types.FormulaE.EntrantId
+    { label : String
+    , current : Types.FormulaE.EntrantId
     , onInput : Types.FormulaE.EntrantId -> Msg.UpdateFormulaEPredictionMsg
     }
 
 
-viewInput : Types.FormulaE.EventId -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
-viewInput eventId kind entrants =
+viewInput : Model key -> Types.FormulaE.EventId -> User -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
+viewInput model eventId user kind entrants =
     let
         toMessage : Msg.UpdateFormulaEPredictionMsg -> Msg
         toMessage =
@@ -117,6 +113,15 @@ viewInput eventId kind entrants =
 
                 Result ->
                     Msg.UpdateFormulaEResult { eventId = eventId }
+
+        current : Types.FormulaE.Prediction
+        current =
+            case kind of
+                Prediction ->
+                    Model.getFormulaEEventPrediction model user eventId
+
+                Result ->
+                    Model.getFormulaEEventResult model eventId
 
         viewSelector : EntrantSelectorConfig -> Html Msg
         viewSelector config =
@@ -153,6 +158,22 @@ viewInput eventId kind entrants =
                     , pleaseSelect = Just "Please select"
                     }
             in
-            Components.Selector.view selectorConfig
+            Html.div
+                [ Html.Attributes.class "formula-e-event-entrant-selector" ]
+                [ Html.label
+                    []
+                    [ Html.text config.label ]
+                , Components.Selector.view selectorConfig
+                ]
     in
-    viewSelector { current = 0, onInput = Msg.SetPole }
+    Html.fieldset
+        []
+        [ viewSelector { label = "Pole", current = current.pole, onInput = Msg.SetPole }
+        , viewSelector { label = "FAM", current = current.fam, onInput = Msg.SetFam }
+        , viewSelector { label = "Fastest lap", current = current.fastestLap, onInput = Msg.SetFastestLap }
+        , viewSelector { label = "HGC", current = current.hgc, onInput = Msg.SetHgc }
+        , viewSelector { label = "First", current = current.first, onInput = Msg.SetFirst }
+        , viewSelector { label = "Second", current = current.second, onInput = Msg.SetSecond }
+        , viewSelector { label = "Third", current = current.third, onInput = Msg.SetThird }
+        , viewSelector { label = "FDNF", current = current.fdnf, onInput = Msg.SetFdnf }
+        ]

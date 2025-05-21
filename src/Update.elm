@@ -352,8 +352,12 @@ update msg model =
             let
                 prediction : Types.FormulaE.Prediction
                 prediction =
-                    Dict.get spec.eventId model.formulaEPredictionInputs
-                        |> Maybe.withDefault Types.FormulaE.emptyPrediction
+                    case Helpers.Http.toMaybe model.userStatus of
+                        Nothing ->
+                            Types.FormulaE.emptyPrediction
+
+                        Just user ->
+                            Model.getFormulaEEventPrediction model user spec.eventId
 
                 newPrediction : Types.FormulaE.Prediction
                 newPrediction =
@@ -369,8 +373,7 @@ update msg model =
             let
                 result : Types.FormulaE.Result
                 result =
-                    Dict.get spec.eventId model.formulaEResultInputs
-                        |> Maybe.withDefault Types.FormulaE.emptyPrediction
+                    Model.getFormulaEEventResult model spec.eventId
 
                 newResult : Types.FormulaE.Result
                 newResult =
@@ -453,4 +456,4 @@ updateFormulaEPrediction msg prediction =
             { prediction | fdnf = entrantId }
 
         Msg.SetSafetyCar safetyCar ->
-            { prediction | safetyCar = safetyCar }
+            { prediction | safetyCar = Just safetyCar }

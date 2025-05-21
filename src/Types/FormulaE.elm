@@ -99,8 +99,7 @@ type alias Prediction =
     , second : EntrantId
     , third : EntrantId
     , fdnf : EntrantId
-    , safetyCar : Bool
-    , score : Int
+    , safetyCar : Maybe Bool
     }
 
 
@@ -114,8 +113,7 @@ emptyPrediction =
     , second = 0
     , third = 0
     , fdnf = 0
-    , safetyCar = False
-    , score = 0
+    , safetyCar = Nothing
     }
 
 
@@ -133,17 +131,37 @@ type alias ScoredPrediction =
 
 predictionDecoder : Decoder Prediction
 predictionDecoder =
+    let
+        safetyCar : Decoder (Maybe Bool)
+        safetyCar =
+            let
+                interpret : String -> Decoder (Maybe Bool)
+                interpret str =
+                    case str of
+                        "yes" ->
+                            Decode.succeed (Just True)
+
+                        "no" ->
+                            Decode.succeed (Just False)
+
+                        "" ->
+                            Decode.succeed Nothing
+
+                        _ ->
+                            Decode.fail "Invalid safety car value"
+            in
+            Decode.string |> Decode.andThen interpret
+    in
     Decode.succeed Prediction
         |> Pipeline.required "pole" Decode.int
         |> Pipeline.required "fam" Decode.int
-        |> Pipeline.required "fastest_lap" Decode.int
+        |> Pipeline.required "fl" Decode.int
         |> Pipeline.required "hgc" Decode.int
         |> Pipeline.required "first" Decode.int
         |> Pipeline.required "second" Decode.int
         |> Pipeline.required "third" Decode.int
         |> Pipeline.required "fdnf" Decode.int
-        |> Pipeline.required "safety_car" Helpers.Decode.intAsBool
-        |> Pipeline.required "score" Decode.int
+        |> Pipeline.required "safety_car" safetyCar
 
 
 scoredPredictionDecoder : Decoder ScoredPrediction

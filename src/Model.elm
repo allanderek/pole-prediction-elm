@@ -1,5 +1,7 @@
 module Model exposing
     ( Model
+    , getFormulaEEventPrediction
+    , getFormulaEEventResult
     , getFormulaOneCurrentSessionPrediction
     , getFormulaOneCurrentSessionResults
     , initial
@@ -115,3 +117,34 @@ getFormulaOneCurrentSessionResults model sessionId =
     in
     Dict.get sessionId model.formulaOneSessionResultEntries
         |> Maybe.Extra.orElse storedResult
+
+
+getFormulaEEventPrediction : Model key -> User -> Types.FormulaE.EventId -> Types.FormulaE.Prediction
+getFormulaEEventPrediction model user eventId =
+    case Dict.get eventId model.formulaEPredictionInputs of
+        Just prediction ->
+            prediction
+
+        Nothing ->
+            Dict.get eventId model.formulaEEventLeaderboards
+                |> Maybe.withDefault Helpers.Http.Ready
+                |> Helpers.Http.toMaybe
+                |> Maybe.map .predictions
+                |> Maybe.withDefault []
+                |> Helpers.List.findWith user.id .userId
+                |> Maybe.map .prediction
+                |> Maybe.withDefault Types.FormulaE.emptyPrediction
+
+
+getFormulaEEventResult : Model key -> Types.FormulaE.EventId -> Types.FormulaE.Result
+getFormulaEEventResult model eventId =
+    case Dict.get eventId model.formulaEResultInputs of
+        Just result ->
+            result
+
+        Nothing ->
+            Dict.get eventId model.formulaEEventLeaderboards
+                |> Maybe.withDefault Helpers.Http.Ready
+                |> Helpers.Http.toMaybe
+                |> Maybe.andThen .result
+                |> Maybe.withDefault Types.FormulaE.emptyPrediction
