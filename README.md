@@ -38,3 +38,4 @@ $ source venv/bin/activate.fish
 - [ ] Next step is to allow updating with Results, a little tricky since it's difficult to get the current result from the leaderboard, unless we also download that at the same time.
 - [ ] We may wish to allow entering results even if the session leaderboard fails to download
 - [ ] We may not really need model.formulaOneSessionResultSubmitStatus since we can just use the  leaderboard status since it returns that.
+- [ ] See if we can make 'SafetyCar' on formula e predictions a Maybe Bool, such that we can submit a result with no safety car such that the 'No' guessers do not get an early point, in particular a point between qualifying and the race.

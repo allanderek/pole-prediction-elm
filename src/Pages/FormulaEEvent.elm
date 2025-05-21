@@ -83,7 +83,7 @@ view model event =
                 Just user ->
                     case Helpers.Time.isEarlier model.now event.startTime of
                         True ->
-                            viewInput model Prediction entrants
+                            viewInput event.id Prediction entrants
 
                         False ->
                             case user.isAdmin of
@@ -91,7 +91,7 @@ view model event =
                                     Html.Extra.nothing
 
                                 True ->
-                                    viewInput model Result entrants
+                                    viewInput event.id Result entrants
     ]
 
 
@@ -100,10 +100,25 @@ type InputKind
     | Result
 
 
-viewInput : Model key -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
-viewInput model kind entrants =
+type alias EntrantSelectorConfig =
+    { current : Types.FormulaE.EntrantId
+    , onInput : Types.FormulaE.EntrantId -> Msg.UpdateFormulaEPredictionMsg
+    }
+
+
+viewInput : Types.FormulaE.EventId -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
+viewInput eventId kind entrants =
     let
-        viewSelector : { current : Types.FormulaE.EntrantId } -> Html Msg
+        toMessage : Msg.UpdateFormulaEPredictionMsg -> Msg
+        toMessage =
+            case kind of
+                Prediction ->
+                    Msg.UpdateFormulaEPrediction { eventId = eventId }
+
+                Result ->
+                    Msg.UpdateFormulaEResult { eventId = eventId }
+
+        viewSelector : EntrantSelectorConfig -> Html Msg
         viewSelector config =
             let
                 options : List Components.Selector.Option
@@ -117,11 +132,21 @@ viewInput model kind entrants =
                     in
                     List.map makeOption entrants
 
+                onInput : String -> Msg
+                onInput valueString =
+                    let
+                        entrantId : Types.FormulaE.EntrantId
+                        entrantId =
+                            String.toInt valueString
+                                |> Maybe.withDefault 0
+                    in
+                    config.onInput entrantId |> toMessage
+
                 selectorConfig : Components.Selector.Config Msg
                 selectorConfig =
                     { classPrefix = "formula-e-event-entrant"
                     , groups = Components.Selector.flatNoGroups options
-                    , onInput = Msg.LoginIdentityInput
+                    , onInput = onInput
                     , onBlur = Nothing
                     , current = String.fromInt config.current
                     , disabled = False
@@ -130,4 +155,4 @@ viewInput model kind entrants =
             in
             Components.Selector.view selectorConfig
     in
-    viewSelector { current = 0 }
+    viewSelector { current = 0, onInput = Msg.SetPole }

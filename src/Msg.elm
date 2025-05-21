@@ -1,6 +1,7 @@
 module Msg exposing
     ( HttpResult
     , Msg(..)
+    , UpdateFormulaEPredictionMsg(..)
     )
 
 import Browser
@@ -42,3 +43,17 @@ type Msg
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)
     | FormulaEEventsResponse { season : Types.FormulaE.Season } (HttpResult (List Types.FormulaE.Event))
     | FormulaEEventEntrantsResponse { eventId : Types.FormulaE.EventId } (HttpResult (List Types.FormulaE.Entrant))
+    | UpdateFormulaEPrediction { eventId : Types.FormulaE.EventId } UpdateFormulaEPredictionMsg
+    | UpdateFormulaEResult { eventId : Types.FormulaE.EventId } UpdateFormulaEPredictionMsg
+
+
+type UpdateFormulaEPredictionMsg
+    = SetPole Types.FormulaE.EntrantId
+    | SetFam Types.FormulaE.EntrantId
+    | SetFastestLap Types.FormulaE.EntrantId
+    | SetHgc Types.FormulaE.EntrantId
+    | SetFirst Types.FormulaE.EntrantId
+    | SetSecond Types.FormulaE.EntrantId
+    | SetThird Types.FormulaE.EntrantId
+    | SetFdnf Types.FormulaE.EntrantId
+    | SetSafetyCar Bool

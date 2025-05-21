@@ -3,9 +3,12 @@ module Types.FormulaE exposing
     , EntrantId
     , Event
     , EventId
+    , Prediction
+    , Result
     , Season
     , currentChampion
     , currentSeason
+    , emptyPrediction
     , entrantDecoder
     , eventDecoder
     )
@@ -82,3 +85,34 @@ entrantDecoder =
         |> Pipeline.required "team_full_name" Decode.string
         |> Pipeline.required "team_short_name" Decode.string
         |> Pipeline.required "team_primary_color" Decode.string
+
+
+type alias Prediction =
+    { pole : EntrantId
+    , fam : EntrantId
+    , fastestLap : EntrantId
+    , hgc : EntrantId
+    , first : EntrantId
+    , second : EntrantId
+    , third : EntrantId
+    , fdnf : EntrantId
+    , safetyCar : Bool
+    }
+
+
+emptyPrediction : Prediction
+emptyPrediction =
+    { pole = 0
+    , fam = 0
+    , fastestLap = 0
+    , hgc = 0
+    , first = 0
+    , second = 0
+    , third = 0
+    , fdnf = 0
+    , safetyCar = False
+    }
+
+
+type alias Result =
+    Prediction

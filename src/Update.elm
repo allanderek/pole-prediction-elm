@@ -336,6 +336,40 @@ update msg model =
                         Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventEntrants
                 }
 
+        Msg.UpdateFormulaEPrediction spec updateMessage ->
+            let
+                prediction : Types.FormulaE.Prediction
+                prediction =
+                    Dict.get spec.eventId model.formulaEPredictionInputs
+                        |> Maybe.withDefault Types.FormulaE.emptyPrediction
+
+                newPrediction : Types.FormulaE.Prediction
+                newPrediction =
+                    updateFormulaEPrediction updateMessage prediction
+            in
+            Return.noEffect
+                { model
+                    | formulaEPredictionInputs =
+                        Dict.insert spec.eventId newPrediction model.formulaEPredictionInputs
+                }
+
+        Msg.UpdateFormulaEResult spec updateMessage ->
+            let
+                result : Types.FormulaE.Result
+                result =
+                    Dict.get spec.eventId model.formulaEResultInputs
+                        |> Maybe.withDefault Types.FormulaE.emptyPrediction
+
+                newResult : Types.FormulaE.Result
+                newResult =
+                    updateFormulaEPrediction updateMessage result
+            in
+            Return.noEffect
+                { model
+                    | formulaEResultInputs =
+                        Dict.insert spec.eventId newResult model.formulaEResultInputs
+                }
+
         Msg.FormulaOneEventSessionsResponse spec result ->
             Return.noEffect
                 { model
@@ -377,3 +411,34 @@ update msg model =
                     | formulaOneDriverStandings =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneDriverStandings
                 }
+
+
+updateFormulaEPrediction : Msg.UpdateFormulaEPredictionMsg -> Types.FormulaE.Prediction -> Types.FormulaE.Prediction
+updateFormulaEPrediction msg prediction =
+    case msg of
+        Msg.SetPole entrantId ->
+            { prediction | pole = entrantId }
+
+        Msg.SetFam entrantId ->
+            { prediction | fam = entrantId }
+
+        Msg.SetFastestLap entrantId ->
+            { prediction | fastestLap = entrantId }
+
+        Msg.SetHgc entrantId ->
+            { prediction | hgc = entrantId }
+
+        Msg.SetFirst entrantId ->
+            { prediction | first = entrantId }
+
+        Msg.SetSecond entrantId ->
+            { prediction | second = entrantId }
+
+        Msg.SetThird entrantId ->
+            { prediction | third = entrantId }
+
+        Msg.SetFdnf entrantId ->
+            { prediction | fdnf = entrantId }
+
+        Msg.SetSafetyCar safetyCar ->
+            { prediction | safetyCar = safetyCar }
