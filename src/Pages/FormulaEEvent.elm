@@ -4,6 +4,7 @@ import Components.HttpStatus
 import Components.Login
 import Components.Section
 import Components.Selector
+import Components.Time
 import Dict
 import Helpers.Attributes
 import Helpers.Events
@@ -38,10 +39,9 @@ view model event =
                 , Html.p
                     [ Html.Attributes.class "event-circuit" ]
                     [ Html.text event.circuit ]
-
-                -- , Html.p
-                --     [ Html.Attributes.class "event-date" ]
-                --     [ Html.text (Time.toString event.date) ]
+                , Html.p
+                    [ Html.Attributes.class "event-date" ]
+                    [ Components.Time.longFormat model.zone event.startTime ]
                 ]
 
         mainContent : Html Msg

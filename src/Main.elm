@@ -83,6 +83,6 @@ init programFlags url key =
 
         initialModel : Model key
         initialModel =
-            Model.initial key url now userStatus
+            Model.initial key url Time.utc now userStatus
     in
     Update.initRoute initialModel

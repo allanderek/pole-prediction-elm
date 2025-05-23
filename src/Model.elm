@@ -26,6 +26,7 @@ type alias Model key =
     { navigationKey : key
     , route : Route
     , now : Time.Posix
+    , zone : Time.Zone
     , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
     , formulaOneLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
@@ -49,11 +50,12 @@ type alias Model key =
     }
 
 
-initial : key -> Url -> Time.Posix -> Helpers.Http.Status User -> Model key
-initial key url now userStatus =
+initial : key -> Url -> Time.Zone -> Time.Posix -> Helpers.Http.Status User -> Model key
+initial key url zone now userStatus =
     { navigationKey = key
     , route = Route.parse url
     , now = now
+    , zone = zone
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
     , formulaOneLeaderboards = Dict.empty
