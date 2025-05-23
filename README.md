@@ -38,7 +38,7 @@ $ source venv/bin/activate.fish
 - [ ] Next step is to allow updating with Results, a little tricky since it's difficult to get the current result from the leaderboard, unless we also download that at the same time.
 - [ ] We may wish to allow entering results even if the session leaderboard fails to download
 - [ ] We may not really need model.formulaOneSessionResultSubmitStatus since we can just use the  leaderboard status since it returns that.
-- [ ] See if we can make 'SafetyCar' on formula e predictions a Maybe Bool, such that we can submit a result with no safety car such that the 'No' guessers do not get an early point, in particular a point between qualifying and the race.
+- [x] See if we can make 'SafetyCar' on formula e predictions a Maybe Bool, such that we can submit a result with no safety car such that the 'No' guessers do not get an early point, in particular a point between qualifying and the race.
 
 - [ ] Check on user login/logout on multiple tabs, does that work? I doubt it, but it should, shelfnova does it well.
 
@@ -47,6 +47,42 @@ $ source venv/bin/activate.fish
 - [x] Allow submitting a prediction/result and saving it to the database.
 - [x] Allow downloading the current predictions/results from the database to pre-populate the form.
 - [ ] Validate the prediction, so that all things should be set, and, for example you cannot select the same entrant for 1st, 2nd, and 3rd.
-- [ ] Results however, can be partial, and we do not need to worry about validation because if that is really the result then that's the result.
+- [x] Results however, can be partial, and we do not need to worry about validation because if that is really the result then that's the result.
 - [x] Figure out how to input safety car.
-- [ ] Perhaps just use a native alert for confirmation/failure of submission.
+- [x] Perhaps just use a native alert for confirmation/failure of submission.
+
+
+## Database migration
+You now allow partial formula e results entry, in particular safety-car can be ""
+But you will need to update the production database:
+```
+-- Create new table with updated constraint
+create table results_new (
+    race integer primary key not null,
+    pole integer not null,
+    fam  integer not null,
+    fl   integer not null,
+    hgc  integer not null,
+    first integer not null,
+    second integer not null,
+    third integer not null,
+    fdnf integer not null,
+    safety_car text check (safety_car in ("yes", "no", "")) not null,
+    foreign key (race) references races(id),
+    foreign key (pole) references entrants(id),
+    foreign key (fam) references entrants(id),
+    foreign key (fl) references entrants(id),
+    foreign key (hgc) references entrants(id),
+    foreign key (first) references entrants(id),
+    foreign key (second) references entrants(id),
+    foreign key (third) references entrants(id),
+    foreign key (fdnf) references entrants(id)
+);
+
+-- Copy existing data
+insert into results_new select * from results;
+
+-- Drop old table and rename new one
+drop table results;
+alter table results_new rename to results;
+```

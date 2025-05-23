@@ -2,6 +2,8 @@ module Pages.FormulaEEvent exposing (view)
 
 import Components.Selector
 import Dict
+import Helpers.Attributes
+import Helpers.Events
 import Helpers.Http
 import Helpers.List
 import Helpers.Table
@@ -9,6 +11,8 @@ import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Html.Extra
+import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Types.FormulaE
@@ -326,6 +330,65 @@ viewInput model eventId user kind entrants =
                     |> Html.Events.onClick
                 ]
                 []
+
+        invalidationMessage : Maybe String
+        invalidationMessage =
+            case kind of
+                Result ->
+                    Nothing
+
+                Prediction ->
+                    let
+                        unselectedEntrantId : Types.FormulaE.EntrantId -> String -> Maybe String
+                        unselectedEntrantId entrantId invalidation =
+                            case entrantId == 0 of
+                                True ->
+                                    Just invalidation
+
+                                False ->
+                                    Nothing
+                    in
+                    Helpers.List.firstJust
+                        [ unselectedEntrantId current.pole "Pole not selected"
+                        , unselectedEntrantId current.fam "FAM not selected"
+                        , unselectedEntrantId current.fastestLap "Fastest lap not selected"
+                        , unselectedEntrantId current.hgc "HGC not selected"
+                        , unselectedEntrantId current.first "First not selected"
+                        , unselectedEntrantId current.second "Second not selected"
+                        , case current.first == current.second of
+                            True ->
+                                Just "First and second cannot be the same"
+
+                            False ->
+                                Nothing
+                        , unselectedEntrantId current.third "Third not selected"
+                        , case current.first == current.third of
+                            True ->
+                                Just "First and third cannot be the same"
+
+                            False ->
+                                Nothing
+                        , case current.second == current.third of
+                            True ->
+                                Just "Second and third cannot be the same"
+
+                            False ->
+                                Nothing
+                        , unselectedEntrantId current.fdnf "FDNF not selected"
+                        , case current.safetyCar of
+                            Just True ->
+                                Nothing
+
+                            Just False ->
+                                Nothing
+
+                            Nothing ->
+                                Just "Safety car not selected"
+                        ]
+
+        submitDisabled : Bool
+        submitDisabled =
+            Maybe.Extra.isJust invalidationMessage
     in
     Html.fieldset
         []
@@ -351,7 +414,17 @@ viewInput model eventId user kind entrants =
                 , Html.text "yes"
                 ]
             ]
+        , case invalidationMessage of
+            Nothing ->
+                Html.Extra.nothing
+
+            Just message ->
+                Html.div
+                    [ Helpers.Attributes.role "alert"
+                    , Html.Attributes.class "invalidation-message"
+                    ]
+                    [ Html.text message ]
         , Html.button
-            [ Html.Events.onClick submitMessage ]
+            [ Helpers.Events.onClickOrDisabled submitDisabled submitMessage ]
             [ Html.text "Submit" ]
         ]

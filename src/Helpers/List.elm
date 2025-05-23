@@ -1,10 +1,24 @@
 module Helpers.List exposing
     ( emptyAsNothing
     , findWith
+    , firstJust
     , moveByIndex
     )
 
 import List.Extra
+
+
+firstJust : List (Maybe a) -> Maybe a
+firstJust items =
+    case items of
+        (Just item) :: _ ->
+            Just item
+
+        Nothing :: rest ->
+            firstJust rest
+
+        [] ->
+            Nothing
 
 
 emptyAsNothing : List a -> Maybe (List a)
