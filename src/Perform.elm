@@ -6,6 +6,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Msg exposing (Msg)
+import Ports
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard
@@ -41,6 +42,9 @@ perform model effect =
 
         Effect.Reload ->
             Browser.Navigation.reload
+
+        Effect.NativeAlert message ->
+            Ports.native_alert message
 
         Effect.SubmitLogin form ->
             let

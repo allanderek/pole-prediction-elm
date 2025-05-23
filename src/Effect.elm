@@ -14,6 +14,7 @@ type Effect
     | Batch (List Effect)
     | PushUrl String
     | LoadUrl String
+    | NativeAlert String
     | Reload
     | SubmitLogin Types.Login.Form
     | SubmitLogout

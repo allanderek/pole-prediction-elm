@@ -40,6 +40,7 @@ $ source venv/bin/activate.fish
 - [ ] We may not really need model.formulaOneSessionResultSubmitStatus since we can just use the  leaderboard status since it returns that.
 - [ ] See if we can make 'SafetyCar' on formula e predictions a Maybe Bool, such that we can submit a result with no safety car such that the 'No' guessers do not get an early point, in particular a point between qualifying and the race.
 
+- [ ] Check on user login/logout on multiple tabs, does that work? I doubt it, but it should, shelfnova does it well.
 
 ## Formula E input
 
@@ -47,5 +48,5 @@ $ source venv/bin/activate.fish
 - [x] Allow downloading the current predictions/results from the database to pre-populate the form.
 - [ ] Validate the prediction, so that all things should be set, and, for example you cannot select the same entrant for 1st, 2nd, and 3rd.
 - [ ] Results however, can be partial, and we do not need to worry about validation because if that is really the result then that's the result.
-- [ ] Figure out how to input safety car.
-- [ ] Perhaps just use a native alert for confirmation/failure or submission.
+- [x] Figure out how to input safety car.
+- [ ] Perhaps just use a native alert for confirmation/failure of submission.

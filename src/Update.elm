@@ -402,18 +402,40 @@ update msg model =
             )
 
         Msg.SubmitFormulaEPredictionResponse spec result ->
-            Return.noEffect
-                { model
-                    | formulaEEventLeaderboards =
-                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
-                }
+            let
+                alertMessage : String
+                alertMessage =
+                    case result of
+                        Ok _ ->
+                            "Prediction submitted successfully!"
+
+                        Err _ ->
+                            "Failed to submit prediction."
+            in
+            ( { model
+                | formulaEEventLeaderboards =
+                    Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
+              }
+            , Effect.NativeAlert alertMessage
+            )
 
         Msg.SubmitFormulaEResultResponse spec result ->
-            Return.noEffect
-                { model
-                    | formulaEEventLeaderboards =
-                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
-                }
+            let
+                alertMessage : String
+                alertMessage =
+                    case result of
+                        Ok _ ->
+                            "Result submitted successfully!"
+
+                        Err _ ->
+                            "Failed to submit result."
+            in
+            ( { model
+                | formulaEEventLeaderboards =
+                    Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaEEventLeaderboards
+              }
+            , Effect.NativeAlert alertMessage
+            )
 
         Msg.FormulaOneEventSessionsResponse spec result ->
             Return.noEffect

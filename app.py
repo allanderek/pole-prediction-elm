@@ -223,6 +223,9 @@ def serve_index(path=None):
                         const user_flags = {user_flags_json};
                         const flags = {{ "flags" : {{ "now": Date.now(), ...user_flags }} }}; 
                         var app = Elm.Main.init(flags); 
+                        app.ports.native_alert.subscribe(function (message) {{ 
+                            alert(message); 
+                        }});
                     </script>
                 </body>
                 </html>"""
