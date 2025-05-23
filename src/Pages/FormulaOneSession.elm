@@ -19,16 +19,6 @@ import Types.FormulaOne
 view : Model key -> Types.FormulaOne.Session -> List (Html Msg)
 view model session =
     let
-        entrantsStatus : Helpers.Http.Status (List Types.FormulaOne.Entrant)
-        entrantsStatus =
-            Dict.get session.id model.formulaOneEntrants
-                |> Maybe.withDefault Helpers.Http.Ready
-
-        leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
-        leaderboardStatus =
-            Dict.get session.id model.formulaOneSessionLeaderboards
-                |> Maybe.withDefault Helpers.Http.Ready
-
         viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
         viewPredictionEntry entrants =
             case Helpers.Http.toMaybe model.userStatus of
@@ -84,78 +74,96 @@ view model session =
                                             (List.map .id currentResults)
                                     }
                                 ]
-    in
-    [ Html.h1
-        []
-        [ Html.text "Formula One Session" ]
-    , case entrantsStatus of
-        Helpers.Http.Inflight ->
-            Html.text "Loading..."
 
-        Helpers.Http.Ready ->
-            Html.text "Ready"
+        entrySection : Html Msg
+        entrySection =
+            let
+                entrantsStatus : Helpers.Http.Status (List Types.FormulaOne.Entrant)
+                entrantsStatus =
+                    Dict.get session.id model.formulaOneEntrants
+                        |> Maybe.withDefault Helpers.Http.Ready
 
-        Helpers.Http.Failed _ ->
-            Html.text "Error obtaining the session entrants"
+                withEntrants : List Types.FormulaOne.Entrant -> Html Msg
+                withEntrants entrants =
+                    case Helpers.Time.isEarlier model.now session.startTime of
+                        True ->
+                            viewPredictionEntry entrants
 
-        Helpers.Http.Succeeded entrants ->
+                        False ->
+                            viewResultEntry entrants
+            in
+            Components.HttpStatus.view
+                { viewFn = withEntrants
+                , failedMessage = "Error obtaining the details of the session entrants"
+                }
+                entrantsStatus
+
+        leaderboardSection : Html Msg
+        leaderboardSection =
             case Helpers.Time.isEarlier model.now session.startTime of
                 True ->
-                    viewPredictionEntry entrants
+                    Html.Extra.nothing
 
                 False ->
-                    viewResultEntry entrants
-    , case leaderboardStatus of
-        Helpers.Http.Inflight ->
-            Html.text "Loading..."
-
-        Helpers.Http.Ready ->
-            Html.text "Ready"
-
-        Helpers.Http.Failed _ ->
-            Html.text "Error obtaining the session leaderboard"
-
-        Helpers.Http.Succeeded leaderboard ->
-            let
-                viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
-                viewRow leaderboardRow =
                     let
-                        viewScoredRow : Types.FormulaOne.ScoredPredictionRow -> Html Msg
-                        viewScoredRow scoredRow =
-                            Html.tr
-                                []
-                                [ Html.td
-                                    [ Attributes.class "scored-row-position" ]
-                                    [ Html.text (String.fromInt scoredRow.predictedPosition) ]
-                                , Html.td
-                                    [ Attributes.class "scored-row-driver" ]
-                                    [ Html.text scoredRow.entrant.driver ]
-                                , Html.td
-                                    [ Attributes.class "scored-row-score" ]
-                                    [ Html.text (String.fromInt scoredRow.score) ]
-                                ]
+                        leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
+                        leaderboardStatus =
+                            Dict.get session.id model.formulaOneSessionLeaderboards
+                                |> Maybe.withDefault Helpers.Http.Ready
+
+                        withLeaderboard : Types.FormulaOne.SessionLeaderboard -> Html Msg
+                        withLeaderboard leaderboard =
+                            let
+                                viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
+                                viewRow leaderboardRow =
+                                    let
+                                        viewScoredRow : Types.FormulaOne.ScoredPredictionRow -> Html Msg
+                                        viewScoredRow scoredRow =
+                                            Html.tr
+                                                []
+                                                [ Html.td
+                                                    [ Attributes.class "scored-row-position" ]
+                                                    [ Html.text (String.fromInt scoredRow.predictedPosition) ]
+                                                , Html.td
+                                                    [ Attributes.class "scored-row-driver" ]
+                                                    [ Html.text scoredRow.entrant.driver ]
+                                                , Html.td
+                                                    [ Attributes.class "scored-row-score" ]
+                                                    [ Html.text (String.fromInt scoredRow.score) ]
+                                                ]
+                                    in
+                                    Html.li
+                                        []
+                                        [ Html.details
+                                            []
+                                            [ Html.summary
+                                                []
+                                                [ Html.span
+                                                    [ Attributes.class "user-name" ]
+                                                    [ Components.UserName.formulaOne
+                                                        leaderboardRow.userId
+                                                        leaderboardRow.userName
+                                                    ]
+                                                , Html.span
+                                                    [ Attributes.class "total-score" ]
+                                                    [ Html.text (String.fromInt leaderboardRow.total) ]
+                                                ]
+                                            , Html.table
+                                                []
+                                                (List.map viewScoredRow leaderboardRow.rows)
+                                            ]
+                                        ]
+                            in
+                            Components.Section.view "Leaderboard"
+                                [ Html.ul [] (List.map viewRow leaderboard.predictions) ]
                     in
-                    Html.li
-                        []
-                        [ Html.details
-                            []
-                            [ Html.summary
-                                []
-                                [ Html.span
-                                    [ Attributes.class "user-name" ]
-                                    [ Components.UserName.formulaOne
-                                        leaderboardRow.userId
-                                        leaderboardRow.userName
-                                    ]
-                                , Html.span
-                                    [ Attributes.class "total-score" ]
-                                    [ Html.text (String.fromInt leaderboardRow.total) ]
-                                ]
-                            , Html.table
-                                []
-                                (List.map viewScoredRow leaderboardRow.rows)
-                            ]
-                        ]
-            in
-            Html.ul [] (List.map viewRow leaderboard.predictions)
+                    Components.HttpStatus.view
+                        { viewFn = withLeaderboard
+                        , failedMessage = "Error obtaining the session leaderboard"
+                        }
+                        leaderboardStatus
+    in
+    [ Html.h1 [] [ Html.text "Formula One Session" ]
+    , entrySection
+    , leaderboardSection
     ]
