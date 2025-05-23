@@ -1,5 +1,7 @@
 module Pages.FormulaEEvent exposing (view)
 
+import Components.HttpStatus
+import Components.Section
 import Components.Selector
 import Dict
 import Helpers.Attributes
@@ -15,6 +17,7 @@ import Html.Extra
 import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
+import Route
 import Types.FormulaE
 import Types.User exposing (User)
 
@@ -41,45 +44,39 @@ view model event =
                 --     [ Html.text (Time.toString event.date) ]
                 ]
 
-        entrantsStatus : Helpers.Http.Status (List Types.FormulaE.Entrant)
-        entrantsStatus =
-            Dict.get event.id model.formulaEEventEntrants
-                |> Maybe.withDefault Helpers.Http.Ready
-    in
-    [ info
-    , case event.cancelled of
-        True ->
-            Html.div
-                [ Html.Attributes.class "event-cancelled" ]
-                [ Html.text "This event has been cancelled." ]
+        mainContent : Html Msg
+        mainContent =
+            let
+                entrantsStatus : Helpers.Http.Status (List Types.FormulaE.Entrant)
+                entrantsStatus =
+                    Dict.get event.id model.formulaEEventEntrants
+                        |> Maybe.withDefault Helpers.Http.Ready
 
-        False ->
-            Html.div
-                [ Html.Attributes.class "event-not-cancelled" ]
-                [ Html.text "This event is not cancelled." ]
-    , case entrantsStatus of
-        Helpers.Http.Inflight ->
-            Html.text "Loading..."
+                mUser : Maybe User
+                mUser =
+                    Helpers.Http.toMaybe model.userStatus
 
-        Helpers.Http.Ready ->
-            Html.text "Ready"
-
-        Helpers.Http.Failed _ ->
-            Html.text "Error obtaining the entrants"
-
-        Helpers.Http.Succeeded entrants ->
-            case Helpers.Http.toMaybe model.userStatus of
-                Nothing ->
-                    Html.text "Not logged in"
-
-                Just user ->
+                viewMain : List Types.FormulaE.Entrant -> Html Msg
+                viewMain entrants =
                     case Helpers.Time.isEarlier model.now event.startTime of
                         True ->
-                            Html.div
-                                []
-                                [ Html.h3 [] [ Html.text "Prediction Entry" ]
-                                , viewInput model event.id user Prediction entrants
-                                ]
+                            case mUser of
+                                Nothing ->
+                                    Html.span
+                                        []
+                                        [ Html.text "You must be "
+                                        , Html.a
+                                            [ Route.href Route.Login ]
+                                            [ Html.text "logged in" ]
+                                        , Html.text " to make predictions."
+                                        ]
+
+                                Just user ->
+                                    Html.div
+                                        []
+                                        [ Html.h3 [] [ Html.text "Prediction Entry" ]
+                                        , viewInput model event.id user Prediction entrants
+                                        ]
 
                         False ->
                             let
@@ -88,20 +85,11 @@ view model event =
                                     Dict.get event.id model.formulaEEventLeaderboards
                                         |> Maybe.withDefault Helpers.Http.Ready
 
-                                viewLeaderboard : List (Html Msg)
+                                viewLeaderboard : Html Msg
                                 viewLeaderboard =
-                                    [ Html.h3 [] [ Html.text "Scores" ]
-                                    , case leaderboardStatus of
-                                        Helpers.Http.Inflight ->
-                                            Html.text "Loading..."
-
-                                        Helpers.Http.Ready ->
-                                            Html.text "Ready"
-
-                                        Helpers.Http.Failed _ ->
-                                            Html.text "Error obtaining the leaderboard"
-
-                                        Helpers.Http.Succeeded leaderboard ->
+                                    let
+                                        withLeaderboard : Types.FormulaE.EventLeaderboard -> Html Msg
+                                        withLeaderboard leaderboard =
                                             let
                                                 viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
                                                 viewRow scoredPrediction =
@@ -208,25 +196,48 @@ view model event =
                                                     []
                                                     (List.map viewRow leaderboard.predictions)
                                                 ]
-                                    ]
-                            in
-                            case user.isAdmin of
-                                False ->
-                                    Html.div
-                                        []
-                                        viewLeaderboard
-
-                                True ->
-                                    let
-                                        resultsEntry : List (Html Msg)
-                                        resultsEntry =
-                                            [ Html.h3 [] [ Html.text "Results Entry" ]
-                                            , viewInput model event.id user Result entrants
-                                            ]
                                     in
-                                    Html.div
-                                        []
-                                        (List.append resultsEntry viewLeaderboard)
+                                    Components.Section.view "Session scores"
+                                        [ Components.HttpStatus.view
+                                            { viewFn = withLeaderboard
+                                            , failedMessage = "Error obtaining the event leaderboard"
+                                            }
+                                            leaderboardStatus
+                                        ]
+                            in
+                            case mUser of
+                                Nothing ->
+                                    viewLeaderboard
+
+                                Just user ->
+                                    case user.isAdmin of
+                                        False ->
+                                            viewLeaderboard
+
+                                        True ->
+                                            Html.div
+                                                []
+                                                [ viewInput model event.id user Result entrants
+                                                , viewLeaderboard
+                                                ]
+            in
+            Components.HttpStatus.view
+                { viewFn = viewMain
+                , failedMessage = "Error obtaining the event entrant information"
+                }
+                entrantsStatus
+    in
+    [ info
+    , case event.cancelled of
+        True ->
+            Html.div
+                [ Helpers.Attributes.role "alert"
+                , Html.Attributes.class "event-cancelled"
+                ]
+                [ Html.text "This event has been cancelled." ]
+
+        False ->
+            mainContent
     ]
 
 
@@ -389,10 +400,27 @@ viewInput model eventId user kind entrants =
         submitDisabled : Bool
         submitDisabled =
             Maybe.Extra.isJust invalidationMessage
+
+        legend : Html msg
+        legend =
+            let
+                text : String
+                text =
+                    case kind of
+                        Prediction ->
+                            "Prediction entry"
+
+                        Result ->
+                            "Result entry"
+            in
+            Html.legend
+                []
+                [ Html.text text ]
     in
     Html.fieldset
         []
-        [ viewSelector { label = "Pole", current = current.pole, onInput = Msg.SetPole }
+        [ legend
+        , viewSelector { label = "Pole", current = current.pole, onInput = Msg.SetPole }
         , viewSelector { label = "FAM", current = current.fam, onInput = Msg.SetFam }
         , viewSelector { label = "Fastest lap", current = current.fastestLap, onInput = Msg.SetFastestLap }
         , viewSelector { label = "HGC", current = current.hgc, onInput = Msg.SetHgc }

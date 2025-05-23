@@ -2,6 +2,7 @@ module Pages.FormulaOneSeason exposing (view)
 
 import Components.HttpStatus
 import Components.Leaderboard
+import Components.Section
 import Components.UserName
 import Dict
 import Helpers.Classes
@@ -37,18 +38,6 @@ view model season =
                     , Route.href (Route.FormulaOne seasonArg)
                     ]
                     [ Html.text linkSeason ]
-                ]
-
-        viewSection : String -> List (Html Msg) -> Html Msg
-        viewSection title content =
-            Html.section
-                [ Attributes.class "section" ]
-                [ Html.h2
-                    []
-                    [ Html.text title ]
-                , Html.div
-                    [ Attributes.class "content" ]
-                    content
                 ]
 
         eventsSection : Html Msg
@@ -88,7 +77,7 @@ view model season =
                         eventsStatus
                     ]
             in
-            viewSection "Events" content
+            Components.Section.view "Events" content
 
         leaderboardSection : Html Msg
         leaderboardSection =
@@ -107,7 +96,7 @@ view model season =
                         leaderboardStatus
                     ]
             in
-            viewSection "Leaderboard" content
+            Components.Section.view "Leaderboard" content
 
         driverStandingsSection : Html Msg
         driverStandingsSection =
@@ -126,7 +115,7 @@ view model season =
                         driverStandingsStatus
                     ]
             in
-            viewSection "Driver Standings" content
+            Components.Section.view "Driver Standings" content
 
         constructorStandingsSection : Html Msg
         constructorStandingsSection =
@@ -145,7 +134,7 @@ view model season =
                         constructorStandingsStatus
                     ]
             in
-            viewSection "Constructor Standings" content
+            Components.Section.view "Constructor Standings" content
 
         seasonLeaderboardSection : Html Msg
         seasonLeaderboardSection =
@@ -210,7 +199,7 @@ view model season =
                         seasonLeaderboardStatus
                     ]
             in
-            viewSection "Season Leaderboard" content
+            Components.Section.view "Season Leaderboard" content
     in
     [ Html.h1
         []
