@@ -1,12 +1,16 @@
 module Pages.FormulaOneSession exposing (view)
 
 import Components.FormulaOneSessionEntry
+import Components.HttpStatus
+import Components.Login
+import Components.Section
 import Components.UserName
 import Dict
 import Helpers.Http
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Types.FormulaOne
@@ -25,21 +29,6 @@ view model session =
             Dict.get session.id model.formulaOneSessionLeaderboards
                 |> Maybe.withDefault Helpers.Http.Ready
 
-        viewEntrant : Types.FormulaOne.Entrant -> Html Msg
-        viewEntrant entrant =
-            Html.li
-                []
-                [ Html.span
-                    [ Attributes.class "entrant-number" ]
-                    [ Html.text (String.fromInt entrant.number) ]
-                , Html.span
-                    [ Attributes.class "entrant-driver" ]
-                    [ Html.text entrant.driver ]
-                , Html.span
-                    [ Attributes.class "entrant-team" ]
-                    [ Html.text entrant.teamShortName ]
-                ]
-
         viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
         viewPredictionEntry entrants =
             case Helpers.Http.toMaybe model.userStatus of
@@ -51,12 +40,8 @@ view model session =
                             Model.getFormulaOneCurrentSessionPrediction model session.id
                                 |> Maybe.withDefault entrants
                     in
-                    Html.div
-                        []
-                        [ Html.h2
-                            []
-                            [ Html.text "Sortable for prediction entry" ]
-                        , Components.FormulaOneSessionEntry.view
+                    Components.Section.view "Prediction entry"
+                        [ Components.FormulaOneSessionEntry.view
                             { kind = Components.FormulaOneSessionEntry.Prediction
                             , user = user
                             , entrants = currentPrediction
@@ -65,25 +50,21 @@ view model session =
                                 Msg.SubmitFormulaOneSessionEntry session.id
                                     (List.map .id currentPrediction)
                             }
-                        , Html.h2 [] [ Html.text "What the model sees for prediction entry" ]
-                        , Html.ol [] (List.map viewEntrant currentPrediction)
                         ]
 
                 Nothing ->
-                    Html.ul
-                        []
-                        (List.map viewEntrant entrants)
+                    Components.Login.youMustBeLoggedInTo "make a prediction"
 
         viewResultEntry : List Types.FormulaOne.Entrant -> Html Msg
         viewResultEntry entrants =
             case Helpers.Http.toMaybe model.userStatus of
                 Nothing ->
-                    Html.text "You must be a logged in admin to enter the results."
+                    Html.Extra.nothing
 
                 Just user ->
                     case user.isAdmin of
                         False ->
-                            Html.text "You must be an admin user to enter the results."
+                            Html.Extra.nothing
 
                         True ->
                             let
@@ -92,10 +73,8 @@ view model session =
                                     Model.getFormulaOneCurrentSessionResults model session.id
                                         |> Maybe.withDefault entrants
                             in
-                            Html.div
-                                []
-                                [ Html.h2 [] [ Html.text "Sortable Results Entry" ]
-                                , Components.FormulaOneSessionEntry.view
+                            Components.Section.view "Results entry"
+                                [ Components.FormulaOneSessionEntry.view
                                     { kind = Components.FormulaOneSessionEntry.Result
                                     , user = user
                                     , entrants = currentResults
@@ -104,8 +83,6 @@ view model session =
                                         Msg.SubmitFormulaOneSessionResult session.id
                                             (List.map .id currentResults)
                                     }
-                                , Html.h2 [] [ Html.text "What the model sees for results entry" ]
-                                , Html.ol [] (List.map viewEntrant currentResults)
                                 ]
     in
     [ Html.h1

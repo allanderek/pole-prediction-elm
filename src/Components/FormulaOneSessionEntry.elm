@@ -33,7 +33,16 @@ view config =
         viewEntrant entrant =
             Html.div
                 [ Html.Attributes.attribute "data-id" (String.fromInt entrant.id) ]
-                [ Html.text entrant.driver ]
+                [ Html.span
+                    [ Html.Attributes.class "entrant-number" ]
+                    [ Html.text (String.fromInt entrant.number) ]
+                , Html.span
+                    [ Html.Attributes.class "entrant-driver" ]
+                    [ Html.text entrant.driver ]
+                , Html.span
+                    [ Html.Attributes.class "entrant-team" ]
+                    [ Html.text entrant.teamShortName ]
+                ]
 
         decodeReorderEvent : Decoder msg
         decodeReorderEvent =

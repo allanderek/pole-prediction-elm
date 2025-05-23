@@ -42,6 +42,9 @@ $ source venv/bin/activate.fish
 
 - [ ] Check on user login/logout on multiple tabs, does that work? I doubt it, but it should, shelfnova does it well.
 
+## Formula One
+- [ ] Do not forget that for entry/result input, you have to merge the current with the entrants that are available. That should be a very rare occurrence (normally we will just update one or more of the entrants), but still it should work.
+
 ## Formula E input
 
 - [x] Allow submitting a prediction/result and saving it to the database.

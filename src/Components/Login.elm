@@ -1,9 +1,14 @@
-module Components.Login exposing (view)
+module Components.Login exposing
+    ( view
+    , youMustBeLoggedInTo
+    )
 
+import Helpers.Html
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events
 import Msg exposing (Msg)
+import Route
 import Types.Login
 
 
@@ -36,4 +41,18 @@ view form =
         , Html.button
             [ Attributes.type_ "submit" ]
             [ Html.text "Submit" ]
+        ]
+
+
+youMustBeLoggedInTo : String -> Html msg
+youMustBeLoggedInTo actionDesc =
+    Html.span
+        []
+        [ Html.text "You must be"
+        , Helpers.Html.nbsp
+        , Html.a
+            [ Route.href Route.Login ]
+            [ Html.text "logged in" ]
+        , Helpers.Html.nbsp
+        , Html.text actionDesc
         ]

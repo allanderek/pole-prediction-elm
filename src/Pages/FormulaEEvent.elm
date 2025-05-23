@@ -1,6 +1,7 @@
 module Pages.FormulaEEvent exposing (view)
 
 import Components.HttpStatus
+import Components.Login
 import Components.Section
 import Components.Selector
 import Dict
@@ -17,7 +18,6 @@ import Html.Extra
 import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
-import Route
 import Types.FormulaE
 import Types.User exposing (User)
 
@@ -62,14 +62,7 @@ view model event =
                         True ->
                             case mUser of
                                 Nothing ->
-                                    Html.span
-                                        []
-                                        [ Html.text "You must be "
-                                        , Html.a
-                                            [ Route.href Route.Login ]
-                                            [ Html.text "logged in" ]
-                                        , Html.text " to make predictions."
-                                        ]
+                                    Components.Login.youMustBeLoggedInTo "to make predictions"
 
                                 Just user ->
                                     Html.div
