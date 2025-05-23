@@ -277,11 +277,22 @@ update msg model =
             )
 
         Msg.SubmitFormulaOneSessionEntryResponse sessionId result ->
-            Return.noEffect
-                { model
-                    | formulaOneSessionPredictionSubmitStatus =
-                        Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionPredictionSubmitStatus
-                }
+            let
+                alertMessage : String
+                alertMessage =
+                    case result of
+                        Ok _ ->
+                            "Prediction submitted successfully!"
+
+                        Err _ ->
+                            "Failed to submit prediction."
+            in
+            ( { model
+                | formulaOneSessionPredictionSubmitStatus =
+                    Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionPredictionSubmitStatus
+              }
+            , Effect.NativeAlert alertMessage
+            )
 
         Msg.SubmitFormulaOneSessionResult sessionId entrantIds ->
             ( { model
@@ -297,14 +308,24 @@ update msg model =
                 newStatus =
                     Helpers.Http.fromResult result
                         |> Helpers.Http.map (\_ -> ())
+
+                alertMessage : String
+                alertMessage =
+                    case result of
+                        Ok _ ->
+                            "Result submitted successfully!"
+
+                        Err _ ->
+                            "Failed to submit result."
             in
-            Return.noEffect
-                { model
-                    | formulaOneSessionResultSubmitStatus =
-                        Dict.insert sessionId newStatus model.formulaOneSessionResultSubmitStatus
-                    , formulaOneSessionLeaderboards =
-                        Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
-                }
+            ( { model
+                | formulaOneSessionResultSubmitStatus =
+                    Dict.insert sessionId newStatus model.formulaOneSessionResultSubmitStatus
+                , formulaOneSessionLeaderboards =
+                    Dict.insert sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
+              }
+            , Effect.NativeAlert alertMessage
+            )
 
         Msg.FormulaOneLeaderboardResponse spec result ->
             Return.noEffect
