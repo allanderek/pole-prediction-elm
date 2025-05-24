@@ -79,7 +79,7 @@ initRoute model =
                 ]
             )
 
-        Route.FormulaOneSession _ eventId sessionId ->
+        Route.FormulaOneSession season eventId sessionId ->
             let
                 haveSessionInfo : Bool
                 haveSessionInfo =
@@ -88,6 +88,14 @@ initRoute model =
                         |> Helpers.Http.toMaybe
                         |> Maybe.withDefault []
                         |> List.any (\session -> session.id == sessionId)
+
+                haveEventInfo : Bool
+                haveEventInfo =
+                    Dict.get season model.formulaOneEvents
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.toMaybe
+                        |> Maybe.withDefault []
+                        |> List.any (\event -> event.id == eventId)
             in
             ( model
             , Effect.Batch
@@ -99,6 +107,12 @@ initRoute model =
 
                     False ->
                         Effect.GetFormulaOneEventSessions { eventId = eventId }
+                , case haveEventInfo of
+                    True ->
+                        Effect.None
+
+                    False ->
+                        Effect.GetFormulaOneEvents { season = season }
                 ]
             )
 

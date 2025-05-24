@@ -2,11 +2,14 @@ module Pages.FormulaOneSession exposing (view)
 
 import Components.FormulaOneSessionEntry
 import Components.HttpStatus
+import Components.Info
 import Components.Login
 import Components.Section
+import Components.Time
 import Components.UserName
 import Dict
 import Helpers.Http
+import Helpers.List
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -19,6 +22,42 @@ import Types.FormulaOne
 view : Model key -> Types.FormulaOne.Session -> List (Html Msg)
 view model session =
     let
+        infoSection : Html msg
+        infoSection =
+            let
+                mEvent : Maybe Types.FormulaOne.Event
+                mEvent =
+                    Model.getFromStatusDict session.season model.formulaOneEvents
+                        |> Maybe.andThen (Helpers.List.findWith session.eventId .id)
+            in
+            Components.Info.view
+                session.name
+                [ { class = "event-name"
+                  , content =
+                        case mEvent of
+                            Nothing ->
+                                Html.text "Unknown event"
+
+                            Just event ->
+                                Types.FormulaOne.eventName event
+                                    |> Html.text
+                  }
+                , { class = "event-round"
+                  , content =
+                        case mEvent of
+                            Nothing ->
+                                Html.text "Unknown event"
+
+                            Just event ->
+                                String.fromInt event.round
+                                    |> String.append "Round: "
+                                    |> Html.text
+                  }
+                , { class = "session-start-time"
+                  , content = Components.Time.longFormat model.zone session.startTime
+                  }
+                ]
+
         viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
         viewPredictionEntry entrants =
             case Helpers.Http.toMaybe model.userStatus of
@@ -163,7 +202,7 @@ view model session =
                         }
                         leaderboardStatus
     in
-    [ Html.h1 [] [ Html.text "Formula One Session" ]
+    [ infoSection
     , entrySection
     , leaderboardSection
     ]

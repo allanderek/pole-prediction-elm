@@ -86,6 +86,8 @@ type alias SessionId =
 
 type alias Session =
     { id : SessionId
+    , season : Season
+    , eventId : EventId
     , name : String
     , half_points : Bool
     , startTime : Time.Posix
@@ -98,6 +100,8 @@ sessionDecoder : Decoder Session
 sessionDecoder =
     Decode.succeed Session
         |> Pipeline.required "id" Decode.int
+        |> Pipeline.required "season" Decode.string
+        |> Pipeline.required "event" Decode.int
         |> Pipeline.required "name" Decode.string
         |> Pipeline.required "half_points" Helpers.Decode.intAsBool
         |> Pipeline.required "start_time" Helpers.Rfc3339.decoder

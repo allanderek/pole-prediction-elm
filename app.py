@@ -331,13 +331,15 @@ def get_formula_one_sessions_by_event(event_id):
     with db_transaction() as db:
         query = """select 
         s.id, 
+        e.season,
+        s.event,
         s.name, 
         s.half_points, 
         s.start_time, 
         s.cancelled, 
-        s.event, 
         s.fastest_lap
     from formula_one_sessions s
+    join formula_one_events e on s.event = e.id
     where s.event = :event_id
     order BY s.start_time
     ;"""
