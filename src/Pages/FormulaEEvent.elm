@@ -1,6 +1,7 @@
 module Pages.FormulaEEvent exposing (view)
 
 import Components.HttpStatus
+import Components.Info
 import Components.Login
 import Components.Section
 import Components.Selector
@@ -28,20 +29,17 @@ view model event =
     let
         info : Html msg
         info =
-            Html.div
-                [ Html.Attributes.class "formula-e-event" ]
-                [ Html.h2
-                    [ Html.Attributes.class "event-name" ]
-                    [ Html.text event.name ]
-                , Html.p
-                    [ Html.Attributes.class "event-country" ]
-                    [ Html.text event.country ]
-                , Html.p
-                    [ Html.Attributes.class "event-circuit" ]
-                    [ Html.text event.circuit ]
-                , Html.p
-                    [ Html.Attributes.class "event-date" ]
-                    [ Components.Time.longFormat model.zone event.startTime ]
+            Components.Info.view
+                event.name
+                [ { class = "event-country"
+                  , content = Html.text event.country
+                  }
+                , { class = "event-circuit"
+                  , content = Html.text event.circuit
+                  }
+                , { class = "event-date"
+                  , content = Components.Time.longFormat model.zone event.startTime
+                  }
                 ]
 
         mainContent : Html Msg

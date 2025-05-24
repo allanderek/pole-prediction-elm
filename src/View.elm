@@ -1,6 +1,8 @@
 module View exposing (application)
 
 import Browser
+import Components.HttpStatus
+import Components.Info
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
@@ -56,21 +58,9 @@ application model =
                         sessionsStatus =
                             Dict.get eventId model.formulaOneSessions
                                 |> Maybe.withDefault Helpers.Http.Ready
-                    in
-                    [ Html.h1
-                        []
-                        [ Html.text "Formula One Event" ]
-                    , case sessionsStatus of
-                        Helpers.Http.Inflight ->
-                            Html.text "Loading..."
 
-                        Helpers.Http.Ready ->
-                            Html.text "Ready"
-
-                        Helpers.Http.Failed _ ->
-                            Html.text "Error obtaining the sessions"
-
-                        Helpers.Http.Succeeded sessions ->
+                        withSessions : List Types.FormulaOne.Session -> Html Msg
+                        withSessions sessions =
                             let
                                 viewSession : Types.FormulaOne.Session -> Html Msg
                                 viewSession session =
@@ -87,6 +77,35 @@ application model =
                             Html.ul
                                 []
                                 (List.map viewSession sessions)
+
+                        mEvent : Maybe Types.FormulaOne.Event
+                        mEvent =
+                            Model.getFromStatusDict season model.formulaOneEvents
+                                |> Maybe.andThen (Helpers.List.findWith eventId .id)
+
+                        info : Html msg
+                        info =
+                            case mEvent of
+                                Just event ->
+                                    Components.Info.view
+                                        (Types.FormulaOne.eventName event)
+                                        [ { class = "event-round"
+                                          , content =
+                                                String.fromInt event.round
+                                                    |> String.append "Round: "
+                                                    |> Html.text
+                                          }
+                                        ]
+
+                                Nothing ->
+                                    Html.text "Event not found"
+                    in
+                    [ info
+                    , Components.HttpStatus.view
+                        { viewFn = withSessions
+                        , failedMessage = "Error obtaining the sessions"
+                        }
+                        sessionsStatus
                     ]
 
                 Route.FormulaOneSession _ eventId sessionId ->

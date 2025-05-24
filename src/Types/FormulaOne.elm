@@ -16,6 +16,7 @@ module Types.FormulaOne exposing
     , currentSeason
     , entrantDecoder
     , eventDecoder
+    , eventName
     , scoredPredictionRowDecoder
     , scoredPredictionRowsToSessionLeaderboard
     , seasonLeaderboardFromSeasonPredictionRows
@@ -56,6 +57,16 @@ type alias Event =
     , name : String
     , isSprint : Bool
     }
+
+
+eventName : Event -> String
+eventName event =
+    case event.isSprint of
+        False ->
+            event.name
+
+        True ->
+            String.append event.name "🏃"
 
 
 eventDecoder : Decoder Event

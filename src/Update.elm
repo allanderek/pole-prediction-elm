@@ -53,9 +53,30 @@ initRoute model =
                 ]
             )
 
-        Route.FormulaOneEvent _ eventId ->
+        Route.FormulaOneEvent season eventId ->
+            let
+                haveEventInfo : Bool
+                haveEventInfo =
+                    Dict.get season model.formulaOneEvents
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.toMaybe
+                        |> Maybe.withDefault []
+                        |> List.any (\event -> event.id == eventId)
+
+                eventsEffect : Effect
+                eventsEffect =
+                    case haveEventInfo of
+                        True ->
+                            Effect.None
+
+                        False ->
+                            Effect.GetFormulaOneEvents { season = season }
+            in
             ( model
-            , Effect.GetFormulaOneEventSessions { eventId = eventId }
+            , Effect.Batch
+                [ Effect.GetFormulaOneEventSessions { eventId = eventId }
+                , eventsEffect
+                ]
             )
 
         Route.FormulaOneSession _ eventId sessionId ->
