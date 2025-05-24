@@ -56,6 +56,7 @@ type alias Event =
     , round : Int
     , name : String
     , isSprint : Bool
+    , startTime : Time.Posix
     }
 
 
@@ -76,6 +77,7 @@ eventDecoder =
         |> Pipeline.required "round" Decode.int
         |> Pipeline.required "name" Decode.string
         |> Pipeline.required "isSprint" Helpers.Decode.intAsBool
+        |> Pipeline.required "start_time" Helpers.Rfc3339.decoder
 
 
 type alias SessionId =

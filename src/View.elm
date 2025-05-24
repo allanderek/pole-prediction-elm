@@ -6,6 +6,7 @@ import Components.Info
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
+import Components.Time
 import Dict
 import Helpers.Classes
 import Helpers.Http
@@ -94,6 +95,9 @@ application model =
                                                 String.fromInt event.round
                                                     |> String.append "Round: "
                                                     |> Html.text
+                                          }
+                                        , { class = "event-start-time"
+                                          , content = Components.Time.longFormat model.zone event.startTime
                                           }
                                         ]
 
