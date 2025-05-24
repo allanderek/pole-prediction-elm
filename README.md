@@ -48,10 +48,12 @@ $ source venv/bin/activate.fish
 - [x] Sort out the zone, in the usual manner (using the package to get the timezone info).
 - [x] Put times on the events in the season pages for both formula 1 and formula e.
 - [ ] Consider showing the timezone whenever we show a time, or at least in some places.
+- [ ] You need to have a tick otherwise it won't tick past a session's start time.
 
 ## Formula One
 - [ ] Do not forget that for entry/result input, you have to merge the current with the entrants that are available. That should be a very rare occurrence (normally we will just update one or more of the entrants), but still it should work.
 - [ ] The session page should either have a link back to the event page, or a list of the other sessions in the event.
+- [ ] On the event page, consider smarter displaying of the session times, probably do not need to show the year, and only  show the month if it differs from the start time of the event.
 
 ## Formula E input
 

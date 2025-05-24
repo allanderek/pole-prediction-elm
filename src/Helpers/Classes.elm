@@ -1,4 +1,7 @@
-module Helpers.Classes exposing (active)
+module Helpers.Classes exposing
+    ( active
+    , boolean
+    )
 
 import Html exposing (Attribute)
 import Html.Attributes as Attributes

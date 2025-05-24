@@ -1,6 +1,7 @@
 module Pages.FormulaOneSession exposing (view)
 
 import Components.FormulaOneSessionEntry
+import Components.FormulaOneSessionList
 import Components.HttpStatus
 import Components.Info
 import Components.Login
@@ -16,6 +17,7 @@ import Html.Attributes as Attributes
 import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
+import Route
 import Types.FormulaOne
 
 
@@ -32,15 +34,30 @@ view model session =
             in
             Components.Info.view
                 session.name
-                [ { class = "event-name"
+                [ { class = "session-start-time"
+                  , content = Components.Time.longFormat model.zone session.startTime
+                  }
+                , { class = "event-name"
                   , content =
                         case mEvent of
                             Nothing ->
                                 Html.text "Unknown event"
 
                             Just event ->
-                                Types.FormulaOne.eventName event
-                                    |> Html.text
+                                Html.a
+                                    [ Route.FormulaOneEvent session.season event.id
+                                        |> Route.href
+                                    ]
+                                    [ Types.FormulaOne.eventName event
+                                        |> Html.text
+                                    ]
+                  }
+                , { class = "event-sessions"
+                  , content =
+                        Components.FormulaOneSessionList.view
+                            model
+                            session.eventId
+                            (Just session.id)
                   }
                 , { class = "event-round"
                   , content =
@@ -52,9 +69,6 @@ view model session =
                                 String.fromInt event.round
                                     |> String.append "Round: "
                                     |> Html.text
-                  }
-                , { class = "session-start-time"
-                  , content = Components.Time.longFormat model.zone session.startTime
                   }
                 ]
 
