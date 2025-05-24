@@ -20,7 +20,6 @@ $ source venv/bin/activate.fish
 
 - [ ] Consider a bit of a refactor of the database, we could have that the entrants all have ids 1-20, but the primary key of the entrant is a composite primary key consisting of session id with the entrant id. This would have some advantages. Such as creating all the entrants in the database at the start of the season. Changing one should really be changing either a driver for a replacement (e.g. Bearman for Sainz due to appendecitis), or swapping teams, e.g. Tsunoda for Lawson and vice versa. 
 
-- [ ] Get the predictions for a session, this depends on the time, you just get the logged-in user's predictions for the session if the start-time has not passed, otherwise you get all the predictions for the session, including any results. Also the predictions are all scored (which will be zero if there is no result yet).
 
 - [ ] You have authentication but no way to register at the moment.
 - [ ] I may do 'event' leaderboard which is just get the leaderboard for the season but restrict it to sessions within a given event, and show it on the event page?
@@ -31,16 +30,16 @@ $ source venv/bin/activate.fish
 - [ ] Not sure what happens when teams/drivers are on equal points? This is mostly for the constructor and driver standings.
 - [ ] Setup ty a lsp for python: https://github.com/astral-sh/ty
 
-- [ ] Create an effect for sending predictions to the server
-- [ ] On response, the entry in the formulaOneSessionEntries should be removed, and when there is no such entry, the 'submit' button can be disabled. Question, what to do if the user re-orders back to what we *think* is the same order? I suggest that it is still enabled so that the user can make certain they are changing it to what they want.
 - [ ] Can we prevent the user from re-ordering the predictions whilst they are being submitted?
-- [ ] Should we just get rid of the entire SQLItePlugin thing and just use the context manager? It seems more hassle than it's worth particularly if it's not going to work with require_auth.
-- [ ] Next step is to allow updating with Results, a little tricky since it's difficult to get the current result from the leaderboard, unless we also download that at the same time.
 - [ ] We may wish to allow entering results even if the session leaderboard fails to download
-- [ ] We may not really need model.formulaOneSessionResultSubmitStatus since we can just use the  leaderboard status since it returns that.
+- [ ] We may not really need model.formulaOneSessionResultSubmitStatus since we can just use the leaderboard status since it returns that. This is similar to formulaE where we just use the leaderboard status, so we should probably do it the same way for both.  I think if 'Inflight' could have a 'Maybe currentValue', that might be useful, and would mean I could set the leaderboard status when I submit the result.
 - [x] See if we can make 'SafetyCar' on formula e predictions a Maybe Bool, such that we can submit a result with no safety car such that the 'No' guessers do not get an early point, in particular a point between qualifying and the race.
 
 - [ ] Check on user login/logout on multiple tabs, does that work? I doubt it, but it should, shelfnova does it well.
+
+## Backend
+- [ ] Must prevent prediction entry after the sesion start time
+- [ ] Must not give back any predictions, other than the current user's *before* the session start time.
 
 ## Times
 - [x] Put the times on the formula 1 session page.
@@ -60,7 +59,7 @@ $ source venv/bin/activate.fish
 
 - [x] Allow submitting a prediction/result and saving it to the database.
 - [x] Allow downloading the current predictions/results from the database to pre-populate the form.
-- [ ] Validate the prediction, so that all things should be set, and, for example you cannot select the same entrant for 1st, 2nd, and 3rd.
+- [x] Validate the prediction, so that all things should be set, and, for example you cannot select the same entrant for 1st, 2nd, and 3rd.
 - [x] Results however, can be partial, and we do not need to worry about validation because if that is really the result then that's the result.
 - [x] Figure out how to input safety car.
 - [x] Perhaps just use a native alert for confirmation/failure of submission.
