@@ -43,13 +43,14 @@ $ source venv/bin/activate.fish
 - [ ] Check on user login/logout on multiple tabs, does that work? I doubt it, but it should, shelfnova does it well.
 
 ## Times
-- [ ] Put the times on the formula 1 session page.
+- [x] Put the times on the formula 1 session page.
 - [ ] Maybe make it clear on the formula E page that the start time is that for qualifying and end of entry.
 - [ ] Sort out the zone, in the usual manner (using the package to get the timezone info).
-- [ ] Put times on the events in the season pages for both formula 1 and formula e.
+- [x] Put times on the events in the season pages for both formula 1 and formula e.
 
 ## Formula One
 - [ ] Do not forget that for entry/result input, you have to merge the current with the entrants that are available. That should be a very rare occurrence (normally we will just update one or more of the entrants), but still it should work.
+- [ ] The session page should either have a link back to the event page, or a list of the other sessions in the event.
 
 ## Formula E input
 
@@ -59,6 +60,10 @@ $ source venv/bin/activate.fish
 - [x] Results however, can be partial, and we do not need to worry about validation because if that is really the result then that's the result.
 - [x] Figure out how to input safety car.
 - [x] Perhaps just use a native alert for confirmation/failure of submission.
+
+## Getting data
+- [ ] I'd really like some uniform way for each route to just describe what data it needs and then for the effects to be automatically calculated from that. In particular it should also set the appropriate loading state, because that's not being done everywhere perfectly.
+- [ ] Ideally as well we would record the time that we last got the data and it would decide whether it needed to 're-get' it. This will come up in particular for the results. Which would be nice if we could automatically re-get the results on a session page. Though of course we could have a button to do that, and also we want to worry about viewing a session from a long time ago.
 
 
 ## Database migration

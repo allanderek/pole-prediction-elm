@@ -3,6 +3,7 @@ module Pages.FormulaOneSeason exposing (view)
 import Components.HttpStatus
 import Components.Leaderboard
 import Components.Section
+import Components.Time
 import Components.UserName
 import Dict
 import Helpers.Classes
@@ -63,7 +64,11 @@ view model season =
                                             , Route.FormulaOneEvent season event.id
                                                 |> Route.href
                                             ]
-                                            [ Html.text event.name ]
+                                            [ Types.FormulaOne.eventName event
+                                                |> Html.text
+                                            , Html.text " - "
+                                            , Components.Time.shortFormat model.zone event.startTime
+                                            ]
                                         ]
                             in
                             Html.ul

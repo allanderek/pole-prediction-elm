@@ -6,6 +6,7 @@ import Components.Info
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
+import Components.Section
 import Components.Time
 import Dict
 import Helpers.Classes
@@ -135,73 +136,62 @@ application model =
                             mSeason
                                 |> Maybe.withDefault Types.FormulaE.currentSeason
 
-                        leaderboardStatus : Helpers.Http.Status Leaderboard
-                        leaderboardStatus =
-                            Dict.get season model.formulaELeaderboards
-                                |> Maybe.withDefault Helpers.Http.Ready
-
-                        viewLink : Types.FormulaE.Season -> Html Msg
-                        viewLink linkSeason =
+                        seasonNav : Html msg
+                        seasonNav =
                             let
-                                seasonArg : Maybe Types.FormulaE.Season
-                                seasonArg =
-                                    case linkSeason == Types.FormulaE.currentSeason of
-                                        True ->
-                                            Nothing
+                                viewLink : Types.FormulaE.Season -> Html msg
+                                viewLink linkSeason =
+                                    let
+                                        seasonArg : Maybe Types.FormulaE.Season
+                                        seasonArg =
+                                            case linkSeason == Types.FormulaE.currentSeason of
+                                                True ->
+                                                    Nothing
 
-                                        False ->
-                                            Just linkSeason
+                                                False ->
+                                                    Just linkSeason
+                                    in
+                                    Html.li
+                                        [ Helpers.Classes.active (linkSeason == season) ]
+                                        [ Html.a
+                                            [ Attributes.class "season-link"
+                                            , Route.href (Route.FormulaE seasonArg)
+                                            ]
+                                            [ Html.text linkSeason ]
+                                        ]
                             in
-                            Html.li
-                                [ Helpers.Classes.active (linkSeason == season) ]
-                                [ Html.a
-                                    [ Attributes.class "season-link"
-                                    , Route.href (Route.FormulaE seasonArg)
-                                    ]
-                                    [ Html.text linkSeason ]
+                            Html.nav
+                                []
+                                [ Html.ul
+                                    []
+                                    (List.map viewLink [ "2024-25", "2023-24", "2022-23" ])
                                 ]
 
-                        eventsStatus : Helpers.Http.Status (List Types.FormulaE.Event)
-                        eventsStatus =
-                            Dict.get season model.formulaEEvents
-                                |> Maybe.withDefault Helpers.Http.Ready
-                    in
-                    [ Html.h1
-                        []
-                        [ Html.text "Formula E "
-                        , Html.text season
-                        ]
-                    , Html.nav
-                        []
-                        [ Html.ul
-                            []
-                            (List.map viewLink [ "2024-25", "2023-24", "2022-23" ])
-                        ]
-                    , case leaderboardStatus of
-                        Helpers.Http.Inflight ->
-                            Html.text "Loading..."
-
-                        Helpers.Http.Ready ->
-                            Html.text "Ready"
-
-                        Helpers.Http.Failed _ ->
-                            Html.text "Error obtaining the leaderboard"
-
-                        Helpers.Http.Succeeded leaderboard ->
-                            Components.Leaderboard.view { firstColumn = "User" } leaderboard
-                    , case eventsStatus of
-                        Helpers.Http.Inflight ->
-                            Html.text "Loading..."
-
-                        Helpers.Http.Ready ->
-                            Html.text "Ready"
-
-                        Helpers.Http.Failed _ ->
-                            Html.text "Error obtaining the events"
-
-                        Helpers.Http.Succeeded events ->
+                        leaderboardSection : Html msg
+                        leaderboardSection =
                             let
-                                viewEvent : Types.FormulaE.Event -> Html Msg
+                                leaderboardStatus : Helpers.Http.Status Leaderboard
+                                leaderboardStatus =
+                                    Dict.get season model.formulaELeaderboards
+                                        |> Maybe.withDefault Helpers.Http.Ready
+                            in
+                            Components.Section.view "Leaderboard"
+                                [ Components.HttpStatus.view
+                                    { viewFn = Components.Leaderboard.view { firstColumn = "Team" }
+                                    , failedMessage = "Error obtaining the leaderboard"
+                                    }
+                                    leaderboardStatus
+                                ]
+
+                        eventsSection : Html msg
+                        eventsSection =
+                            let
+                                eventsStatus : Helpers.Http.Status (List Types.FormulaE.Event)
+                                eventsStatus =
+                                    Dict.get season model.formulaEEvents
+                                        |> Maybe.withDefault Helpers.Http.Ready
+
+                                viewEvent : Types.FormulaE.Event -> Html msg
                                 viewEvent event =
                                     Html.li
                                         []
@@ -210,12 +200,34 @@ application model =
                                             , Route.FormulaEEvent season event.id
                                                 |> Route.href
                                             ]
-                                            [ Html.text event.name ]
+                                            [ Html.text event.name
+                                            , Html.text " - "
+                                            , Components.Time.shortFormat model.zone event.startTime
+                                            ]
                                         ]
+
+                                viewEvents : List Types.FormulaE.Event -> Html msg
+                                viewEvents events =
+                                    Html.ul
+                                        []
+                                        (List.map viewEvent events)
                             in
-                            Html.ul
-                                []
-                                (List.map viewEvent events)
+                            Components.Section.view "Events"
+                                [ Components.HttpStatus.view
+                                    { viewFn = viewEvents
+                                    , failedMessage = "Error obtaining the events"
+                                    }
+                                    eventsStatus
+                                ]
+                    in
+                    [ Html.h1
+                        []
+                        [ Html.text "Formula E "
+                        , Html.text season
+                        ]
+                    , seasonNav
+                    , leaderboardSection
+                    , eventsSection
                     ]
 
                 Route.FormulaEEvent season eventId ->
