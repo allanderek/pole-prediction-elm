@@ -45,8 +45,9 @@ $ source venv/bin/activate.fish
 ## Times
 - [x] Put the times on the formula 1 session page.
 - [ ] Maybe make it clear on the formula E page that the start time is that for qualifying and end of entry.
-- [ ] Sort out the zone, in the usual manner (using the package to get the timezone info).
+- [x] Sort out the zone, in the usual manner (using the package to get the timezone info).
 - [x] Put times on the events in the season pages for both formula 1 and formula e.
+- [ ] Consider showing the timezone whenever we show a time, or at least in some places.
 
 ## Formula One
 - [ ] Do not forget that for entry/result input, you have to merge the current with the entrants that are available. That should be a very rare occurrence (normally we will just update one or more of the entrants), but still it should work.

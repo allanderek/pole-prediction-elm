@@ -73,7 +73,10 @@ application model =
                                             , Route.FormulaOneSession season eventId session.id
                                                 |> Route.href
                                             ]
-                                            [ Html.text session.name ]
+                                            [ Html.text session.name
+                                            , Html.text " - "
+                                            , Components.Time.shortFormat model.zone session.startTime
+                                            ]
                                         ]
                             in
                             Html.ul
