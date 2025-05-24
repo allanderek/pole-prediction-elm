@@ -11,6 +11,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Perform
+import Return
 import Time
 import Types.User exposing (User)
 import Update
@@ -83,6 +84,7 @@ init programFlags url key =
 
         initialModel : Model key
         initialModel =
-            Model.initial key url Time.utc now userStatus
+            Model.initial key url now userStatus
     in
     Update.initRoute initialModel
+        |> Return.addEffect Effect.GetTimeZone

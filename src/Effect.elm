@@ -16,6 +16,8 @@ type Effect
     | LoadUrl String
     | NativeAlert String
     | Reload
+    | GetTimeZone
+    | LegacyGetTimeZone
     | SubmitLogin Types.Login.Form
     | SubmitLogout
     | GetFormulaOneLeaderboard { season : Types.FormulaOne.Season }

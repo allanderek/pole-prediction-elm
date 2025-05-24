@@ -6,6 +6,8 @@ module Msg exposing
 
 import Browser
 import Http
+import Time
+import TimeZone
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
@@ -20,6 +22,8 @@ type alias HttpResult a =
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | GetTimeZone (Result TimeZone.Error ( String, Time.Zone ))
+    | LegacyGetTimeZone Time.Zone
     | LoginIdentityInput String
     | LoginPasswordInput String
     | LoginSubmit

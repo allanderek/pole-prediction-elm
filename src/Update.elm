@@ -196,6 +196,19 @@ update msg model =
             initRoute
                 { model | route = Route.parse url }
 
+        Msg.GetTimeZone result ->
+            case result of
+                Err _ ->
+                    ( model
+                    , Effect.LegacyGetTimeZone
+                    )
+
+                Ok ( _, zone ) ->
+                    Return.noEffect { model | zone = zone }
+
+        Msg.LegacyGetTimeZone zone ->
+            Return.noEffect { model | zone = zone }
+
         Msg.LoginIdentityInput input ->
             let
                 form : Types.Login.Form

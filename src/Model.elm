@@ -50,12 +50,12 @@ type alias Model key =
     }
 
 
-initial : key -> Url -> Time.Zone -> Time.Posix -> Helpers.Http.Status User -> Model key
-initial key url zone now userStatus =
+initial : key -> Url -> Time.Posix -> Helpers.Http.Status User -> Model key
+initial key url now userStatus =
     { navigationKey = key
     , route = Route.parse url
     , now = now
-    , zone = zone
+    , zone = Time.utc
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
     , formulaOneLeaderboards = Dict.empty
