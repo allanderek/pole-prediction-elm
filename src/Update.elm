@@ -196,6 +196,9 @@ update msg model =
             initRoute
                 { model | route = Route.parse url }
 
+        Msg.Tick now ->
+            Return.noEffect { model | now = now }
+
         Msg.GetTimeZone result ->
             case result of
                 Err _ ->

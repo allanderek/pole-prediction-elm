@@ -22,6 +22,7 @@ type alias HttpResult a =
 type Msg
     = LinkClicked Browser.UrlRequest
     | UrlChanged Url.Url
+    | Tick Time.Posix
     | GetTimeZone (Result TimeZone.Error ( String, Time.Zone ))
     | LegacyGetTimeZone Time.Zone
     | LoginIdentityInput String

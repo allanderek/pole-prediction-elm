@@ -44,7 +44,16 @@ main =
 
         subscriptions : Model key -> Sub Msg
         subscriptions _ =
-            Sub.none
+            let
+                second : Float
+                second =
+                    1000
+
+                tenSeconds : Float
+                tenSeconds =
+                    second * 10
+            in
+            Time.every tenSeconds Msg.Tick
     in
     Browser.application
         { init = performInit
