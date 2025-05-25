@@ -48,6 +48,7 @@ $ source venv/bin/activate.fish
 - [x] Put times on the events in the season pages for both formula 1 and formula e.
 - [ ] Consider showing the timezone whenever we show a time, or at least in some places.
 - [x] You need to have a tick otherwise it won't tick past a session's start time.
+- [ ] You need to do a bit of a deepdive on the RFC3339 format in python, and just check if your function will work in that case.
 
 ## Formula One
 - [ ] Do not forget that for entry/result input, you have to merge the current with the entrants that are available. That should be a very rare occurrence (normally we will just update one or more of the entrants), but still it should work.

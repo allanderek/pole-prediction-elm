@@ -13,6 +13,7 @@ import sqlite3
 import inspect
 import base64
 import hmac
+from datetime import datetime, timezone
 
 
 
@@ -446,6 +447,21 @@ order by
 
     return json.dumps([ dict(row) for row in rows])
 
+def parse_sqlite_datetime(dt_str):
+    # I think there is more to this here, including the 'Z' at the end
+    return datetime.fromisoformat(dt_str.replace(' ', 'T'))
+
+def is_db_time_earlier_than_now (db_time_str):
+    # Parse the SQLite datetime string
+    db_time = parse_sqlite_datetime(db_time_str)
+    
+    # Get the current time in UTC
+    current_time = datetime.now(timezone.utc)
+    
+    # Compare times
+    return db_time < current_time
+
+
 @app.route('/api/formula-one/session-prediction/<session_id>', method='POST')
 @require_auth
 def save_formula_one_prediction(user_id, session_id):
@@ -459,6 +475,22 @@ def save_formula_one_prediction(user_id, session_id):
         
         # Get fastest lap prediction, could be None
         fastest_lap = prediction_data.get('fastest_lap')
+
+        # First, get the session details to check start time
+        session = db.execute(
+            "select start_time, name from formula_one_sessions where id = ?",
+            (session_id,)
+        ).fetchone()
+        
+        if not session:
+            bottle.response.status = 404
+            return {'error': 'Session not found'}
+        
+        # Check if predictions are still allowed (before session start)
+        if is_db_time_earlier_than_now(session['start_time']):
+            bottle.response.status = 403
+            return {'error': f'Predictions for {session["name"]} are no longer accepted - session has started'}
+        
         
         # First delete any existing predictions for this user and session
         db.execute(
@@ -1012,6 +1044,21 @@ def save_formula_e_race_prediction(user_id, race_id):
         if prediction_data['safety_car'] not in ["yes", "no"]:
             bottle.response.status = 400
             return {'error': 'safety_car must be either "yes" or "no"'}
+
+        # Get the race details to check start time
+        race = db.execute(
+            "select date, name from races where id = ?",
+            (race_id,)
+        ).fetchone()
+        
+        if not race:
+            bottle.response.status = 404
+            return {'error': 'Event not found'}
+
+        # Check if predictions are still allowed (before session start)
+        if is_db_time_earlier_than_now(race['date']):
+            bottle.response.status = 403
+            return {'error': f'Predictions for {race["name"]} are no longer accepted - session has started'}
         
         # First delete any existing prediction for this race
         db.execute(
