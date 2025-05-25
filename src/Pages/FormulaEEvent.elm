@@ -38,7 +38,12 @@ view model event =
                   , content = Html.text event.circuit
                   }
                 , { class = "event-date"
-                  , content = Components.Time.longFormat model.zone event.startTime
+                  , content =
+                        Html.div
+                            []
+                            [ Components.Time.longFormat model.zone event.startTime
+                            , Html.text " - qualifying starts, and prediction entry closes"
+                            ]
                   }
                 ]
 
