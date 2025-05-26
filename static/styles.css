@@ -14,15 +14,20 @@ p {
     font-family: 'Inter', sans-serif;
 }
 
-/* Page layout */
-main {
+div.app {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
+
+    /* Page layout */
+    main {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
 }
+
 
 /* Navigation Bar Styling with CSS Nesting */
 aside {
@@ -555,8 +560,9 @@ fieldset {
     .formula-e-event-entrant-selector {
         margin-bottom: 1.5rem;
         display: flex;
-        align-items: center;
-        gap: 1rem;
+        flex-direction: column;
+        align-items: start;
+        gap: 0.5rem;
 
         label {
             font-weight: 600;
@@ -584,6 +590,15 @@ fieldset {
                 border-color: #adb5bd;
             }
         }
+
+    }
+
+    /* Medium screens and up */
+    @media (min-width: 768px) {
+        .formula-e-event-entrant-selector {
+            flex-direction: row;
+            align-items: center;
+        }
     }
 
     /* Safety car radio buttons */
@@ -605,7 +620,6 @@ fieldset {
             gap: 0.5rem;
             font-weight: 500;
             cursor: pointer;
-            padding: 0.5rem;
             border-radius: 4px;
             transition: background 0.2s ease;
 
@@ -682,18 +696,18 @@ section.formula-e-event-scores {
     }
 
     .scores-table {
-        width: 100%;
+        max-width: 1000px;
         min-width: 800px;
-        /* Ensure minimum width for readability */
         border-collapse: collapse;
         background: white;
         margin: 0;
+        margin-top: 1em;
 
         thead {
-            background: linear-gradient(135deg, #0c4da2 0%, #00d9ff 100%);
             position: sticky;
             top: 0;
-            z-index: 10;
+            background: #0c4da2;
+            z-index: 100;
 
             th {
                 padding: 1rem 0.75rem;
@@ -708,23 +722,12 @@ section.formula-e-event-scores {
                     border-right: none;
                 }
 
-                /* Fixed width columns for consistency */
                 &:first-child {
                     /* User */
-                    width: 100px;
                     position: sticky;
                     left: 0;
+                    z-index: 105;
                     background: #0c4da2;
-                    z-index: 11;
-                }
-
-                &:nth-child(2) {
-                    /* Score */
-                    width: 80px;
-                    position: sticky;
-                    left: 100px;
-                    background: #0c4da2;
-                    z-index: 11;
                 }
             }
         }
@@ -754,7 +757,7 @@ section.formula-e-event-scores {
                     border-right: none;
                 }
 
-                /* Sticky user and score columns */
+                /* Sticky user column */
                 &:first-child {
                     /* User */
                     font-weight: 600;
@@ -762,20 +765,7 @@ section.formula-e-event-scores {
                     position: sticky;
                     left: 0;
                     background: white;
-                    z-index: 5;
-                    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
-                }
-
-                &:nth-child(2) {
-                    /* Score */
-                    font-weight: 700;
-                    color: #0c4da2;
-                    font-size: 1rem;
-                    position: sticky;
-                    left: 100px;
-                    background: white;
-                    z-index: 5;
-                    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+                    z-index: 105;
                 }
 
                 /* Styling for scoring predictions */

@@ -30,21 +30,27 @@ import Types.Leaderboard exposing (Leaderboard)
 application : Model key -> Browser.Document Msg
 application model =
     let
-        contents : List (Html Msg)
-        contents =
+        pageDetails : { class : String, contents : List (Html Msg) }
+        pageDetails =
             case model.route of
                 Route.Home ->
-                    [ Html.h1
-                        []
-                        [ Html.text "Welcome to Pole Prediction!" ]
-                    ]
+                    { class = "home-page"
+                    , contents =
+                        [ Html.h1
+                            []
+                            [ Html.text "Welcome to Pole Prediction!" ]
+                        ]
+                    }
 
                 Route.Login ->
-                    [ Html.h1
-                        []
-                        [ Html.text "Login" ]
-                    , Components.Login.view model.loginForm
-                    ]
+                    { class = "login-page"
+                    , contents =
+                        [ Html.h1
+                            []
+                            [ Html.text "Login" ]
+                        , Components.Login.view model.loginForm
+                        ]
+                    }
 
                 Route.FormulaOne mSeason ->
                     let
@@ -53,7 +59,9 @@ application model =
                             mSeason
                                 |> Maybe.withDefault Types.FormulaOne.currentSeason
                     in
-                    Pages.FormulaOneSeason.view model season
+                    { class = "formula-one-season-page"
+                    , contents = Pages.FormulaOneSeason.view model season
+                    }
 
                 Route.FormulaOneEvent season eventId ->
                     let
@@ -84,9 +92,12 @@ application model =
                                 Nothing ->
                                     Html.text "Event not found"
                     in
-                    [ info
-                    , Components.FormulaOneSessionList.view model eventId Nothing
-                    ]
+                    { class = "formula-one-event-page"
+                    , contents =
+                        [ info
+                        , Components.FormulaOneSessionList.view model eventId Nothing
+                        ]
+                    }
 
                 Route.FormulaOneSession _ eventId sessionId ->
                     let
@@ -97,12 +108,15 @@ application model =
                                 |> Helpers.Http.toMaybe
                                 |> Maybe.andThen (Helpers.List.findWith sessionId .id)
                     in
-                    case mSession of
-                        Nothing ->
-                            [ Html.text "Session not found" ]
+                    { class = "formula-one-session-page"
+                    , contents =
+                        case mSession of
+                            Nothing ->
+                                [ Html.text "Session not found" ]
 
-                        Just session ->
-                            Pages.FormulaOneSession.view model session
+                            Just session ->
+                                Pages.FormulaOneSession.view model session
+                    }
 
                 Route.FormulaE mSeason ->
                     let
@@ -208,15 +222,18 @@ application model =
                                     eventsStatus
                                 ]
                     in
-                    [ Html.h1
-                        []
-                        [ Html.text "Formula E "
-                        , Html.text season
+                    { class = "formula-e-season-page"
+                    , contents =
+                        [ Html.h1
+                            []
+                            [ Html.text "Formula E "
+                            , Html.text season
+                            ]
+                        , seasonNav
+                        , leaderboardSection
+                        , eventsSection
                         ]
-                    , seasonNav
-                    , leaderboardSection
-                    , eventsSection
-                    ]
+                    }
 
                 Route.FormulaEEvent season eventId ->
                     let
@@ -227,58 +244,68 @@ application model =
                                 |> Helpers.Http.toMaybe
                                 |> Maybe.andThen (Helpers.List.findWith eventId .id)
                     in
-                    case mEvent of
-                        Nothing ->
-                            [ Html.text "Event not found" ]
+                    { class = "formula-e-event-page"
+                    , contents =
+                        case mEvent of
+                            Nothing ->
+                                [ Html.text "Event not found" ]
 
-                        Just event ->
-                            Pages.FormulaEEvent.view model event
+                            Just event ->
+                                Pages.FormulaEEvent.view model event
+                    }
 
                 Route.Profile ->
-                    [ Html.h1
-                        []
-                        [ Html.text "Profile Page" ]
-                    , case Helpers.Http.toMaybe model.userStatus of
-                        Just user ->
-                            Html.dl
-                                []
-                                [ Html.dt
+                    { class = "profile-page"
+                    , contents =
+                        [ Html.h1
+                            []
+                            [ Html.text "Profile Page" ]
+                        , case Helpers.Http.toMaybe model.userStatus of
+                            Just user ->
+                                Html.dl
                                     []
-                                    [ Html.text "Username" ]
-                                , Html.dd
-                                    []
-                                    [ Html.text user.username ]
-                                , Html.dt
-                                    []
-                                    [ Html.text "Name" ]
-                                , Html.dd
-                                    []
-                                    [ Html.text user.fullname ]
-                                , Html.dt
-                                    []
-                                    [ Html.text "Logout" ]
-                                , Html.dd
-                                    []
-                                    [ Html.button
-                                        [ Attributes.class "logout-button"
-                                        , Html.Events.onClick Msg.Logout
-                                        ]
+                                    [ Html.dt
+                                        []
+                                        [ Html.text "Username" ]
+                                    , Html.dd
+                                        []
+                                        [ Html.text user.username ]
+                                    , Html.dt
+                                        []
+                                        [ Html.text "Name" ]
+                                    , Html.dd
+                                        []
+                                        [ Html.text user.fullname ]
+                                    , Html.dt
+                                        []
                                         [ Html.text "Logout" ]
+                                    , Html.dd
+                                        []
+                                        [ Html.button
+                                            [ Attributes.class "logout-button"
+                                            , Html.Events.onClick Msg.Logout
+                                            ]
+                                            [ Html.text "Logout" ]
+                                        ]
                                     ]
-                                ]
 
-                        Nothing ->
-                            Components.Login.view model.loginForm
-                    ]
+                            Nothing ->
+                                Components.Login.view model.loginForm
+                        ]
+                    }
 
                 Route.NotFound ->
-                    [ Html.text "Page not found" ]
+                    { class = "not-found-page"
+                    , contents = [ Html.text "Page not found" ]
+                    }
 
         mainElement : Html Msg
         mainElement =
             Html.node "main"
-                [ Attributes.class "main-page" ]
-                contents
+                [ Attributes.class "main-page"
+                , Attributes.class pageDetails.class
+                ]
+                pageDetails.contents
     in
     { title = "Pole prediction"
     , body =
