@@ -13,3 +13,92 @@ body,
 p {
     font-family: 'Inter', sans-serif;
 }
+
+
+/* Navigation Bar Styling with CSS Nesting */
+aside {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #1a1a1a;
+    border-bottom: 2px solid #e10600;
+    /* F1 red accent */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+    nav {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+
+        ul {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            min-height: 60px;
+        }
+
+        li {
+            flex: 1;
+            text-align: center;
+        }
+
+        a {
+            display: block;
+            padding: 1rem 0.5rem;
+            text-decoration: none;
+            color: #ffffff;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            margin: 0 0.25rem;
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: #ffffff;
+            }
+
+            /* Active state - add this class when on the corresponding route */
+            &.active {
+                background: #e10600;
+                color: #ffffff;
+
+                &:hover {
+                    background: #c40500;
+                }
+            }
+        }
+
+        /* Medium screens and up */
+        @media (min-width: 768px) {
+            padding: 0 2rem;
+
+            ul {
+                justify-content: flex-start;
+                gap: 2rem;
+                min-height: 70px;
+            }
+
+            li {
+                flex: none;
+                text-align: left;
+            }
+
+            a {
+                font-size: 1rem;
+                padding: 1rem 1.5rem;
+                margin: 0;
+            }
+        }
+
+        /* Large screens */
+        @media (min-width: 1024px) {
+            a {
+                font-size: 1.1rem;
+            }
+        }
+    }
+}

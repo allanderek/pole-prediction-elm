@@ -1,5 +1,6 @@
 module Components.Navbar exposing (view)
 
+import Helpers.Classes
 import Helpers.Http
 import Html exposing (Html)
 import Model exposing (Model)
@@ -14,7 +15,9 @@ view model =
             Html.li
                 []
                 [ Html.a
-                    [ Route.href route ]
+                    [ Route.href route
+                    , Helpers.Classes.active (model.route == route)
+                    ]
                     [ Html.text label ]
                 ]
 

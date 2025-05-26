@@ -39,7 +39,7 @@ $ source venv/bin/activate.fish
 
 ## Backend
 - [x] Must prevent prediction entry after the sesion start time
-- [ ] Must not give back any predictions, other than the current user's *before* the session start time.
+- [x] Must not give back any predictions, other than the current user's *before* the session start time.
 
 ## Times
 - [x] Put the times on the formula 1 session page.
