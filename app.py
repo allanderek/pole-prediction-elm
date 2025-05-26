@@ -962,10 +962,25 @@ def get_formula_e_event_entrants(race_id):
 @app.route('/api/formula-e/race-predictions/<race_id>', method='GET')
 def get_formula_e_race_predictions(race_id):
     with db_transaction() as db:
-        return get_scored_formula_e_race_predictions(db, race_id)
+        user_id = get_user_id_from_cookie()
+        return get_scored_formula_e_race_predictions(db, user_id, race_id)
 
-def get_scored_formula_e_race_predictions(db, race_id):
-    query = """select
+def get_scored_formula_e_race_predictions(db, user_id, race_id):
+    # Get the race details to check start time
+    race = db.execute(
+        "select date, name from races where id = ?",
+        (race_id,)
+    ).fetchone()
+    
+    if not race:
+        bottle.response.status = 404
+        return {'error': 'Event not found'}
+
+    # Check if predictions are still allowed (before session start)
+    session_started =  is_db_time_earlier_than_now(race['date'])
+    where_clause_suffix = "and predictions.user = :user_id" if not session_started else ""
+
+    query = f"""select
     user as user_id,
     users.fullname as user_name, 
     pole,
@@ -979,25 +994,28 @@ def get_scored_formula_e_race_predictions(db, race_id):
     safety_car
     from predictions
     join users on predictions.user = users.id
-    where race = :race_id
+    where race = :race_id {where_clause_suffix}
     """
-    prediction_rows = db.execute(query, {'race_id': race_id}).fetchall()
+    prediction_rows = db.execute(query, {'race_id': race_id, 'user_id': user_id}).fetchall()
 
 
-    query = """select
-    pole,
-    fam,
-    fl,
-    hgc,
-    first,
-    second,
-    third,
-    fdnf,
-    safety_car
-    from results
-    where race = :race_id
-    """
-    result_row = db.execute(query, {'race_id': race_id}).fetchone()
+    if not session_started:
+        result_row = None
+    else:
+        query = """select
+        pole,
+        fam,
+        fl,
+        hgc,
+        first,
+        second,
+        third,
+        fdnf,
+        safety_car
+        from results
+        where race = :race_id
+        """
+        result_row = db.execute(query, {'race_id': race_id}).fetchone()
 
     def transform_prediction(prediction):
         if result_row is not None:
@@ -1091,7 +1109,7 @@ def save_formula_e_race_prediction(user_id, race_id):
         # Return the predictions for this race, even if that is only the current user's prediction
         # Arguably, it must be otherwise we wouldn't be allowing them to save it, so we could probably
         # save work here by just returning the new prediction.
-        return get_scored_formula_e_race_predictions(db, race_id)
+        return get_scored_formula_e_race_predictions(db, user_id, race_id)
 
 @app.route('/api/formula-e/race-result/<race_id>', method='POST')
 def save_formula_e_race_result(race_id):
@@ -1133,7 +1151,7 @@ def save_formula_e_race_result(race_id):
         })
         
         # Return the predictions for this race
-        return get_scored_formula_e_race_predictions(db, race_id)
+        return get_scored_formula_e_race_predictions(db, admin_user_id, race_id)
 
 
 

@@ -38,7 +38,7 @@ $ source venv/bin/activate.fish
 - [ ] Check on user login/logout on multiple tabs, does that work? I doubt it, but it should, shelfnova does it well.
 
 ## Backend
-- [ ] Must prevent prediction entry after the sesion start time
+- [x] Must prevent prediction entry after the sesion start time
 - [ ] Must not give back any predictions, other than the current user's *before* the session start time.
 
 ## Times
