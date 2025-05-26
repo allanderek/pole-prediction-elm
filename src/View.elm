@@ -125,19 +125,26 @@ application model =
                                                     Just linkSeason
                                     in
                                     Html.li
-                                        [ Helpers.Classes.active (linkSeason == season) ]
+                                        []
                                         [ Html.a
                                             [ Attributes.class "season-link"
                                             , Route.href (Route.FormulaE seasonArg)
+                                            , Helpers.Classes.active (linkSeason == season)
                                             ]
                                             [ Html.text linkSeason ]
                                         ]
                             in
-                            Html.nav
-                                []
-                                [ Html.ul
+                            Html.details
+                                [ Attributes.class "season-nav" ]
+                                [ Html.summary
                                     []
-                                    (List.map viewLink [ "2024-25", "2023-24", "2022-23" ])
+                                    [ Html.text "Seasons" ]
+                                , Html.nav
+                                    []
+                                    [ Html.ul
+                                        []
+                                        (List.map viewLink [ "2024-25", "2023-24", "2022-23" ])
+                                    ]
                                 ]
 
                         leaderboardSection : Html msg
