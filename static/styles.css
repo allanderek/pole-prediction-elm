@@ -375,6 +375,46 @@ section {
     .events-list a {
         font-size: 1.1rem;
     }
+
+    section.section {
+        h2 {
+            font-size: 2.2rem;
+        }
+
+        .event-country,
+        .event-circuit {
+            font-size: 1.3rem;
+        }
+
+        .event-date .time {
+            font-size: 1.2rem;
+        }
+    }
+
+    fieldset {
+        .formula-e-event-entrant-selector {
+            label {
+                min-width: 120px;
+                font-size: 1rem;
+            }
+
+            .formula-e-event-entrant-select {
+                font-size: 1rem;
+            }
+        }
+
+        div:has(input[type="radio"])>label:first-child {
+            min-width: 120px;
+        }
+    }
+
+    .scores-table {
+        min-width: 1000px;
+
+        tbody td {
+            font-size: 0.9rem;
+        }
+    }
 }
 
 @media (min-width: 1024px) {
@@ -398,5 +438,372 @@ section {
     .events {
         grid-column: 1;
         grid-row: 2 / -1;
+    }
+
+    .scores-table {
+        min-width: 1200px;
+
+        thead th {
+            font-size: 1rem;
+        }
+
+        tbody td {
+            font-size: 0.95rem;
+            padding: 1rem 0.75rem;
+        }
+    }
+}
+
+/* Print styles for scores table */
+@media print {
+    .scores-section .table-wrapper {
+        overflow: visible;
+    }
+
+    .scores-table {
+        min-width: auto;
+        width: 100%;
+        font-size: 0.7rem;
+
+        thead th,
+        tbody td {
+            padding: 0.5rem 0.25rem;
+        }
+    }
+}
+
+
+/* Formula E Event Page Styling */
+
+
+/* Event Information Section */
+section.section {
+    h2 {
+        margin: 0 0 1rem 0;
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, #0c4da2 0%, #00d9ff 100%);
+        color: white;
+        font-size: 1.8rem;
+        font-weight: 700;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .event-country {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #666;
+        margin: 1rem 1.5rem 0.5rem 1.5rem;
+    }
+
+    .event-circuit {
+        font-size: 1.2rem;
+        font-weight: 500;
+        color: #333;
+        margin: 0 1.5rem 1rem 1.5rem;
+    }
+
+    .event-date {
+        margin: 0 1.5rem 1.5rem 1.5rem;
+
+        .time {
+            display: inline-block;
+            font-weight: 600;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            padding: 0.75rem 1.25rem;
+            border-radius: 20px;
+            border: 1px solid #ffeaa7;
+        }
+    }
+}
+
+/* Prediction/Result Entry Forms */
+fieldset {
+    border: 3px solid;
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 0 0 2rem 0;
+    position: relative;
+
+    legend {
+        font-size: 1.3rem;
+        font-weight: 700;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        color: white;
+    }
+
+    /* Prediction Entry Styling */
+    &.prediction-entry {
+        background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+        border-color: #28a745;
+
+        legend {
+            background: #28a745;
+        }
+    }
+
+    /* Result Entry Styling */
+    &.result-entry {
+        background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+        border-color: #ffc107;
+
+        legend {
+            background: #ffc107;
+            color: #333;
+        }
+    }
+
+    .formula-e-event-entrant-selector {
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        label {
+            font-weight: 600;
+            color: #333;
+            min-width: 100px;
+            font-size: 0.95rem;
+        }
+
+        .formula-e-event-entrant-select {
+            flex: 1;
+            padding: 0.75rem;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            background: white;
+            transition: all 0.2s ease;
+
+            &:focus {
+                outline: none;
+                border-color: #0c4da2;
+                box-shadow: 0 0 0 3px rgba(12, 77, 162, 0.1);
+            }
+
+            &:hover {
+                border-color: #adb5bd;
+            }
+        }
+    }
+
+    /* Safety car radio buttons */
+    div:has(input[type="radio"]) {
+        margin: 1.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+
+        >label:first-child {
+            font-weight: 600;
+            color: #333;
+            min-width: 100px;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 4px;
+            transition: background 0.2s ease;
+
+            &:hover {
+                background: rgba(0, 0, 0, 0.05);
+            }
+
+            input[type="radio"] {
+                margin: 0;
+                cursor: pointer;
+            }
+        }
+    }
+
+    button {
+        background: #0c4da2;
+        color: white;
+        padding: 0.875rem 2.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-top: 1rem;
+
+        &:hover {
+            background: #094080;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(12, 77, 162, 0.3);
+        }
+
+        &:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(12, 77, 162, 0.3);
+        }
+
+        &:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+    }
+}
+
+/* Scores Table Section */
+.scores-section {
+
+    /* Wrapper to handle horizontal scroll */
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+        /* Custom scrollbar styling */
+        &::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #0c4da2;
+            border-radius: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background: #094080;
+        }
+    }
+
+    .scores-table {
+        width: 100%;
+        min-width: 800px;
+        /* Ensure minimum width for readability */
+        border-collapse: collapse;
+        background: white;
+        margin: 0;
+
+        thead {
+            background: linear-gradient(135deg, #0c4da2 0%, #00d9ff 100%);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+
+            th {
+                padding: 1rem 0.75rem;
+                text-align: left;
+                font-weight: 600;
+                color: white;
+                font-size: 0.9rem;
+                white-space: nowrap;
+                border-right: 1px solid rgba(255, 255, 255, 0.2);
+
+                &:last-child {
+                    border-right: none;
+                }
+
+                /* Fixed width columns for consistency */
+                &:first-child {
+                    /* User */
+                    width: 100px;
+                    position: sticky;
+                    left: 0;
+                    background: #0c4da2;
+                    z-index: 11;
+                }
+
+                &:nth-child(2) {
+                    /* Score */
+                    width: 80px;
+                    position: sticky;
+                    left: 100px;
+                    background: #0c4da2;
+                    z-index: 11;
+                }
+            }
+        }
+
+        tbody {
+            tr {
+                border-bottom: 1px solid #dee2e6;
+                transition: background 0.2s ease;
+
+                &:hover {
+                    background: #f8f9fa;
+                }
+
+                &:last-child {
+                    border-bottom: none;
+                }
+            }
+
+            td {
+                padding: 0.75rem;
+                color: #333;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                border-right: 1px solid #dee2e6;
+
+                &:last-child {
+                    border-right: none;
+                }
+
+                /* Sticky user and score columns */
+                &:first-child {
+                    /* User */
+                    font-weight: 600;
+                    color: #0c4da2;
+                    position: sticky;
+                    left: 0;
+                    background: white;
+                    z-index: 5;
+                    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+                }
+
+                &:nth-child(2) {
+                    /* Score */
+                    font-weight: 700;
+                    color: #0c4da2;
+                    font-size: 1rem;
+                    position: sticky;
+                    left: 100px;
+                    background: white;
+                    z-index: 5;
+                    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+                }
+
+                /* Styling for scoring predictions */
+                b,
+                .scored {
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    color: #155724;
+                    font-weight: 700;
+                    padding: 0.25rem 0.5rem;
+                    border-radius: 4px;
+                    border: 1px solid #c3e6cb;
+                    display: inline-block;
+                    width: 100%;
+                    box-sizing: border-box;
+                }
+            }
+
+            /* Hover effect for sticky columns */
+            tr:hover {
+
+                td:first-child,
+                td:nth-child(2) {
+                    background: #f8f9fa;
+                }
+            }
+        }
     }
 }

@@ -412,9 +412,23 @@ viewInput model eventId user kind entrants =
             Html.legend
                 []
                 [ Html.text text ]
+
+        fieldsetClass : Html.Attribute msg
+        fieldsetClass =
+            let
+                className : String
+                className =
+                    case kind of
+                        Prediction ->
+                            "prediction-entry"
+
+                        Result ->
+                            "result-entry"
+            in
+            Html.Attributes.class className
     in
     Html.fieldset
-        []
+        [ fieldsetClass ]
         [ legend
         , viewSelector { label = "Pole", current = current.pole, onInput = Msg.SetPole }
         , viewSelector { label = "FAM", current = current.fam, onInput = Msg.SetFam }
