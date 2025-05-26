@@ -378,10 +378,26 @@ def get_formula_one_session_entrants(session_id):
 @app.route('/api/formula-one/session-leaderboard/<session_id>', method='GET')
 def get_formula_one_session_leaderboard(session_id):
     with db_transaction() as db:
-        return get_formula_one_session_scored_predictions(db, session_id)
+        user_id = get_user_id_from_cookie()
+        return get_formula_one_session_scored_predictions(db, user_id, session_id)
 
-def get_formula_one_session_scored_predictions(db, session_id):
-    query = """with 
+def get_formula_one_session_scored_predictions(db, user_id, session_id):
+    # Get the session details to check start time
+    session = db.execute(
+        "select start_time, name from formula_one_sessions where id = ?",
+        (session_id,)
+    ).fetchone()
+    
+    if not session:
+        bottle.response.status = 404
+        return {'error': 'Session not found'}
+    
+    # Check if predictions are still allowed (before session start)
+    session_started = is_db_time_earlier_than_now(session['start_time'])
+    where_clause_suffix = "and formula_one_prediction_lines.user = :user_id" if not session_started else ""
+
+
+    query = f"""with 
     all_predictions as (
         select 
             user,
@@ -390,7 +406,7 @@ def get_formula_one_session_scored_predictions(db, session_id):
             position,
             fastest_lap
         from formula_one_prediction_lines
-        where formula_one_prediction_lines.session = :session_id
+        where formula_one_prediction_lines.session = :session_id {where_clause_suffix}
     ),
     session_results as (
         select 
@@ -443,7 +459,7 @@ order by
     user_name,
     ap.position
 ;"""
-    rows = db.execute(query, {'session_id': session_id}).fetchall()
+    rows = db.execute(query, {'session_id': session_id, 'user_id': user_id}).fetchall()
 
     return json.dumps([ dict(row) for row in rows])
 
@@ -476,7 +492,7 @@ def save_formula_one_prediction(user_id, session_id):
         # Get fastest lap prediction, could be None
         fastest_lap = prediction_data.get('fastest_lap')
 
-        # First, get the session details to check start time
+        # Get the session details to check start time
         session = db.execute(
             "select start_time, name from formula_one_sessions where id = ?",
             (session_id,)
@@ -569,8 +585,8 @@ def save_formula_one_session_result(session_id):
         """
         
         db.executemany(query, rows_to_insert)
-        # Now we do not wish to return the new session leaderboard 
-        return get_formula_one_session_scored_predictions(db, session_id)
+        # Now we wish to return the new session leaderboard 
+        return get_formula_one_session_scored_predictions(db, admin_user_id, session_id)
 
 @app.route('/api/formula-one/leaderboard/<season>', method='GET')
 def get_formula_one_leaderboard(season):
