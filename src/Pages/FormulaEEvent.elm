@@ -50,196 +50,193 @@ view model event =
                   }
                 ]
 
-        mainContent : Html Msg
+        mainContent : List (Html Msg)
         mainContent =
-            let
-                entrantsStatus : Helpers.Http.Status (List Types.FormulaE.Entrant)
-                entrantsStatus =
-                    Dict.get event.id model.formulaEEventEntrants
-                        |> Maybe.withDefault Helpers.Http.Ready
+            case event.cancelled of
+                True ->
+                    [ Html.p
+                        [ Helpers.Attributes.role "alert"
+                        , Html.Attributes.class "event-cancelled"
+                        ]
+                        [ Html.text "This event has been cancelled." ]
+                    ]
 
-                mUser : Maybe User
-                mUser =
-                    Helpers.Http.toMaybe model.userStatus
+                False ->
+                    let
+                        entrantsStatus : Helpers.Http.Status (List Types.FormulaE.Entrant)
+                        entrantsStatus =
+                            Dict.get event.id model.formulaEEventEntrants
+                                |> Maybe.withDefault Helpers.Http.Ready
 
-                viewMain : List Types.FormulaE.Entrant -> Html Msg
-                viewMain entrants =
-                    case Helpers.Time.isEarlier model.now event.startTime of
-                        True ->
-                            case mUser of
-                                Nothing ->
-                                    Components.Login.youMustBeLoggedInTo "to make predictions"
+                        mUser : Maybe User
+                        mUser =
+                            Helpers.Http.toMaybe model.userStatus
 
-                                Just user ->
-                                    viewInput model event.id user Prediction entrants
+                        viewMain : List Types.FormulaE.Entrant -> List (Html Msg)
+                        viewMain entrants =
+                            case Helpers.Time.isEarlier model.now event.startTime of
+                                True ->
+                                    case mUser of
+                                        Nothing ->
+                                            [ Components.Login.youMustBeLoggedInTo "to make predictions" ]
 
-                        False ->
-                            let
-                                leaderboardStatus : Helpers.Http.Status Types.FormulaE.EventLeaderboard
-                                leaderboardStatus =
-                                    Dict.get event.id model.formulaEEventLeaderboards
-                                        |> Maybe.withDefault Helpers.Http.Ready
+                                        Just user ->
+                                            [ viewInput model event.id user Prediction entrants ]
 
-                                viewLeaderboard : Html Msg
-                                viewLeaderboard =
+                                False ->
                                     let
-                                        withLeaderboard : Types.FormulaE.EventLeaderboard -> Html Msg
-                                        withLeaderboard leaderboard =
+                                        leaderboardStatus : Helpers.Http.Status Types.FormulaE.EventLeaderboard
+                                        leaderboardStatus =
+                                            Dict.get event.id model.formulaEEventLeaderboards
+                                                |> Maybe.withDefault Helpers.Http.Ready
+
+                                        viewLeaderboard : Html Msg
+                                        viewLeaderboard =
                                             let
-                                                viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
-                                                viewRow scoredPrediction =
+                                                withLeaderboard : Types.FormulaE.EventLeaderboard -> Html Msg
+                                                withLeaderboard leaderboard =
                                                     let
-                                                        scoredAttribute : Bool -> Html.Attribute msg
-                                                        scoredAttribute scored =
-                                                            Helpers.Classes.boolean "scored" "not-scored" scored
-
-                                                        matchesResult : (Types.FormulaE.Prediction -> a) -> a -> Bool
-                                                        matchesResult getResultValue predictionValue =
-                                                            leaderboard.result
-                                                                |> Maybe.map getResultValue
-                                                                |> Maybe.map ((==) predictionValue)
-                                                                |> Maybe.withDefault False
-
-                                                        entrantCell : (Types.FormulaE.Prediction -> Types.FormulaE.EntrantId) -> Html Msg
-                                                        entrantCell getEntrantId =
+                                                        viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
+                                                        viewRow scoredPrediction =
                                                             let
-                                                                entrantId : Types.FormulaE.EntrantId
-                                                                entrantId =
-                                                                    getEntrantId prediction
-                                                            in
-                                                            case Helpers.List.findWith entrantId .id entrants of
-                                                                Just entrant ->
-                                                                    Html.div
-                                                                        [ scoredAttribute <|
-                                                                            matchesResult getEntrantId entrantId
-                                                                        ]
-                                                                        [ Html.span
-                                                                            [ Html.Attributes.class "driver-name" ]
-                                                                            [ Html.text entrant.driver ]
-                                                                        , Html.span
-                                                                            [ Html.Attributes.class "team-name" ]
-                                                                            [ Html.text entrant.teamShortName ]
-                                                                        ]
-                                                                        |> Helpers.Table.cell
+                                                                scoredAttribute : Bool -> Html.Attribute msg
+                                                                scoredAttribute scored =
+                                                                    Helpers.Classes.boolean "scored" "not-scored" scored
 
-                                                                Nothing ->
-                                                                    Helpers.Table.stringCell "Unknown - driver"
+                                                                matchesResult : (Types.FormulaE.Prediction -> a) -> a -> Bool
+                                                                matchesResult getResultValue predictionValue =
+                                                                    leaderboard.result
+                                                                        |> Maybe.map getResultValue
+                                                                        |> Maybe.map ((==) predictionValue)
+                                                                        |> Maybe.withDefault False
 
-                                                        prediction : Types.FormulaE.Prediction
-                                                        prediction =
-                                                            scoredPrediction.prediction
-
-                                                        safetyCar : Html Msg
-                                                        safetyCar =
-                                                            let
-                                                                value : String
-                                                                value =
-                                                                    case prediction.safetyCar of
-                                                                        Just True ->
-                                                                            "Yes"
-
-                                                                        Just False ->
-                                                                            "No"
+                                                                entrantCell : (Types.FormulaE.Prediction -> Types.FormulaE.EntrantId) -> Html Msg
+                                                                entrantCell getEntrantId =
+                                                                    let
+                                                                        entrantId : Types.FormulaE.EntrantId
+                                                                        entrantId =
+                                                                            getEntrantId prediction
+                                                                    in
+                                                                    case Helpers.List.findWith entrantId .id entrants of
+                                                                        Just entrant ->
+                                                                            Html.div
+                                                                                [ scoredAttribute <|
+                                                                                    matchesResult getEntrantId entrantId
+                                                                                ]
+                                                                                [ Html.span
+                                                                                    [ Html.Attributes.class "driver-name" ]
+                                                                                    [ Html.text entrant.driver ]
+                                                                                , Html.span
+                                                                                    [ Html.Attributes.class "team-name" ]
+                                                                                    [ Html.text entrant.teamShortName ]
+                                                                                ]
+                                                                                |> Helpers.Table.cell
 
                                                                         Nothing ->
-                                                                            "-"
+                                                                            Helpers.Table.stringCell "Unknown - driver"
 
-                                                                scoresPoints : Bool
-                                                                scoresPoints =
-                                                                    (prediction.safetyCar /= Nothing)
-                                                                        && matchesResult .safetyCar prediction.safetyCar
+                                                                prediction : Types.FormulaE.Prediction
+                                                                prediction =
+                                                                    scoredPrediction.prediction
+
+                                                                safetyCar : Html Msg
+                                                                safetyCar =
+                                                                    let
+                                                                        value : String
+                                                                        value =
+                                                                            case prediction.safetyCar of
+                                                                                Just True ->
+                                                                                    "Yes"
+
+                                                                                Just False ->
+                                                                                    "No"
+
+                                                                                Nothing ->
+                                                                                    "-"
+
+                                                                        scoresPoints : Bool
+                                                                        scoresPoints =
+                                                                            (prediction.safetyCar /= Nothing)
+                                                                                && matchesResult .safetyCar prediction.safetyCar
+                                                                    in
+                                                                    Html.span
+                                                                        [ scoredAttribute scoresPoints ]
+                                                                        [ Html.text value ]
+                                                                        |> Helpers.Table.cell
                                                             in
-                                                            Html.span
-                                                                [ scoredAttribute scoresPoints ]
-                                                                [ Html.text value ]
-                                                                |> Helpers.Table.cell
+                                                            Html.tr
+                                                                []
+                                                                [ Helpers.Table.stringCell scoredPrediction.userName
+                                                                , Helpers.Table.intCell scoredPrediction.score
+                                                                , entrantCell .pole
+                                                                , entrantCell .fam
+                                                                , entrantCell .fastestLap
+                                                                , entrantCell .hgc
+                                                                , entrantCell .first
+                                                                , entrantCell .second
+                                                                , entrantCell .third
+                                                                , entrantCell .fdnf
+                                                                , safetyCar
+                                                                ]
                                                     in
-                                                    Html.tr
-                                                        []
-                                                        [ Helpers.Table.stringCell scoredPrediction.userName
-                                                        , Helpers.Table.intCell scoredPrediction.score
-                                                        , entrantCell .pole
-                                                        , entrantCell .fam
-                                                        , entrantCell .fastestLap
-                                                        , entrantCell .hgc
-                                                        , entrantCell .first
-                                                        , entrantCell .second
-                                                        , entrantCell .third
-                                                        , entrantCell .fdnf
-                                                        , safetyCar
-                                                        ]
-                                            in
-                                            Html.div
-                                                [ Html.Attributes.class "table-wrapper" ]
-                                                [ Html.table
-                                                    [ Html.Attributes.class "scores-table" ]
-                                                    [ Html.thead
-                                                        []
-                                                        [ Helpers.Table.headerRow
-                                                            [ "User"
-                                                            , "Score"
-                                                            , "Pole"
-                                                            , "FAM"
-                                                            , "FL"
-                                                            , "HGC"
-                                                            , "First"
-                                                            , "Second"
-                                                            , "Third"
-                                                            , "FDNF"
-                                                            , "Safety car"
+                                                    Html.div
+                                                        [ Html.Attributes.class "table-wrapper" ]
+                                                        [ Html.table
+                                                            [ Html.Attributes.class "scores-table" ]
+                                                            [ Html.thead
+                                                                []
+                                                                [ Helpers.Table.headerRow
+                                                                    [ "User"
+                                                                    , "Score"
+                                                                    , "Pole"
+                                                                    , "FAM"
+                                                                    , "FL"
+                                                                    , "HGC"
+                                                                    , "First"
+                                                                    , "Second"
+                                                                    , "Third"
+                                                                    , "FDNF"
+                                                                    , "Safety car"
+                                                                    ]
+                                                                ]
+                                                            , Html.tbody
+                                                                []
+                                                                (List.map viewRow leaderboard.predictions)
                                                             ]
                                                         ]
-                                                    , Html.tbody
-                                                        []
-                                                        (List.map viewRow leaderboard.predictions)
-                                                    ]
+                                            in
+                                            Components.Section.view
+                                                { title = "Session scores"
+                                                , class = "formula-e-event-scores"
+                                                }
+                                                [ Components.HttpStatus.view
+                                                    { viewFn = withLeaderboard
+                                                    , failedMessage = "Error obtaining the event leaderboard"
+                                                    }
+                                                    leaderboardStatus
                                                 ]
                                     in
-                                    Components.Section.view
-                                        { title = "Session scores"
-                                        , class = "formula-e-event-scores"
-                                        }
-                                        [ Components.HttpStatus.view
-                                            { viewFn = withLeaderboard
-                                            , failedMessage = "Error obtaining the event leaderboard"
-                                            }
-                                            leaderboardStatus
-                                        ]
-                            in
-                            case mUser of
-                                Nothing ->
-                                    viewLeaderboard
+                                    case mUser of
+                                        Nothing ->
+                                            [ viewLeaderboard ]
 
-                                Just user ->
-                                    case user.isAdmin of
-                                        False ->
-                                            viewLeaderboard
+                                        Just user ->
+                                            case user.isAdmin of
+                                                False ->
+                                                    [ viewLeaderboard ]
 
-                                        True ->
-                                            Html.div
-                                                []
-                                                [ viewInput model event.id user Result entrants
-                                                , viewLeaderboard
-                                                ]
-            in
-            Components.HttpStatus.view
-                { viewFn = viewMain
-                , failedMessage = "Error obtaining the event entrant information"
-                }
-                entrantsStatus
+                                                True ->
+                                                    [ viewInput model event.id user Result entrants
+                                                    , viewLeaderboard
+                                                    ]
+                    in
+                    Components.HttpStatus.viewList
+                        { viewFn = viewMain
+                        , failedMessage = "Error obtaining the event entrant information"
+                        }
+                        entrantsStatus
     in
-    [ info
-    , case event.cancelled of
-        True ->
-            Html.div
-                [ Helpers.Attributes.role "alert"
-                , Html.Attributes.class "event-cancelled"
-                ]
-                [ Html.text "This event has been cancelled." ]
-
-        False ->
-            mainContent
-    ]
+    info :: mainContent
 
 
 type InputKind
