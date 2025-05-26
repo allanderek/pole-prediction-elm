@@ -189,7 +189,7 @@ application model =
                                 viewEvents : List Types.FormulaE.Event -> Html msg
                                 viewEvents events =
                                     Html.ul
-                                        []
+                                        [ Attributes.class "events-list" ]
                                         (List.map viewEvent events)
                             in
                             Components.Section.view "Events"

@@ -56,6 +56,9 @@ $ source venv/bin/activate.fish
 - [ ] On the event page, consider smarter displaying of the session times, probably do not need to show the year, and only  show the month if it differs from the start time of the event.
 - [ ] For prediction entry, consider  countdown,  but that risks someone attempting to do so at the last second and expecting it to work, so either have a bit of a delay on the backend, or maybe not.
 
+## Formula E
+- [ ] Should be a link back to the season page
+
 ## Formula E input
 
 - [x] Allow submitting a prediction/result and saving it to the database.

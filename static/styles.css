@@ -215,7 +215,7 @@ section {
 }
 
 /* Leaderboard table */
-.leaderboard-table {
+.leaderboard {
     width: 100%;
     border-collapse: collapse;
     margin: 0;
@@ -362,7 +362,7 @@ section {
         font-size: 1.1rem;
     }
 
-    .leaderboard-table {
+    .leaderboard {
         thead th {
             font-size: 1rem;
         }
