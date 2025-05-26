@@ -67,7 +67,9 @@ application model =
                             case mEvent of
                                 Just event ->
                                     Components.Info.view
-                                        (Types.FormulaOne.eventName event)
+                                        { title = Types.FormulaOne.eventName event
+                                        , class = "formula-one-event-info"
+                                        }
                                         [ { class = "event-round"
                                           , content =
                                                 String.fromInt event.round
@@ -155,7 +157,10 @@ application model =
                                     Dict.get season model.formulaELeaderboards
                                         |> Maybe.withDefault Helpers.Http.Ready
                             in
-                            Components.Section.view "Leaderboard"
+                            Components.Section.view
+                                { title = "Leaderboard"
+                                , class = "formula-e-leaderboard"
+                                }
                                 [ Components.HttpStatus.view
                                     { viewFn = Components.Leaderboard.view { firstColumn = "Team" }
                                     , failedMessage = "Error obtaining the leaderboard"
@@ -192,7 +197,10 @@ application model =
                                         [ Attributes.class "events-list" ]
                                         (List.map viewEvent events)
                             in
-                            Components.Section.view "Events"
+                            Components.Section.view
+                                { title = "Events"
+                                , class = "formula-e-events"
+                                }
                                 [ Components.HttpStatus.view
                                     { viewFn = viewEvents
                                     , failedMessage = "Error obtaining the events"

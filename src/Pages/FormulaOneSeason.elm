@@ -82,7 +82,7 @@ view model season =
                         eventsStatus
                     ]
             in
-            Components.Section.view "Events" content
+            Components.Section.view { title = "Events", class = "formula-one-events" } content
 
         leaderboardSection : Html Msg
         leaderboardSection =
@@ -101,7 +101,7 @@ view model season =
                         leaderboardStatus
                     ]
             in
-            Components.Section.view "Leaderboard" content
+            Components.Section.view { title = "Leaderboard", class = "formula-one-leaderboard" } content
 
         driverStandingsSection : Html Msg
         driverStandingsSection =
@@ -120,7 +120,7 @@ view model season =
                         driverStandingsStatus
                     ]
             in
-            Components.Section.view "Driver Standings" content
+            Components.Section.view { title = "Driver Standings", class = "formula-one-driver-standings" } content
 
         constructorStandingsSection : Html Msg
         constructorStandingsSection =
@@ -139,7 +139,7 @@ view model season =
                         constructorStandingsStatus
                     ]
             in
-            Components.Section.view "Constructor Standings" content
+            Components.Section.view { title = "Constructor Standings", class = "formula-one-constructor-standings" } content
 
         seasonLeaderboardSection : Html Msg
         seasonLeaderboardSection =
@@ -204,7 +204,7 @@ view model season =
                         seasonLeaderboardStatus
                     ]
             in
-            Components.Section.view "Season Leaderboard" content
+            Components.Section.view { title = "Season Leaderboard", class = "formula-one-season-leaderboard" } content
     in
     [ Html.h1
         []

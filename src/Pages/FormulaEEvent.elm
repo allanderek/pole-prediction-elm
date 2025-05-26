@@ -30,7 +30,9 @@ view model event =
         info : Html msg
         info =
             Components.Info.view
-                event.name
+                { title = event.name
+                , class = "formula-e-event-info"
+                }
                 [ { class = "event-country"
                   , content = Html.text event.country
                   }
@@ -170,30 +172,36 @@ view model event =
                                                         , safetyCar
                                                         ]
                                             in
-                                            Html.table
-                                                []
-                                                [ Html.thead
-                                                    []
-                                                    [ Helpers.Table.headerRow
-                                                        [ "User"
-                                                        , "Score"
-                                                        , "Pole"
-                                                        , "FAM"
-                                                        , "FL"
-                                                        , "HGC"
-                                                        , "First"
-                                                        , "Second"
-                                                        , "Third"
-                                                        , "FDNF"
-                                                        , "Safety car"
+                                            Html.div
+                                                [ Html.Attributes.class "table-wrapper" ]
+                                                [ Html.table
+                                                    [ Html.Attributes.class "scores-table" ]
+                                                    [ Html.thead
+                                                        []
+                                                        [ Helpers.Table.headerRow
+                                                            [ "User"
+                                                            , "Score"
+                                                            , "Pole"
+                                                            , "FAM"
+                                                            , "FL"
+                                                            , "HGC"
+                                                            , "First"
+                                                            , "Second"
+                                                            , "Third"
+                                                            , "FDNF"
+                                                            , "Safety car"
+                                                            ]
                                                         ]
+                                                    , Html.tbody
+                                                        []
+                                                        (List.map viewRow leaderboard.predictions)
                                                     ]
-                                                , Html.tbody
-                                                    []
-                                                    (List.map viewRow leaderboard.predictions)
                                                 ]
                                     in
-                                    Components.Section.view "Session scores"
+                                    Components.Section.view
+                                        { title = "Session scores"
+                                        , class = "formula-e-event-scores"
+                                        }
                                         [ Components.HttpStatus.view
                                             { viewFn = withLeaderboard
                                             , failedMessage = "Error obtaining the event leaderboard"

@@ -11,8 +11,8 @@ type alias Item msg =
     }
 
 
-view : String -> List (Item msg) -> Html msg
-view title items =
+view : Components.Section.Config -> List (Item msg) -> Html msg
+view config items =
     let
         viewItem : Item msg -> Html msg
         viewItem item =
@@ -20,5 +20,5 @@ view title items =
                 [ Html.Attributes.class item.class ]
                 [ item.content ]
     in
-    Components.Section.view title
+    Components.Section.view config
         (List.map viewItem items)

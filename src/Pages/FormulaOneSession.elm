@@ -33,7 +33,9 @@ view model session =
                         |> Maybe.andThen (Helpers.List.findWith session.eventId .id)
             in
             Components.Info.view
-                session.name
+                { title = session.name
+                , class = "formula-one-session-info"
+                }
                 [ { class = "session-start-time"
                   , content = Components.Time.longFormat model.zone session.startTime
                   }
@@ -83,7 +85,10 @@ view model session =
                             Model.getFormulaOneCurrentSessionPrediction model session.id
                                 |> Maybe.withDefault entrants
                     in
-                    Components.Section.view "Prediction entry"
+                    Components.Section.view
+                        { title = "Prediction entry"
+                        , class = "formula-one-session-prediction-entry"
+                        }
                         [ Components.FormulaOneSessionEntry.view
                             { kind = Components.FormulaOneSessionEntry.Prediction
                             , user = user
@@ -116,7 +121,10 @@ view model session =
                                     Model.getFormulaOneCurrentSessionResults model session.id
                                         |> Maybe.withDefault entrants
                             in
-                            Components.Section.view "Results entry"
+                            Components.Section.view
+                                { title = "Results entry"
+                                , class = "formula-one-session-results-entry"
+                                }
                                 [ Components.FormulaOneSessionEntry.view
                                     { kind = Components.FormulaOneSessionEntry.Result
                                     , user = user
@@ -207,7 +215,10 @@ view model session =
                                             ]
                                         ]
                             in
-                            Components.Section.view "Leaderboard"
+                            Components.Section.view
+                                { title = "Leaderboard"
+                                , class = "formula-one-session-leaderboard"
+                                }
                                 [ Html.ul [] (List.map viewRow leaderboard.predictions) ]
                     in
                     Components.HttpStatus.view
