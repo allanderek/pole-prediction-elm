@@ -8,6 +8,7 @@ import Components.Selector
 import Components.Time
 import Dict
 import Helpers.Attributes
+import Helpers.Classes
 import Helpers.Events
 import Helpers.Http
 import Helpers.List
@@ -70,11 +71,7 @@ view model event =
                                     Components.Login.youMustBeLoggedInTo "to make predictions"
 
                                 Just user ->
-                                    Html.div
-                                        []
-                                        [ Html.h3 [] [ Html.text "Prediction Entry" ]
-                                        , viewInput model event.id user Prediction entrants
-                                        ]
+                                    viewInput model event.id user Prediction entrants
 
                         False ->
                             let
@@ -92,14 +89,9 @@ view model event =
                                                 viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
                                                 viewRow scoredPrediction =
                                                     let
-                                                        boldIf : Bool -> Html Msg -> Html Msg
-                                                        boldIf condition content =
-                                                            case condition of
-                                                                True ->
-                                                                    Html.b [] [ content ]
-
-                                                                False ->
-                                                                    content
+                                                        scoredAttribute : Bool -> Html.Attribute msg
+                                                        scoredAttribute scored =
+                                                            Helpers.Classes.boolean "scored" "not-scored" scored
 
                                                         matchesResult : (Types.FormulaE.Prediction -> a) -> a -> Bool
                                                         matchesResult getResultValue predictionValue =
@@ -117,13 +109,17 @@ view model event =
                                                             in
                                                             case Helpers.List.findWith entrantId .id entrants of
                                                                 Just entrant ->
-                                                                    [ entrant.driver
-                                                                    , " - "
-                                                                    , entrant.teamShortName
-                                                                    ]
-                                                                        |> String.concat
-                                                                        |> Html.text
-                                                                        |> boldIf (matchesResult getEntrantId entrantId)
+                                                                    Html.div
+                                                                        [ scoredAttribute <|
+                                                                            matchesResult getEntrantId entrantId
+                                                                        ]
+                                                                        [ Html.span
+                                                                            [ Html.Attributes.class "driver-name" ]
+                                                                            [ Html.text entrant.driver ]
+                                                                        , Html.span
+                                                                            [ Html.Attributes.class "team-name" ]
+                                                                            [ Html.text entrant.teamShortName ]
+                                                                        ]
                                                                         |> Helpers.Table.cell
 
                                                                 Nothing ->
@@ -153,8 +149,9 @@ view model event =
                                                                     (prediction.safetyCar /= Nothing)
                                                                         && matchesResult .safetyCar prediction.safetyCar
                                                             in
-                                                            Html.text value
-                                                                |> boldIf scoresPoints
+                                                            Html.span
+                                                                [ scoredAttribute scoresPoints ]
+                                                                [ Html.text value ]
                                                                 |> Helpers.Table.cell
                                                     in
                                                     Html.tr

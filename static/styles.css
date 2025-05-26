@@ -768,8 +768,18 @@ section.formula-e-event-scores {
                     z-index: 105;
                 }
 
+                div {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: start;
+                    gap: 0.5rem;
+
+                    .team-name {
+                        font-size: 0.65rem;
+                    }
+                }
+
                 /* Styling for scoring predictions */
-                b,
                 .scored {
                     background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
                     color: #155724;
@@ -777,7 +787,6 @@ section.formula-e-event-scores {
                     padding: 0.25rem 0.5rem;
                     border-radius: 4px;
                     border: 1px solid #c3e6cb;
-                    display: inline-block;
                     width: 100%;
                     box-sizing: border-box;
                 }
