@@ -2,9 +2,8 @@ module View exposing (application)
 
 import Browser
 import Components.EventList
-import Components.FormulaOneSessionList
+import Components.FormulaOneEventInfo
 import Components.HttpStatus
-import Components.Info
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
@@ -12,7 +11,6 @@ import Components.SeasonNav
 import Components.Section
 import Components.Time
 import Dict
-import Helpers.Classes
 import Helpers.Http
 import Helpers.List
 import Html exposing (Html)
@@ -76,29 +74,26 @@ application model =
                         info =
                             case mEvent of
                                 Just event ->
-                                    Components.Info.view
+                                    Components.FormulaOneEventInfo.view
+                                        model
                                         { title = Types.FormulaOne.eventName event
                                         , class = "formula-one-event-info"
+                                        , season = season
+                                        , start =
+                                            [ { class = "event-start-time"
+                                              , content = Components.Time.longFormat model.zone event.startTime
+                                              }
+                                            ]
+                                        , eventId = eventId
+                                        , mEvent = mEvent
+                                        , mSessionId = Nothing
                                         }
-                                        [ { class = "event-round"
-                                          , content =
-                                                String.fromInt event.round
-                                                    |> String.append "Round: "
-                                                    |> Html.text
-                                          }
-                                        , { class = "event-start-time"
-                                          , content = Components.Time.longFormat model.zone event.startTime
-                                          }
-                                        ]
 
                                 Nothing ->
                                     Html.text "Event not found"
                     in
                     { class = "formula-one-event-page"
-                    , contents =
-                        [ info
-                        , Components.FormulaOneSessionList.view model eventId Nothing
-                        ]
+                    , contents = [ info ]
                     }
 
                 Route.FormulaOneSession _ eventId sessionId ->

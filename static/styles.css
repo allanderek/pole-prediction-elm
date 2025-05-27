@@ -852,3 +852,92 @@ section.formula-e-event-scores {
         grid-area: constructor-standings;
     }
 }
+
+/* Session list container */
+.event-sessions {
+    margin: 1rem 0;
+}
+
+.event-sessions ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* Session links */
+.session-link {
+    display: block;
+    padding: 0.75rem 1rem;
+    text-decoration: none;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    background-color: #fff;
+    color: #333;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.session-link:hover {
+    border-color: #007acc;
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 122, 204, 0.1);
+}
+
+/* Current session highlighting */
+.session-link.current-session {
+    border-color: #007acc;
+    background-color: #007acc;
+    color: #fff;
+    font-weight: 600;
+}
+
+.session-link.current-session:hover {
+    background-color: #0066a3;
+    border-color: #0066a3;
+    transform: none;
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.3);
+}
+
+/* Time styling */
+.session-link .time {
+    font-weight: 400;
+    opacity: 0.9;
+}
+
+.session-link.current-session .time {
+    opacity: 1;
+    font-weight: 500;
+}
+
+/* Desktop layout - horizontal if there's space */
+@media (min-width: 768px) {
+    .event-sessions ul {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .session-link {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+    }
+}
+
+/* Large desktop - more generous spacing */
+@media (min-width: 1200px) {
+    .event-sessions {
+        margin: 1.5rem 0;
+    }
+
+    .event-sessions ul {
+        gap: 1rem;
+    }
+
+    .session-link {
+        padding: 1rem 1.5rem;
+    }
+}

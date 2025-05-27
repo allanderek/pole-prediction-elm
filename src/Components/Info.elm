@@ -1,4 +1,7 @@
-module Components.Info exposing (view)
+module Components.Info exposing
+    ( Item
+    , view
+    )
 
 import Components.Section
 import Html exposing (Html)

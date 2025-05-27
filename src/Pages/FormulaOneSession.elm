@@ -1,9 +1,8 @@
 module Pages.FormulaOneSession exposing (view)
 
+import Components.FormulaOneEventInfo
 import Components.FormulaOneSessionEntry
-import Components.FormulaOneSessionList
 import Components.HttpStatus
-import Components.Info
 import Components.Login
 import Components.Section
 import Components.Time
@@ -32,47 +31,35 @@ view model session =
                     Model.getFromStatusDict session.season model.formulaOneEvents
                         |> Maybe.andThen (Helpers.List.findWith session.eventId .id)
             in
-            Components.Info.view
+            Components.FormulaOneEventInfo.view
+                model
                 { title = session.name
                 , class = "formula-one-session-info"
+                , season = session.season
+                , start =
+                    [ { class = "session-start-time"
+                      , content = Components.Time.longFormat model.zone session.startTime
+                      }
+                    , { class = "event-name"
+                      , content =
+                            Html.a
+                                [ Route.FormulaOneEvent session.season session.eventId
+                                    |> Route.href
+                                ]
+                                [ case mEvent of
+                                    Nothing ->
+                                        Html.text "Unknown event"
+
+                                    Just event ->
+                                        Types.FormulaOne.eventName event
+                                            |> Html.text
+                                ]
+                      }
+                    ]
+                , eventId = session.eventId
+                , mEvent = mEvent
+                , mSessionId = Just session.id
                 }
-                [ { class = "session-start-time"
-                  , content = Components.Time.longFormat model.zone session.startTime
-                  }
-                , { class = "event-name"
-                  , content =
-                        case mEvent of
-                            Nothing ->
-                                Html.text "Unknown event"
-
-                            Just event ->
-                                Html.a
-                                    [ Route.FormulaOneEvent session.season event.id
-                                        |> Route.href
-                                    ]
-                                    [ Types.FormulaOne.eventName event
-                                        |> Html.text
-                                    ]
-                  }
-                , { class = "event-sessions"
-                  , content =
-                        Components.FormulaOneSessionList.view
-                            model
-                            session.eventId
-                            (Just session.id)
-                  }
-                , { class = "event-round"
-                  , content =
-                        case mEvent of
-                            Nothing ->
-                                Html.text "Unknown event"
-
-                            Just event ->
-                                String.fromInt event.round
-                                    |> String.append "Round: "
-                                    |> Html.text
-                  }
-                ]
 
         viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
         viewPredictionEntry entrants =
