@@ -1,5 +1,6 @@
 module Pages.FormulaOneSeason exposing (view)
 
+import Components.EventList
 import Components.HttpStatus
 import Components.Leaderboard
 import Components.SeasonNav
@@ -40,32 +41,13 @@ view model season =
 
                 content : List (Html Msg)
                 content =
-                    let
-                        viewEvents : List Types.FormulaOne.Event -> Html Msg
-                        viewEvents events =
-                            let
-                                viewEvent : Types.FormulaOne.Event -> Html Msg
-                                viewEvent event =
-                                    Html.li
-                                        []
-                                        [ Html.a
-                                            [ Attributes.class "event-link"
-                                            , Route.FormulaOneEvent season event.id
-                                                |> Route.href
-                                            ]
-                                            [ Types.FormulaOne.eventName event
-                                                |> Html.text
-                                            , Html.text " - "
-                                            , Components.Time.shortFormat model.zone event.startTime
-                                            ]
-                                        ]
-                            in
-                            Html.ul
-                                []
-                                (List.map viewEvent events)
-                    in
                     [ Components.HttpStatus.view
-                        { viewFn = viewEvents
+                        { viewFn =
+                            Components.EventList.view model.zone
+                                { toRoute = Route.FormulaOneEvent season << .id
+                                , toName = Types.FormulaOne.eventName
+                                , toStartTime = .startTime
+                                }
                         , failedMessage = "Error obtaining the events"
                         }
                         eventsStatus

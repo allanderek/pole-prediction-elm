@@ -1,6 +1,7 @@
 module View exposing (application)
 
 import Browser
+import Components.EventList
 import Components.FormulaOneSessionList
 import Components.HttpStatus
 import Components.Info
@@ -162,34 +163,18 @@ application model =
                                 eventsStatus =
                                     Dict.get season model.formulaEEvents
                                         |> Maybe.withDefault Helpers.Http.Ready
-
-                                viewEvent : Types.FormulaE.Event -> Html msg
-                                viewEvent event =
-                                    Html.li
-                                        []
-                                        [ Html.a
-                                            [ Attributes.class "event-link"
-                                            , Route.FormulaEEvent season event.id
-                                                |> Route.href
-                                            ]
-                                            [ Html.text event.name
-                                            , Html.text " - "
-                                            , Components.Time.shortFormat model.zone event.startTime
-                                            ]
-                                        ]
-
-                                viewEvents : List Types.FormulaE.Event -> Html msg
-                                viewEvents events =
-                                    Html.ul
-                                        [ Attributes.class "events-list" ]
-                                        (List.map viewEvent events)
                             in
                             Components.Section.view
                                 { title = "Events"
                                 , class = "formula-e-events"
                                 }
                                 [ Components.HttpStatus.view
-                                    { viewFn = viewEvents
+                                    { viewFn =
+                                        Components.EventList.view model.zone
+                                            { toRoute = Route.FormulaEEvent season << .id
+                                            , toName = .name
+                                            , toStartTime = .startTime
+                                            }
                                     , failedMessage = "Error obtaining the events"
                                     }
                                     eventsStatus
