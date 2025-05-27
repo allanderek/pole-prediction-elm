@@ -5,7 +5,6 @@ import Components.HttpStatus
 import Components.Leaderboard
 import Components.SeasonNav
 import Components.Section
-import Components.Time
 import Components.UserName
 import Dict
 import Helpers.Http
@@ -43,7 +42,7 @@ view model season =
                 content =
                     [ Components.HttpStatus.view
                         { viewFn =
-                            Components.EventList.view model.zone
+                            Components.EventList.view model
                                 { toRoute = Route.FormulaOneEvent season << .id
                                 , toName = Types.FormulaOne.eventName
                                 , toStartTime = .startTime

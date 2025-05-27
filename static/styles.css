@@ -305,38 +305,32 @@ section.section {
 
         /* Finished events styling */
         &.finished {
-            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
-            border-left-color: #28a745;
-            /* Green for completed */
-            color: #155724;
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left-color: #ffc107;
+            color: #856404;
 
             &::after {
                 content: '✓';
                 position: absolute;
                 right: 1rem;
                 top: 50%;
-                transform: translateY(-50%);
-                color: #28a745;
+                color: #ffc107;
                 font-weight: bold;
             }
         }
 
-        /* Add subtle animation for current/next event */
-        &.current {
-            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
-            border-left-color: #ffc107;
-            /* Amber for current/next */
-            color: #856404;
+        &.not-finished {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            border-left-color: #28a745;
+            color: #155724;
 
             &::after {
                 content: '→';
                 position: absolute;
                 right: 1rem;
                 top: 50%;
-                transform: translateY(-50%);
-                color: #ffc107;
+                color: #28a745;
                 font-weight: bold;
-                animation: pulse 2s infinite;
             }
         }
     }

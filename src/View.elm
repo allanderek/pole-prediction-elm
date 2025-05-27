@@ -170,7 +170,7 @@ application model =
                                 }
                                 [ Components.HttpStatus.view
                                     { viewFn =
-                                        Components.EventList.view model.zone
+                                        Components.EventList.view model
                                             { toRoute = Route.FormulaEEvent season << .id
                                             , toName = .name
                                             , toStartTime = .startTime
