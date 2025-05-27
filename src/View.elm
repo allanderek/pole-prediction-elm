@@ -7,6 +7,7 @@ import Components.Info
 import Components.Leaderboard
 import Components.Login
 import Components.Navbar
+import Components.SeasonNav
 import Components.Section
 import Components.Time
 import Dict
@@ -127,41 +128,13 @@ application model =
 
                         seasonNav : Html msg
                         seasonNav =
-                            let
-                                viewLink : Types.FormulaE.Season -> Html msg
-                                viewLink linkSeason =
-                                    let
-                                        seasonArg : Maybe Types.FormulaE.Season
-                                        seasonArg =
-                                            case linkSeason == Types.FormulaE.currentSeason of
-                                                True ->
-                                                    Nothing
-
-                                                False ->
-                                                    Just linkSeason
-                                    in
-                                    Html.li
-                                        []
-                                        [ Html.a
-                                            [ Attributes.class "season-link"
-                                            , Route.href (Route.FormulaE seasonArg)
-                                            , Helpers.Classes.active (linkSeason == season)
-                                            ]
-                                            [ Html.text linkSeason ]
-                                        ]
-                            in
-                            Html.details
-                                [ Attributes.class "season-nav" ]
-                                [ Html.summary
-                                    []
-                                    [ Html.text "Seasons" ]
-                                , Html.nav
-                                    []
-                                    [ Html.ul
-                                        []
-                                        (List.map viewLink [ "2024-25", "2023-24", "2022-23" ])
-                                    ]
-                                ]
+                            Components.SeasonNav.view
+                                { currentSeason = Types.FormulaE.currentSeason
+                                , viewedSeason = season
+                                , allSeasons = [ "2024-25", "2023-24", "2022-23" ]
+                                , toRoute = Route.FormulaE << Just
+                                , toName = identity
+                                }
 
                         leaderboardSection : Html msg
                         leaderboardSection =

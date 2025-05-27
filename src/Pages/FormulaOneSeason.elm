@@ -2,11 +2,11 @@ module Pages.FormulaOneSeason exposing (view)
 
 import Components.HttpStatus
 import Components.Leaderboard
+import Components.SeasonNav
 import Components.Section
 import Components.Time
 import Components.UserName
 import Dict
-import Helpers.Classes
 import Helpers.Http
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -20,26 +20,15 @@ import Types.Leaderboard exposing (Leaderboard)
 view : Model key -> Types.FormulaOne.Season -> List (Html Msg)
 view model season =
     let
-        viewLink : Types.FormulaOne.Season -> Html Msg
-        viewLink linkSeason =
-            let
-                seasonArg : Maybe Types.FormulaOne.Season
-                seasonArg =
-                    case linkSeason == Types.FormulaOne.currentSeason of
-                        True ->
-                            Nothing
-
-                        False ->
-                            Just linkSeason
-            in
-            Html.li
-                [ Helpers.Classes.active (linkSeason == season) ]
-                [ Html.a
-                    [ Attributes.class "season-link"
-                    , Route.href (Route.FormulaOne seasonArg)
-                    ]
-                    [ Html.text linkSeason ]
-                ]
+        seasonNav : Html msg
+        seasonNav =
+            Components.SeasonNav.view
+                { currentSeason = Types.FormulaOne.currentSeason
+                , viewedSeason = season
+                , allSeasons = [ "2025", "2024" ]
+                , toRoute = Route.FormulaOne << Just
+                , toName = identity
+                }
 
         eventsSection : Html Msg
         eventsSection =
@@ -211,12 +200,7 @@ view model season =
         [ Html.text "Formula One "
         , Html.text season
         ]
-    , Html.nav
-        []
-        [ Html.ul
-            []
-            (List.map viewLink [ "2025", "2024" ])
-        ]
+    , seasonNav
     , eventsSection
     , leaderboardSection
     , driverStandingsSection
