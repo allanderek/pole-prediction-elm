@@ -184,7 +184,7 @@ view model season =
     , seasonNav
     , eventsSection
     , leaderboardSection
+    , seasonLeaderboardSection
     , driverStandingsSection
     , constructorStandingsSection
-    , seasonLeaderboardSection
     ]

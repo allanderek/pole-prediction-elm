@@ -17,18 +17,16 @@ p {
 div.app {
     max-width: 1200px;
     margin: 0 auto;
-
-    /* Page layout */
-    main {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
 }
 
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
 
 /* Navigation Bar Styling with CSS Nesting */
 aside {
@@ -796,5 +794,61 @@ section.formula-e-event-scores {
                 }
             }
         }
+    }
+}
+
+
+.formula-one-season-page {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+/* Mobile-first: all sections stack vertically */
+.formula-one-season-page>* {
+    grid-column: 1;
+}
+
+/* Desktop layout */
+@media (min-width: 768px) {
+    .formula-one-season-page {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "header nav"
+            "events events"
+            "leaderboard leaderboard"
+            "season-leaderboard season-leaderboard"
+            "driver-standings constructor-standings";
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+
+    .formula-one-season-page h1 {
+        grid-area: header;
+    }
+
+    .season-nav {
+        grid-area: nav;
+    }
+
+    .formula-one-events {
+        grid-area: events;
+    }
+
+    .formula-one-leaderboard {
+        grid-area: leaderboard;
+    }
+
+    .formula-one-season-leaderboard {
+        grid-area: season-leaderboard;
+    }
+
+    .formula-one-driver-standings {
+        grid-area: driver-standings;
+    }
+
+    .formula-one-constructor-standings {
+        grid-area: constructor-standings;
     }
 }
