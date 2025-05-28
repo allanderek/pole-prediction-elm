@@ -56,6 +56,7 @@ $ source venv/bin/activate.fish
 - [ ] On the event page, consider smarter displaying of the session times, probably do not need to show the year, and only  show the month if it differs from the start time of the event.
 - [ ] For prediction entry, consider  countdown,  but that risks someone attempting to do so at the last second and expecting it to work, so either have a bit of a delay on the backend, or maybe not.
 - [ ] The events list marks events as finished if the date is after the date of the start time, but for Formula One, we do not want that, so we probably wish to have a secondary datetime on formula one events which is the start time of the last session.
+- [ ] Session leaderboards, when showing the expanded user's predictions, we don't need to show positions 10-20.
 
 ## Formula E
 - [ ] Should be a link back to the season page

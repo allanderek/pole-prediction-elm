@@ -165,10 +165,34 @@ view model session =
                                 viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
                                 viewRow leaderboardRow =
                                     let
-                                        viewScoredRow : Types.FormulaOne.ScoredPredictionRow -> Html Msg
+                                        viewScoredRow : Types.FormulaOne.ScoredPredictionRow -> Html msg
                                         viewScoredRow scoredRow =
+                                            let
+                                                pointsClass : String
+                                                pointsClass =
+                                                    case scoredRow.score of
+                                                        0 ->
+                                                            "scored-row-zero"
+
+                                                        4 ->
+                                                            "scored-row-maximum"
+
+                                                        _ ->
+                                                            "scored-row-points"
+
+                                                actualPosition : String
+                                                actualPosition =
+                                                    case scoredRow.actualPosition of
+                                                        Just position ->
+                                                            String.fromInt position
+
+                                                        Nothing ->
+                                                            "-"
+                                            in
                                             Html.tr
-                                                []
+                                                [ Attributes.class "scored-row"
+                                                , Attributes.class pointsClass
+                                                ]
                                                 [ Html.td
                                                     [ Attributes.class "scored-row-position" ]
                                                     [ Html.text (String.fromInt scoredRow.predictedPosition) ]
@@ -176,9 +200,18 @@ view model session =
                                                     [ Attributes.class "scored-row-driver" ]
                                                     [ Html.text scoredRow.entrant.driver ]
                                                 , Html.td
+                                                    [ Attributes.class "scored-row-actual-position" ]
+                                                    [ Html.text actualPosition ]
+                                                , Html.td
                                                     [ Attributes.class "scored-row-score" ]
                                                     [ Html.text (String.fromInt scoredRow.score) ]
                                                 ]
+
+                                        scoredRows : List (Html msg)
+                                        scoredRows =
+                                            leaderboardRow.rows
+                                                |> List.take 10
+                                                |> List.map viewScoredRow
                                     in
                                     Html.li
                                         []
@@ -196,9 +229,7 @@ view model session =
                                                     [ Attributes.class "total-score" ]
                                                     [ Html.text (String.fromInt leaderboardRow.total) ]
                                                 ]
-                                            , Html.table
-                                                []
-                                                (List.map viewScoredRow leaderboardRow.rows)
+                                            , Html.table [] scoredRows
                                             ]
                                         ]
                             in

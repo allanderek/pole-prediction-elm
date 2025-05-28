@@ -1107,3 +1107,172 @@ section.formula-e-event-scores {
 .formula-one-session-prediction-entry button:hover {
     background: var(--prediction-color-dark, #f57c00);
 }
+
+
+/* Formula One Session Leaderboard Styles */
+.formula-one-session-leaderboard {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.formula-one-session-leaderboard h2 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #333;
+}
+
+.formula-one-session-leaderboard ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.formula-one-session-leaderboard li {
+    margin-bottom: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Summary styling with flexbox for alignment */
+.formula-one-session-leaderboard summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+    background: #f8f9fa;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s ease;
+    font-weight: 500;
+}
+
+.formula-one-session-leaderboard summary:hover {
+    background: #e9ecef;
+}
+
+/* Remove default arrow and add custom one */
+.formula-one-session-leaderboard summary {
+    list-style: none;
+}
+
+.formula-one-session-leaderboard summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Add custom expand/collapse indicator */
+.formula-one-session-leaderboard summary::after {
+    content: '▼';
+    font-size: 0.8rem;
+    color: #666;
+    transition: transform 0.2s ease;
+    margin-left: 0.5rem;
+}
+
+.formula-one-session-leaderboard details[open] summary::after {
+    transform: rotate(180deg);
+}
+
+/* User name styling */
+.user-name {
+    flex: 1;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+/* Total score styling - fixed width for alignment */
+.total-score {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #007bff;
+    background: #e7f3ff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    min-width: 3rem;
+    text-align: center;
+}
+
+/* Prediction table styling */
+.formula-one-session-leaderboard table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    background: white;
+}
+
+.formula-one-session-leaderboard table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.formula-one-session-leaderboard table td {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+}
+
+.scored-row-position {
+    font-weight: bold;
+    color: #666;
+    width: 3rem;
+    text-align: center;
+}
+
+.scored-row-driver {
+    flex: 1;
+    color: #333;
+}
+
+.scored-row-score {
+    font-weight: bold;
+    text-align: center;
+    width: 3rem;
+    font-size: 0.85rem;
+    color: #333;
+}
+
+/* Score circle colours based on row class */
+.scored-row-zero {
+    opacity: 0.5;
+
+    .scored-row-score {
+        color: #95a5a6;
+    }
+}
+
+.scored-row-points .scored-row-score {
+    color: #f39c12;
+}
+
+.scored-row-maximum .scored-row-score {
+    color: #27ae60;
+}
+
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .formula-one-session-leaderboard {
+        padding: 0.5rem;
+    }
+
+    .formula-one-session-leaderboard summary {
+        padding: 0.75rem;
+    }
+
+    .user-name {
+        font-size: 1rem;
+    }
+
+    .total-score {
+        font-size: 1.1rem;
+        min-width: 2.5rem;
+        padding: 0.2rem 0.6rem;
+    }
+
+    .formula-one-session-leaderboard table td {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.85rem;
+    }
+}
