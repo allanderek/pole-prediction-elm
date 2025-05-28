@@ -941,3 +941,169 @@ section.formula-e-event-scores {
         padding: 1rem 1.5rem;
     }
 }
+
+
+/* Formula One Session Results/Prediction Entry Styling */
+
+.formula-one-session-results-entry sortable-list,
+.formula-one-session-prediction-entry sortable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 1rem;
+    counter-reset: entrant-counter;
+}
+
+.formula-one-session-results-entry sortable-list>div.entrant,
+.formula-one-session-prediction-entry sortable-list>div.entrant {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 4px;
+    background: var(--card-background, #ffffff);
+    border-radius: 8px;
+    border: 1px solid var(--border-color, #e0e0e0);
+    cursor: grab;
+    transition: all 0.2s ease;
+    position: relative;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    counter-increment: entrant-counter;
+}
+
+.formula-one-session-results-entry sortable-list>div:hover,
+.formula-one-session-prediction-entry sortable-list>div:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.formula-one-session-results-entry sortable-list>div:active,
+.formula-one-session-prediction-entry sortable-list>div:active {
+    cursor: grabbing;
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Entrant number styling */
+.entrant-position {
+    &::before {
+        content: counter(entrant-counter);
+    }
+
+    font-weight: 900;
+    font-size: 1.0rem;
+    min-width: 2.0em;
+    box-sizing: border-box;
+    color: var(--text-secondary, #666666);
+    text-align: center;
+    align-self: center;
+}
+
+
+/* Driver name - most prominent */
+.entrant-driver {
+    font-weight: 600;
+    font-size: 1.0rem;
+    color: var(--text-primary, #333333);
+    margin-left: 1em;
+}
+
+.entrant-number {
+    font-weight: 600;
+    font-size: 0.55em;
+    align-self: baseline;
+}
+
+/* Team name - secondary */
+.entrant-team {
+    font-size: 0.55rem;
+    margin-left: 1em;
+    align-self: last baseline;
+}
+
+
+
+/* Points-scoring positions (top 10) vs non-points positions */
+.formula-one-session-results-entry sortable-list>div:nth-child(n+11),
+.formula-one-session-prediction-entry sortable-list>div:nth-child(n+11) {
+    opacity: 0.7;
+}
+
+.formula-one-session-results-entry sortable-list>div:nth-child(n+11):hover,
+.formula-one-session-prediction-entry sortable-list>div:nth-child(n+11):hover {
+    opacity: 0.85;
+}
+
+/* Visual distinction between results and prediction entry */
+.formula-one-session-results-entry sortable-list>div {
+    background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+}
+
+.formula-one-session-prediction-entry sortable-list>div {
+    background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+
+    .formula-one-session-results-entry sortable-list>div,
+    .formula-one-session-prediction-entry sortable-list>div {
+        padding: 2px;
+        grid-template-columns: 35px 1fr auto;
+    }
+
+    .entrant-number {
+        font-size: 1rem;
+    }
+
+    .entrant-driver {
+        font-size: 0.95rem;
+    }
+
+    .entrant-team {
+        font-size: 0.8rem;
+    }
+}
+
+/* Touch device improvements */
+@media (hover: none) and (pointer: coarse) {
+
+    .formula-one-session-results-entry sortable-list>div,
+    .formula-one-session-prediction-entry sortable-list>div {
+        cursor: default;
+        padding: 14px 12px;
+    }
+
+    .formula-one-session-results-entry sortable-list>div:active,
+    .formula-one-session-prediction-entry sortable-list>div:active {
+        cursor: default;
+    }
+}
+
+/* Submit button styling */
+.formula-one-session-results-entry button,
+.formula-one-session-prediction-entry button {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary-color, #2196f3);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 1rem;
+}
+
+.formula-one-session-results-entry button:hover,
+.formula-one-session-prediction-entry button:hover {
+    background: var(--primary-color-dark, #1976d2);
+}
+
+.formula-one-session-prediction-entry button {
+    background: var(--prediction-color, #ff9800);
+}
+
+.formula-one-session-prediction-entry button:hover {
+    background: var(--prediction-color-dark, #f57c00);
+}

@@ -31,16 +31,33 @@ view config =
     let
         viewEntrant : Types.FormulaOne.Entrant -> Html msg
         viewEntrant entrant =
+            let
+                teamColor : String
+                teamColor =
+                    case entrant.teamPrimaryColor == "#FFFFFF" of
+                        False ->
+                            entrant.teamPrimaryColor
+
+                        True ->
+                            entrant.teamSecondaryColor
+            in
             Html.div
-                [ Html.Attributes.attribute "data-id" (String.fromInt entrant.id) ]
+                [ Html.Attributes.attribute "data-id" (String.fromInt entrant.id)
+                , Html.Attributes.class "entrant"
+                ]
                 [ Html.span
-                    [ Html.Attributes.class "entrant-number" ]
-                    [ Html.text (String.fromInt entrant.number) ]
+                    [ Html.Attributes.class "entrant-position" ]
+                    []
                 , Html.span
                     [ Html.Attributes.class "entrant-driver" ]
                     [ Html.text entrant.driver ]
                 , Html.span
-                    [ Html.Attributes.class "entrant-team" ]
+                    [ Html.Attributes.class "entrant-number" ]
+                    [ Html.text (String.fromInt entrant.number) ]
+                , Html.span
+                    [ Html.Attributes.class "entrant-team"
+                    , Html.Attributes.style "color" teamColor
+                    ]
                     [ Html.text entrant.teamShortName ]
                 ]
 
