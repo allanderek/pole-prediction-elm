@@ -960,10 +960,9 @@ section.formula-e-event-scores {
     flex-direction: row;
     align-items: center;
     padding: 4px;
-    background: var(--card-background, #ffffff);
     border-radius: 8px;
-    border: 1px solid var(--border-color, #e0e0e0);
     cursor: grab;
+    background-color: white;
     transition: all 0.2s ease;
     position: relative;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -1034,11 +1033,11 @@ section.formula-e-event-scores {
 }
 
 /* Visual distinction between results and prediction entry */
-.formula-one-session-results-entry sortable-list>div {
+.formula-one-session-results-entry sortable-list {
     background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
 }
 
-.formula-one-session-prediction-entry sortable-list>div {
+.formula-one-session-prediction-entry sortable-list {
     background: linear-gradient(135deg, #e8f5e8 0%, #f0f8f0 100%);
 }
 

@@ -67,6 +67,15 @@ view config =
                 |> Pipeline.required "oldIndex" Decode.int
                 |> Pipeline.required "newIndex" Decode.int
                 |> Decode.field "detail"
+
+        submitText : String
+        submitText =
+            case config.kind of
+                Prediction ->
+                    "Submit Predictions"
+
+                Result ->
+                    "Submit Results"
     in
     Html.div
         []
@@ -76,5 +85,5 @@ view config =
             (List.map viewEntrant config.entrants)
         , Html.button
             [ Html.Events.onClick config.submitMessage ]
-            [ Html.text "Submit" ]
+            [ Html.text submitText ]
         ]
