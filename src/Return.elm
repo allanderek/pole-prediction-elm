@@ -1,5 +1,6 @@
 module Return exposing
     ( addEffect
+    , combine
     , noEffect
     )
 
@@ -14,3 +15,12 @@ noEffect model =
 addEffect : Effect -> ( model, Effect ) -> ( model, Effect )
 addEffect effect ( model, existingEffect ) =
     ( model, Effect.Batch [ existingEffect, effect ] )
+
+
+combine : (model -> ( model, Effect )) -> ( model, Effect ) -> ( model, Effect )
+combine andThen ( model, effect ) =
+    let
+        ( newModel, newEffect ) =
+            andThen model
+    in
+    ( newModel, Effect.Batch [ effect, newEffect ] )

@@ -10,6 +10,7 @@ import Ports
 import Task
 import Time
 import TimeZone
+import Types.Data
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard
@@ -85,116 +86,118 @@ perform model effect =
                 , expect = Http.expectWhatever Msg.LogoutResponse
                 }
 
-        Effect.GetFormulaOneLeaderboard spec ->
-            Http.get
-                { url = apiUrl [ "formula-one", "leaderboard", spec.season ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneLeaderboardResponse spec)
-                        Types.Leaderboard.decoder
-                }
+        Effect.GetData data ->
+            case data of
+                Types.Data.FormulaOneLeaderboard spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "leaderboard", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneLeaderboardResponse spec)
+                                Types.Leaderboard.decoder
+                        }
 
-        Effect.GetFormulaOneEvents spec ->
-            Http.get
-                { url = apiUrl [ "formula-one", "season-events", spec.season ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneEventsResponse spec)
-                        (Decode.list Types.FormulaOne.eventDecoder)
-                }
+                Types.Data.FormulaOneEvents spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "season-events", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneEventsResponse spec)
+                                (Decode.list Types.FormulaOne.eventDecoder)
+                        }
 
-        Effect.GetFormulaOneEventSessions spec ->
-            Http.get
-                { url = apiUrl [ "formula-one", "event-sessions", String.fromInt spec.eventId ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneEventSessionsResponse spec)
-                        (Decode.list Types.FormulaOne.sessionDecoder)
-                }
+                Types.Data.FormulaOneEventSessions spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "event-sessions", String.fromInt spec.eventId ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneEventSessionsResponse spec)
+                                (Decode.list Types.FormulaOne.sessionDecoder)
+                        }
 
-        Effect.GetFormulaOneEntrants spec ->
-            Http.get
-                { url = apiUrl [ "formula-one", "session-entrants", String.fromInt spec.sessionId ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneEntrantsResponse spec)
-                        (Decode.list Types.FormulaOne.entrantDecoder)
-                }
+                Types.Data.FormulaOneEntrants spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "session-entrants", String.fromInt spec.sessionId ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneEntrantsResponse spec)
+                                (Decode.list Types.FormulaOne.entrantDecoder)
+                        }
 
-        Effect.GetFormulaOneSessionLeaderboard spec ->
-            let
-                decoder : Decoder Types.FormulaOne.SessionLeaderboard
-                decoder =
-                    Decode.list Types.FormulaOne.scoredPredictionRowDecoder
-                        |> Decode.map Types.FormulaOne.scoredPredictionRowsToSessionLeaderboard
-            in
-            Http.get
-                { url = apiUrl [ "formula-one", "session-leaderboard", String.fromInt spec.sessionId ]
-                , expect = Http.expectJson (Msg.FormulaOneSessionLeaderboardResponse spec) decoder
-                }
+                Types.Data.FormulaOneSessionLeaderboard spec ->
+                    let
+                        decoder : Decoder Types.FormulaOne.SessionLeaderboard
+                        decoder =
+                            Decode.list Types.FormulaOne.scoredPredictionRowDecoder
+                                |> Decode.map Types.FormulaOne.scoredPredictionRowsToSessionLeaderboard
+                    in
+                    Http.get
+                        { url = apiUrl [ "formula-one", "session-leaderboard", String.fromInt spec.sessionId ]
+                        , expect = Http.expectJson (Msg.FormulaOneSessionLeaderboardResponse spec) decoder
+                        }
 
-        Effect.GetFormulaOneSeasonLeaderboard spec ->
-            let
-                decoder : Decoder Types.FormulaOne.SeasonLeaderboard
-                decoder =
-                    Decode.list Types.FormulaOne.seasonPredictionRowDecoder
-                        |> Decode.map Types.FormulaOne.seasonLeaderboardFromSeasonPredictionRows
-            in
-            Http.get
-                { url = apiUrl [ "formula-one", "season-leaderboard", spec.season ]
-                , expect = Http.expectJson (Msg.FormulaOneSeasonLeaderboardResponse spec) decoder
-                }
+                Types.Data.FormulaOneSeasonLeaderboard spec ->
+                    let
+                        decoder : Decoder Types.FormulaOne.SeasonLeaderboard
+                        decoder =
+                            Decode.list Types.FormulaOne.seasonPredictionRowDecoder
+                                |> Decode.map Types.FormulaOne.seasonLeaderboardFromSeasonPredictionRows
+                    in
+                    Http.get
+                        { url = apiUrl [ "formula-one", "season-leaderboard", spec.season ]
+                        , expect = Http.expectJson (Msg.FormulaOneSeasonLeaderboardResponse spec) decoder
+                        }
 
-        Effect.GetFormulaOneConstructorStandings spec ->
-            Http.get
-                { url = apiUrl [ "formula-one", "constructor-standings", spec.season ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneConstructorStandingsResponse spec)
-                        Types.Leaderboard.decoder
-                }
+                Types.Data.FormulaOneConstructorStandings spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "constructor-standings", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneConstructorStandingsResponse spec)
+                                Types.Leaderboard.decoder
+                        }
 
-        Effect.GetFormulaOneDriverStandings spec ->
-            Http.get
-                { url = apiUrl [ "formula-one", "driver-standings", spec.season ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneDriverStandingsResponse spec)
-                        Types.Leaderboard.decoder
-                }
+                Types.Data.FormulaOneDriverStandings spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "driver-standings", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneDriverStandingsResponse spec)
+                                Types.Leaderboard.decoder
+                        }
 
-        Effect.GetFormulaELeaderboard spec ->
-            Http.get
-                { url = apiUrl [ "formula-e", "leaderboard", spec.season ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaELeaderboardResponse spec)
-                        Types.Leaderboard.decoder
-                }
+                Types.Data.FormulaELeaderboard spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-e", "leaderboard", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaELeaderboardResponse spec)
+                                Types.Leaderboard.decoder
+                        }
 
-        Effect.GetFormulaEEvents spec ->
-            Http.get
-                { url = apiUrl [ "formula-e", "season-events", spec.season ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaEEventsResponse spec)
-                        (Decode.list Types.FormulaE.eventDecoder)
-                }
+                Types.Data.FormulaEEvents spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-e", "season-events", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaEEventsResponse spec)
+                                (Decode.list Types.FormulaE.eventDecoder)
+                        }
 
-        Effect.GetFormulaEEventEntrants spec ->
-            Http.get
-                { url = apiUrl [ "formula-e", "event-entrants", String.fromInt spec.eventId ]
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaEEventEntrantsResponse spec)
-                        (Decode.list Types.FormulaE.entrantDecoder)
-                }
+                Types.Data.FormulaEEventEntrants spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-e", "event-entrants", String.fromInt spec.eventId ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaEEventEntrantsResponse spec)
+                                (Decode.list Types.FormulaE.entrantDecoder)
+                        }
 
-        Effect.GetFormulaEEventLeaderboard spec ->
-            Http.get
-                { url = apiUrl [ "formula-e", "race-predictions", String.fromInt spec.eventId ]
-                , expect = Http.expectJson (Msg.FormulaEEventLeaderboardResponse spec) Types.FormulaE.eventLeaderboardDecoder
-                }
+                Types.Data.FormulaEEventLeaderboard spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-e", "race-predictions", String.fromInt spec.eventId ]
+                        , expect = Http.expectJson (Msg.FormulaEEventLeaderboardResponse spec) Types.FormulaE.eventLeaderboardDecoder
+                        }
 
         Effect.SubmitFormulaEPrediction spec prediction ->
             Http.post

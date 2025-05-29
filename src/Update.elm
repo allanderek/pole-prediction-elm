@@ -12,10 +12,107 @@ import Model exposing (Model)
 import Msg exposing (Msg)
 import Return
 import Route
+import Types.Data exposing (Data)
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Login
 import Url
+
+
+getData : Data -> Model key -> ( Model key, Effect )
+getData data model =
+    let
+        newModel : Model key
+        newModel =
+            case data of
+                Types.Data.FormulaOneLeaderboard spec ->
+                    { model
+                        | formulaOneLeaderboards =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneLeaderboards
+                    }
+
+                Types.Data.FormulaOneEvents spec ->
+                    { model
+                        | formulaOneEvents =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneEvents
+                    }
+
+                Types.Data.FormulaOneEventSessions spec ->
+                    { model
+                        | formulaOneSessions =
+                            Dict.insert spec.eventId Helpers.Http.Inflight model.formulaOneSessions
+                    }
+
+                Types.Data.FormulaOneEntrants spec ->
+                    { model
+                        | formulaOneEntrants =
+                            Dict.insert spec.sessionId Helpers.Http.Inflight model.formulaOneEntrants
+                    }
+
+                Types.Data.FormulaOneSessionLeaderboard spec ->
+                    { model
+                        | formulaOneSessionLeaderboards =
+                            Dict.insert spec.sessionId Helpers.Http.Inflight model.formulaOneSessionLeaderboards
+                    }
+
+                Types.Data.FormulaOneSeasonLeaderboard spec ->
+                    { model
+                        | formulaOneSeasonLeaderboards =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneSeasonLeaderboards
+                    }
+
+                Types.Data.FormulaOneConstructorStandings spec ->
+                    { model
+                        | formulaOneConstructorStandings =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneConstructorStandings
+                    }
+
+                Types.Data.FormulaOneDriverStandings spec ->
+                    { model
+                        | formulaOneDriverStandings =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneDriverStandings
+                    }
+
+                Types.Data.FormulaELeaderboard spec ->
+                    { model
+                        | formulaELeaderboards =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaELeaderboards
+                    }
+
+                Types.Data.FormulaEEvents spec ->
+                    { model
+                        | formulaEEvents =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaEEvents
+                    }
+
+                Types.Data.FormulaEEventEntrants spec ->
+                    { model
+                        | formulaEEventEntrants =
+                            Dict.insert spec.eventId Helpers.Http.Inflight model.formulaEEventEntrants
+                    }
+
+                Types.Data.FormulaEEventLeaderboard spec ->
+                    { model
+                        | formulaEEventLeaderboards =
+                            Dict.insert spec.eventId Helpers.Http.Inflight model.formulaEEventLeaderboards
+                    }
+    in
+    ( newModel, Effect.GetData data )
+
+
+getDataWith : Data -> ( Model key, Effect ) -> ( Model key, Effect )
+getDataWith data ( model, existingEffect ) =
+    Return.combine (getData data) ( model, existingEffect )
+
+
+getMultipleData : List Data -> Model key -> ( Model key, Effect )
+getMultipleData datas model =
+    List.foldl getDataWith (Return.noEffect model) datas
+
+
+getMultipleDataIf : List ( Bool, Data ) -> Model key -> ( Model key, Effect )
+getMultipleDataIf datas model =
+    getMultipleData (Helpers.List.filterByFirst datas) model
 
 
 initRoute : Model key -> ( Model key, Effect )
@@ -38,20 +135,14 @@ initRoute model =
                 spec =
                     { season = season }
             in
-            ( { model
-                | formulaOneLeaderboards =
-                    Dict.insert season Helpers.Http.Inflight model.formulaOneLeaderboards
-                , formulaOneEvents =
-                    Dict.insert season Helpers.Http.Inflight model.formulaOneEvents
-              }
-            , Effect.Batch
-                [ Effect.GetFormulaOneLeaderboard spec
-                , Effect.GetFormulaOneSeasonLeaderboard spec
-                , Effect.GetFormulaOneEvents spec
-                , Effect.GetFormulaOneConstructorStandings spec
-                , Effect.GetFormulaOneDriverStandings spec
-                ]
-            )
+            model
+                |> getMultipleData
+                    [ Types.Data.FormulaOneLeaderboard spec
+                    , Types.Data.FormulaOneSeasonLeaderboard spec
+                    , Types.Data.FormulaOneEvents spec
+                    , Types.Data.FormulaOneConstructorStandings spec
+                    , Types.Data.FormulaOneDriverStandings spec
+                    ]
 
         Route.FormulaOneEvent season eventId ->
             let
@@ -62,22 +153,12 @@ initRoute model =
                         |> Helpers.Http.toMaybe
                         |> Maybe.withDefault []
                         |> List.any (\event -> event.id == eventId)
-
-                eventsEffect : Effect
-                eventsEffect =
-                    case haveEventInfo of
-                        True ->
-                            Effect.None
-
-                        False ->
-                            Effect.GetFormulaOneEvents { season = season }
             in
-            ( model
-            , Effect.Batch
-                [ Effect.GetFormulaOneEventSessions { eventId = eventId }
-                , eventsEffect
-                ]
-            )
+            model
+                |> getMultipleDataIf
+                    [ ( not haveEventInfo, Types.Data.FormulaOneEvents { season = season } )
+                    , ( True, Types.Data.FormulaOneEventSessions { eventId = eventId } )
+                    ]
 
         Route.FormulaOneSession season eventId sessionId ->
             let
@@ -97,24 +178,17 @@ initRoute model =
                         |> Maybe.withDefault []
                         |> List.any (\event -> event.id == eventId)
             in
-            ( model
-            , Effect.Batch
-                [ Effect.GetFormulaOneEntrants { sessionId = sessionId }
-                , Effect.GetFormulaOneSessionLeaderboard { sessionId = sessionId }
-                , case haveSessionInfo of
-                    True ->
-                        Effect.None
-
-                    False ->
-                        Effect.GetFormulaOneEventSessions { eventId = eventId }
-                , case haveEventInfo of
-                    True ->
-                        Effect.None
-
-                    False ->
-                        Effect.GetFormulaOneEvents { season = season }
-                ]
-            )
+            model
+                |> getMultipleDataIf
+                    [ ( True, Types.Data.FormulaOneEntrants { sessionId = sessionId } )
+                    , ( True, Types.Data.FormulaOneSessionLeaderboard { sessionId = sessionId } )
+                    , ( not haveSessionInfo
+                      , Types.Data.FormulaOneEventSessions { eventId = eventId }
+                      )
+                    , ( not haveEventInfo
+                      , Types.Data.FormulaOneEvents { season = season }
+                      )
+                    ]
 
         Route.FormulaE mSeason ->
             let
@@ -127,17 +201,11 @@ initRoute model =
                 spec =
                     { season = season }
             in
-            ( { model
-                | formulaELeaderboards =
-                    Dict.insert season Helpers.Http.Inflight model.formulaELeaderboards
-                , formulaEEvents =
-                    Dict.insert season Helpers.Http.Inflight model.formulaEEvents
-              }
-            , Effect.Batch
-                [ Effect.GetFormulaELeaderboard spec
-                , Effect.GetFormulaEEvents spec
-                ]
-            )
+            model
+                |> getMultipleData
+                    [ Types.Data.FormulaELeaderboard spec
+                    , Types.Data.FormulaEEvents spec
+                    ]
 
         Route.FormulaEEvent season eventId ->
             let
@@ -149,26 +217,22 @@ initRoute model =
                         |> Maybe.withDefault []
                         |> List.any (\event -> event.id == eventId)
 
-                eventsEffect : Effect
-                eventsEffect =
-                    case haveEventInfo of
-                        True ->
-                            Effect.None
-
-                        False ->
-                            Effect.GetFormulaEEvents { season = season }
-
                 spec : { eventId : Types.FormulaE.EventId }
                 spec =
                     { eventId = eventId }
             in
-            ( model
-            , Effect.Batch
-                [ eventsEffect
-                , Effect.GetFormulaEEventEntrants spec
-                , Effect.GetFormulaEEventLeaderboard spec
-                ]
-            )
+            model
+                |> getMultipleDataIf
+                    [ ( not haveEventInfo
+                      , Types.Data.FormulaEEvents { season = season }
+                      )
+                    , ( True
+                      , Types.Data.FormulaEEventEntrants spec
+                      )
+                    , ( True
+                      , Types.Data.FormulaEEventLeaderboard spec
+                      )
+                    ]
 
         Route.Profile ->
             Return.noEffect model

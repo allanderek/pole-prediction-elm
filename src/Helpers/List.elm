@@ -1,11 +1,19 @@
 module Helpers.List exposing
     ( emptyAsNothing
+    , filterByFirst
     , findWith
     , firstJust
     , moveByIndex
     )
 
 import List.Extra
+
+
+filterByFirst : List ( Bool, a ) -> List a
+filterByFirst items =
+    items
+        |> List.filter Tuple.first
+        |> List.map Tuple.second
 
 
 firstJust : List (Maybe a) -> Maybe a
