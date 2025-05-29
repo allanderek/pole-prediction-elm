@@ -48,7 +48,7 @@ application model =
                         [ Html.h1
                             []
                             [ Html.text "Login" ]
-                        , Components.Login.view model.loginForm
+                        , Components.Login.view model
                         ]
                     }
 
@@ -243,7 +243,7 @@ application model =
                                     ]
 
                             Nothing ->
-                                Components.Login.view model.loginForm
+                                Components.Login.view model
                         ]
                     }
 

@@ -13,7 +13,6 @@ import sqlite3
 import inspect
 import base64
 import hmac
-from datetime import datetime, timezone
 
 
 
@@ -465,14 +464,14 @@ order by
 
 def parse_sqlite_datetime(dt_str):
     # I think there is more to this here, including the 'Z' at the end
-    return datetime.fromisoformat(dt_str.replace(' ', 'T'))
+    return datetime.datetime.fromisoformat(dt_str.replace(' ', 'T'))
 
 def is_db_time_earlier_than_now (db_time_str):
     # Parse the SQLite datetime string
     db_time = parse_sqlite_datetime(db_time_str)
     
     # Get the current time in UTC
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.datetime.now(datetime.timezone.utc)
     
     # Compare times
     return db_time < current_time

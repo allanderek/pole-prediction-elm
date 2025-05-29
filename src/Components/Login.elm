@@ -4,27 +4,37 @@ module Components.Login exposing
     )
 
 import Helpers.Html
+import Helpers.Http
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events
+import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
-import Types.Login
 
 
-view : Types.Login.Form -> Html Msg
-view form =
+view : Model key -> Html Msg
+view model =
     -- TODO: This should be disabled if the request is inflight
+    let
+        disabled : Bool
+        disabled =
+            Helpers.Http.isInflight model.userStatus
+    in
     Html.form
-        [ Html.Events.onSubmit Msg.LoginSubmit ]
+        [ Html.Events.onSubmit Msg.LoginSubmit
+        , Attributes.disabled disabled
+        ]
         [ Html.label
             [ Attributes.class "form-label" ]
             [ Html.text "Username"
             , Html.input
                 [ Attributes.type_ "text"
-                , Attributes.value form.username
+                , Attributes.value model.loginForm.username
+                , Attributes.name "username"
                 , Html.Events.onInput Msg.LoginIdentityInput
                 , Attributes.placeholder "username"
+                , Attributes.disabled disabled
                 ]
                 []
             ]
@@ -33,13 +43,19 @@ view form =
             [ Html.text "Password"
             , Html.input
                 [ Attributes.type_ "password"
-                , Attributes.value form.password
+                , Attributes.value model.loginForm.password
+                , Attributes.name "password"
+                , Attributes.disabled disabled
                 , Html.Events.onInput Msg.LoginPasswordInput
                 ]
                 []
             ]
         , Html.button
-            [ Attributes.type_ "submit" ]
+            [ Attributes.type_ "submit"
+            , Attributes.name "submit"
+            , Attributes.value "submit"
+            , Attributes.disabled disabled
+            ]
             [ Html.text "Submit" ]
         ]
 
