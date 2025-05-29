@@ -1,5 +1,7 @@
 module Route exposing
     ( Route(..)
+    , formulaESeason
+    , formulaOneSeason
     , href
     , parse
     , unparse
@@ -75,6 +77,36 @@ parse url =
     url
         |> Parser.parse routeParser
         |> Maybe.withDefault NotFound
+
+
+formulaESeason : Types.FormulaE.Season -> Route
+formulaESeason season =
+    let
+        mSeason : Maybe Types.FormulaE.Season
+        mSeason =
+            case season == Types.FormulaE.currentSeason of
+                True ->
+                    Nothing
+
+                False ->
+                    Just season
+    in
+    FormulaE mSeason
+
+
+formulaOneSeason : Types.FormulaOne.Season -> Route
+formulaOneSeason season =
+    let
+        mSeason : Maybe Types.FormulaOne.Season
+        mSeason =
+            case season == Types.FormulaOne.currentSeason of
+                True ->
+                    Nothing
+
+                False ->
+                    Just season
+    in
+    FormulaOne mSeason
 
 
 href : Route -> Html.Attribute msg

@@ -20,7 +20,9 @@ view config items =
         viewItem : Item msg -> Html msg
         viewItem item =
             Html.p
-                [ Html.Attributes.class item.class ]
+                [ Html.Attributes.class item.class
+                , Html.Attributes.class "info-item"
+                ]
                 [ item.content ]
     in
     Components.Section.view config

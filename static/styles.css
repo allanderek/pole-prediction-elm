@@ -19,10 +19,6 @@ div.app {
     margin: 0 auto;
 }
 
-main {
-    max-width: 1200px;
-    margin: 0 auto;
-}
 
 /* Navigation Bar Styling with CSS Nesting */
 aside {
@@ -31,6 +27,7 @@ aside {
     z-index: 100;
     background: #1a1a1a;
     border-bottom: 2px solid #e10600;
+    margin-bottom: 0.5rem;
     /* F1 red accent */
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 
@@ -114,13 +111,50 @@ aside {
 
 
 /* Formula E Main Page Styling */
+main.formula-e-season-page {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+/* Mobile-first: all sections stack vertically */
+main.formula-e-season-page>* {
+    grid-column: 1;
+}
+
+/* Desktop layout */
+@media (min-width: 768px) {
+    main.formula-e-season-page {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "header nav"
+            "events leaderboard"
+        ;
+        gap: 1em;
+
+        h1 {
+            grid-area: header;
+        }
+
+        .season-nav {
+            grid-area: nav;
+        }
+
+        .formula-e-events {
+            grid-area: events;
+        }
+
+        .formula-e-leaderboard {
+            grid-area: leaderboard;
+        }
+
+    }
+}
 
 
 /* Secondary Navigation - Season Selector */
 details.season-nav {
     background: #f5f5f5;
     border: 1px solid #ddd;
-    border-radius: 8px;
 
     summary {
         padding: 0.75rem 1rem;
@@ -194,7 +228,6 @@ details.season-nav {
 /* Section styling (used for leaderboard and other sections) */
 section.section {
     background: white;
-    border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
     h2 {
@@ -211,6 +244,7 @@ section.section {
         padding: 1.5rem;
     }
 }
+
 
 /* Leaderboard table */
 .leaderboard {
@@ -275,7 +309,6 @@ section.section {
     gap: 0.5rem;
 
     li {
-        border-radius: 6px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
@@ -308,7 +341,6 @@ section.section {
                 content: '✓';
                 position: absolute;
                 right: 1rem;
-                top: 50%;
                 color: #ffc107;
                 font-weight: bold;
             }
@@ -323,7 +355,6 @@ section.section {
                 content: '→';
                 position: absolute;
                 right: 1rem;
-                top: 50%;
                 color: #28a745;
                 font-weight: bold;
             }
@@ -368,8 +399,7 @@ section.section {
             font-size: 2.2rem;
         }
 
-        .event-country,
-        .event-circuit {
+        .info-item {
             font-size: 1.3rem;
         }
 
@@ -453,37 +483,42 @@ section.section {
 }
 
 
-/* Formula E Event Page Styling */
 
-
-/* Event Information Section */
-section.formula-e-event-info {
+section {
     h2 {
-        margin: 0 0 1rem 0;
         padding: 1.25rem 1.5rem;
         background: linear-gradient(135deg, #0c4da2 0%, #00d9ff 100%);
         color: white;
         font-size: 1.8rem;
         font-weight: 700;
-        border-radius: 8px 8px 0 0;
     }
 
-    .event-country {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #666;
+    p.info-item {
         margin: 1rem 1.5rem 0.5rem 1.5rem;
     }
 
-    .event-circuit {
+}
+
+/* Formula E Event Page Styling */
+/* Event Information Section */
+section.formula-e-event-info {
+    padding-bottom: 1.0rem;
+
+
+    p.event-country {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #666;
+    }
+
+    p.event-circuit {
         font-size: 1.2rem;
         font-weight: 500;
         color: #333;
-        margin: 0 1.5rem 1rem 1.5rem;
     }
 
-    .event-date {
-        margin: 0 1.5rem 1.5rem 1.5rem;
+    p.event-date {
+        font-size: 0.9rem;
 
         .time {
             display: inline-block;
@@ -803,36 +838,76 @@ section.formula-e-event-scores {
             "events season-leaderboard"
             "driver-standings constructor-standings";
         gap: 1em;
+
+        h1 {
+            grid-area: header;
+        }
+
+        .season-nav {
+            grid-area: nav;
+        }
+
+        .formula-one-events {
+            grid-area: events;
+        }
+
+        .formula-one-leaderboard {
+            grid-area: leaderboard;
+        }
+
+        .formula-one-season-leaderboard {
+            grid-area: season-leaderboard;
+        }
+
+        .formula-one-driver-standings {
+            grid-area: driver-standings;
+        }
+
+        .formula-one-constructor-standings {
+            grid-area: constructor-standings;
+        }
     }
+}
+
+.formula-one-session-page {
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+/* Mobile-first: all sections stack vertically */
+.formula-one-session-page>* {
+    grid-column: 1;
+}
+
+/* Desktop layout */
+@media (min-width: 768px) {
+    .formula-one-session-page {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "info info"
+            "entry leaderboard"
+        ;
+        gap: 1em;
+
+        .formula-one-session-info {
+            grid-area: info;
+        }
+
+        .formula-one-session-results-entry,
+        .formula-one-session-prediction-entry {
+            grid-area: entry;
+        }
+
+        .formula-one-session-leaderboard {
+            grid-area: leaderboard;
+        }
+    }
+}
 
 
-    .formula-one-season-page h1 {
-        grid-area: header;
-    }
-
-    .season-nav {
-        grid-area: nav;
-    }
-
-    .formula-one-events {
-        grid-area: events;
-    }
-
-    .formula-one-leaderboard {
-        grid-area: leaderboard;
-    }
-
-    .formula-one-season-leaderboard {
-        grid-area: season-leaderboard;
-    }
-
-    .formula-one-driver-standings {
-        grid-area: driver-standings;
-    }
-
-    .formula-one-constructor-standings {
-        grid-area: constructor-standings;
-    }
+.formula-one-event-info,
+.formula-one-session-info {
+    padding-bottom: 1.0rem;
 }
 
 /* Session list container */
@@ -1076,17 +1151,21 @@ section.formula-e-event-scores {
     margin-top: 1rem;
 }
 
-.formula-one-session-results-entry button:hover,
-.formula-one-session-prediction-entry button:hover {
-    background: var(--primary-color-dark, #1976d2);
-}
 
 .formula-one-session-prediction-entry button {
-    background: var(--prediction-color, #ff9800);
+    background: var(--prediction-color, #28a745);
+
+    &:hover {
+        background: var(--prediction-color-dark, #218838);
+    }
 }
 
-.formula-one-session-prediction-entry button:hover {
-    background: var(--prediction-color-dark, #f57c00);
+.formula-one-session-results-entry button {
+    background: var(--result-color, #f57c00);
+
+    &:hover {
+        background: var(--result-color, #c17120);
+    }
 }
 
 /* Formula One Session Leaderboard Styles */

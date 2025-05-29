@@ -56,7 +56,7 @@ $ source venv/bin/activate.fish
 - [ ] On the event page, consider smarter displaying of the session times, probably do not need to show the year, and only  show the month if it differs from the start time of the event.
 - [ ] For prediction entry, consider  countdown,  but that risks someone attempting to do so at the last second and expecting it to work, so either have a bit of a delay on the backend, or maybe not.
 - [ ] The events list marks events as finished if the date is after the date of the start time, but for Formula One, we do not want that, so we probably wish to have a secondary datetime on formula one events which is the start time of the last session.
-- [ ] Session leaderboards, when showing the expanded user's predictions, we don't need to show positions 10-20.
+- [x] Session leaderboards, when showing the expanded user's predictions, we don't need to show positions 10-20.
 
 ## Formula E
 - [ ] Should be a link back to the season page
@@ -71,7 +71,7 @@ $ source venv/bin/activate.fish
 - [x] Perhaps just use a native alert for confirmation/failure of submission.
 
 ## Getting data
-- [ ] I'd really like some uniform way for each route to just describe what data it needs and then for the effects to be automatically calculated from that. In particular it should also set the appropriate loading state, because that's not being done everywhere perfectly.
+- [x] I'd really like some uniform way for each route to just describe what data it needs and then for the effects to be automatically calculated from that. In particular it should also set the appropriate loading state, because that's not being done everywhere perfectly.
 - [ ] Ideally as well we would record the time that we last got the data and it would decide whether it needed to 're-get' it. This will come up in particular for the results. Which would be nice if we could automatically re-get the results on a session page. Though of course we could have a button to do that, and also we want to worry about viewing a session from a long time ago.
 
 

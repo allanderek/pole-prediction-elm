@@ -2,7 +2,6 @@ module Components.FormulaOneEventInfo exposing (view)
 
 import Components.FormulaOneSessionList
 import Components.Info
-import Components.Time
 import Html exposing (Html)
 import Model exposing (Model)
 import Route
@@ -32,9 +31,19 @@ view model config =
                             Html.text "Unknown event"
 
                         Just event ->
-                            String.fromInt event.round
-                                |> String.append "Round: "
-                                |> Html.text
+                            Html.div
+                                []
+                                [ Html.text "Round: "
+                                , String.fromInt event.round
+                                    |> Html.text
+                                , Html.text " of the "
+                                , Html.a
+                                    [ Route.formulaOneSeason config.season
+                                        |> Route.href
+                                    ]
+                                    [ Html.text config.season ]
+                                , Html.text " season"
+                                ]
               }
             , { class = "event-sessions"
               , content = Components.FormulaOneSessionList.view model config.eventId config.mSessionId

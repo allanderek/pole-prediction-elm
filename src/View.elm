@@ -204,7 +204,7 @@ application model =
                                 [ Html.text "Event not found" ]
 
                             Just event ->
-                                Pages.FormulaEEvent.view model event
+                                Pages.FormulaEEvent.view model season event
                     }
 
                 Route.Profile ->

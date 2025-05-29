@@ -21,12 +21,13 @@ import Html.Extra
 import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
+import Route
 import Types.FormulaE
 import Types.User exposing (User)
 
 
-view : Model key -> Types.FormulaE.Event -> List (Html Msg)
-view model event =
+view : Model key -> Types.FormulaE.Season -> Types.FormulaE.Event -> List (Html Msg)
+view model season event =
     let
         info : Html msg
         info =
@@ -39,6 +40,21 @@ view model event =
                   }
                 , { class = "event-circuit"
                   , content = Html.text event.circuit
+                  }
+                , { class = "event-round"
+                  , content =
+                        Html.div
+                            []
+                            [ Html.text "Round: "
+                            , Html.text <| String.fromInt event.round
+                            , Html.text " of the "
+                            , Html.a
+                                [ Route.formulaESeason season
+                                    |> Route.href
+                                ]
+                                [ Html.text season ]
+                            , Html.text " season"
+                            ]
                   }
                 , { class = "event-date"
                   , content =
