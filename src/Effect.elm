@@ -8,6 +8,7 @@ import Types.Data exposing (Data)
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Login
+import Types.Profile
 
 
 type Effect
@@ -21,6 +22,7 @@ type Effect
     | LegacyGetTimeZone
     | SubmitLogin Types.Login.Form
     | SubmitLogout
+    | SubmitProfile Types.Profile.Form
     | GetData Data
     | SubmitFormulaEPrediction { eventId : Types.FormulaE.EventId } Types.FormulaE.Prediction
     | SubmitFormulaEResult { eventId : Types.FormulaE.EventId } Types.FormulaE.Result

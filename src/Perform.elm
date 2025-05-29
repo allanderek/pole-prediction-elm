@@ -15,6 +15,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard
 import Types.Login
+import Types.Profile
 import Types.User exposing (User)
 
 
@@ -84,6 +85,21 @@ perform model effect =
                 { url = apiUrl [ "logout" ]
                 , body = Http.emptyBody
                 , expect = Http.expectWhatever Msg.LogoutResponse
+                }
+
+        Effect.SubmitProfile form ->
+            let
+                decoder : Decoder User
+                decoder =
+                    Types.User.decoder
+            in
+            Http.post
+                { url = apiUrl [ "profile" ]
+                , body =
+                    form
+                        |> Types.Profile.encodeForm
+                        |> Http.jsonBody
+                , expect = Http.expectJson Msg.SubmitEditedProfileResponse decoder
                 }
 
         Effect.GetData data ->

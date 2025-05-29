@@ -11,6 +11,7 @@ import TimeZone
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
+import Types.Profile
 import Types.User exposing (User)
 import Url
 
@@ -31,6 +32,11 @@ type Msg
     | LoginSubmitResponse (HttpResult User)
     | Logout
     | LogoutResponse (HttpResult ())
+    | EditProfile
+    | CancelEditProfile
+    | EditProfileFullNameInput String
+    | SubmitEditedProfile Types.Profile.Form
+    | SubmitEditedProfileResponse (HttpResult User)
     | ReorderFormulaOneSessionPredictionEntry Types.FormulaOne.SessionId Int Int
     | ReorderFormulaOneSessionResultEntry Types.FormulaOne.SessionId Int Int
     | SubmitFormulaOneSessionEntry Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)

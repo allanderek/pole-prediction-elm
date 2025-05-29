@@ -292,21 +292,47 @@ def logout():
 
 @app.route('/api/me', method='GET')
 @require_auth
-def get_current_user(user_id):
+def get_me(user_id):
     with db_transaction() as db:
-        query = "SELECT id, username, fullname, admin FROM users WHERE id = ?"
-        user = db.execute(query, (user_id,)).fetchone()
+        return get_current_user(db, user_id)
+
+
+
+def get_current_user(db, user_id):
+    query = "SELECT id, username, fullname, admin FROM users WHERE id = ?"
+    user = db.execute(query, (user_id,)).fetchone()
+    
+    if not user:
+        bottle.response.status = 404
+        return {'error': 'User not found'}
+    
+    return {
+        'id': user['id'],
+        'username': user['username'],
+        'fullname': user['fullname'],
+        'admin': bool(user['admin'])
+    }
+
+
+@app.route('/api/profile', method='POST')
+@require_auth
+def update_profile(user_id):
+    with db_transaction() as db:
+        data = bottle.request.json
         
-        if not user:
-            bottle.response.status = 404
-            return {'error': 'User not found'}
+        fullname = data.get('fullname')
+
+        if not fullname:
+            bottle.response.status = 400
+            return {'error': 'Full name is required and cannot be empty'}
+
         
-        return {
-            'id': user['id'],
-            'username': user['username'],
-            'fullname': user['fullname'],
-            'admin': bool(user['admin'])
-        }
+        db.execute(
+            "update users set fullname = :fullname where id = :user_id;",
+            { 'fullname': fullname, 'user_id': user_id }
+        )
+        
+        return get_current_user(db, user_id)
 
 
 # Protected API routes

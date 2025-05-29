@@ -16,6 +16,7 @@ import Types.Data exposing (Data)
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Login
+import Types.Profile
 import Url
 
 
@@ -324,6 +325,72 @@ update msg model =
             -- but then that would look like you were logged-out when maybe actually you weren't.
             -- So we just ignore the result and reload the page.
             ( model, Effect.Reload )
+
+        Msg.EditProfile ->
+            Return.noEffect { model | editingProfile = True }
+
+        Msg.CancelEditProfile ->
+            Return.noEffect { model | editingProfile = False }
+
+        Msg.EditProfileFullNameInput input ->
+            case Helpers.Http.toMaybe model.userStatus of
+                Nothing ->
+                    Return.noEffect model
+
+                Just user ->
+                    let
+                        form : Types.Profile.Form
+                        form =
+                            case model.profileForm of
+                                Nothing ->
+                                    Types.Profile.initForm user
+
+                                Just existingForm ->
+                                    existingForm
+
+                        newForm : Maybe Types.Profile.Form
+                        newForm =
+                            case input == user.fullname of
+                                True ->
+                                    Nothing
+
+                                False ->
+                                    Just { form | fullname = input }
+                    in
+                    Return.noEffect
+                        { model | profileForm = newForm }
+
+        Msg.SubmitEditedProfile form ->
+            ( { model | profileStatus = Helpers.Http.Inflight }
+            , Effect.SubmitProfile form
+            )
+
+        Msg.SubmitEditedProfileResponse result ->
+            Return.noEffect
+                { model
+                    | profileStatus = Helpers.Http.fromResult result
+                    , userStatus =
+                        case result of
+                            Ok user ->
+                                Helpers.Http.Succeeded user
+
+                            Err _ ->
+                                model.userStatus
+                    , editingProfile =
+                        case result of
+                            Ok _ ->
+                                False
+
+                            Err _ ->
+                                True
+                    , profileForm =
+                        case result of
+                            Ok _ ->
+                                Nothing
+
+                            Err _ ->
+                                model.profileForm
+                }
 
         Msg.ReorderFormulaOneSessionPredictionEntry sessionId oldIndex newIndex ->
             let

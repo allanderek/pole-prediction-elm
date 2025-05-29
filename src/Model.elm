@@ -18,6 +18,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 import Types.Login
+import Types.Profile
 import Types.User exposing (User)
 import Url exposing (Url)
 
@@ -29,6 +30,9 @@ type alias Model key =
     , zone : Time.Zone
     , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
+    , editingProfile : Bool
+    , profileForm : Maybe Types.Profile.Form
+    , profileStatus : Helpers.Http.Status User
     , formulaOneLeaderboards : Dict Types.FormulaOne.Season (Helpers.Http.Status Leaderboard)
     , formulaOneEvents : Dict Types.FormulaOne.Season (Helpers.Http.Status (List Types.FormulaOne.Event))
     , formulaOneSessions : Dict Types.FormulaOne.EventId (Helpers.Http.Status (List Types.FormulaOne.Session))
@@ -58,6 +62,9 @@ initial key url now userStatus =
     , zone = Time.utc
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
+    , editingProfile = False
+    , profileForm = Nothing
+    , profileStatus = Helpers.Http.Ready
     , formulaOneLeaderboards = Dict.empty
     , formulaOneEvents = Dict.empty
     , formulaOneSessions = Dict.empty

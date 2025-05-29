@@ -21,10 +21,12 @@ import Msg exposing (Msg)
 import Pages.FormulaEEvent
 import Pages.FormulaOneSeason
 import Pages.FormulaOneSession
+import Pages.Profile
 import Route
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
+import Types.Profile
 
 
 application : Model key -> Browser.Document Msg
@@ -209,42 +211,7 @@ application model =
 
                 Route.Profile ->
                     { class = "profile-page"
-                    , contents =
-                        [ Html.h1
-                            []
-                            [ Html.text "Profile Page" ]
-                        , case Helpers.Http.toMaybe model.userStatus of
-                            Just user ->
-                                Html.dl
-                                    []
-                                    [ Html.dt
-                                        []
-                                        [ Html.text "Username" ]
-                                    , Html.dd
-                                        []
-                                        [ Html.text user.username ]
-                                    , Html.dt
-                                        []
-                                        [ Html.text "Name" ]
-                                    , Html.dd
-                                        []
-                                        [ Html.text user.fullname ]
-                                    , Html.dt
-                                        []
-                                        [ Html.text "Logout" ]
-                                    , Html.dd
-                                        []
-                                        [ Html.button
-                                            [ Attributes.class "logout-button"
-                                            , Html.Events.onClick Msg.Logout
-                                            ]
-                                            [ Html.text "Logout" ]
-                                        ]
-                                    ]
-
-                            Nothing ->
-                                Components.Login.view model
-                        ]
+                    , contents = Pages.Profile.view model
                     }
 
                 Route.NotFound ->
