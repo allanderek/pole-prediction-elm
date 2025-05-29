@@ -1,11 +1,13 @@
 module Components.FormulaOneSessionEntry exposing
     ( Kind(..)
     , view
+    , viewEntrant
     )
 
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
+import Html.Extra
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
 import Types.FormulaOne
@@ -29,38 +31,6 @@ type alias Config msg =
 view : Config msg -> Html msg
 view config =
     let
-        viewEntrant : Types.FormulaOne.Entrant -> Html msg
-        viewEntrant entrant =
-            let
-                teamColor : String
-                teamColor =
-                    case entrant.teamPrimaryColor == "#FFFFFF" of
-                        False ->
-                            entrant.teamPrimaryColor
-
-                        True ->
-                            entrant.teamSecondaryColor
-            in
-            Html.div
-                [ Html.Attributes.attribute "data-id" (String.fromInt entrant.id)
-                , Html.Attributes.class "entrant"
-                ]
-                [ Html.span
-                    [ Html.Attributes.class "entrant-position" ]
-                    []
-                , Html.span
-                    [ Html.Attributes.class "entrant-driver" ]
-                    [ Html.text entrant.driver ]
-                , Html.span
-                    [ Html.Attributes.class "entrant-number" ]
-                    [ Html.text (String.fromInt entrant.number) ]
-                , Html.span
-                    [ Html.Attributes.class "entrant-team"
-                    , Html.Attributes.style "color" teamColor
-                    ]
-                    [ Html.text entrant.teamShortName ]
-                ]
-
         decodeReorderEvent : Decoder msg
         decodeReorderEvent =
             Decode.succeed config.reorderMessage
@@ -82,8 +52,45 @@ view config =
         [ Html.node
             "sortable-list"
             [ Html.Events.on "item-reordered" decodeReorderEvent ]
-            (List.map viewEntrant config.entrants)
+            (List.map (viewEntrant { showPosition = True }) config.entrants)
         , Html.button
             [ Html.Events.onClick config.submitMessage ]
             [ Html.text submitText ]
+        ]
+
+
+viewEntrant : { showPosition : Bool } -> Types.FormulaOne.Entrant -> Html msg
+viewEntrant config entrant =
+    let
+        teamColor : String
+        teamColor =
+            case entrant.teamPrimaryColor == "#FFFFFF" of
+                False ->
+                    entrant.teamPrimaryColor
+
+                True ->
+                    entrant.teamSecondaryColor
+    in
+    Html.div
+        [ Html.Attributes.attribute "data-id" (String.fromInt entrant.id)
+        , Html.Attributes.class "entrant"
+        ]
+        [ case config.showPosition of
+            False ->
+                Html.Extra.nothing
+
+            True ->
+                -- A placeholder which is then filled in by CSS with the position.
+                Html.span [ Html.Attributes.class "entrant-position" ] []
+        , Html.span
+            [ Html.Attributes.class "entrant-driver" ]
+            [ Html.text entrant.driver ]
+        , Html.span
+            [ Html.Attributes.class "entrant-number" ]
+            [ Html.text (String.fromInt entrant.number) ]
+        , Html.span
+            [ Html.Attributes.class "entrant-team"
+            , Html.Attributes.style "color" teamColor
+            ]
+            [ Html.text entrant.teamShortName ]
         ]

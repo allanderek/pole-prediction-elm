@@ -1168,6 +1168,15 @@ section.formula-e-event-scores {
     }
 }
 
+table.formula-one-session-results-table {
+    /* Viewed by non-logged in users or non-admin users */
+    margin: 1rem;
+
+    tr:nth-child(even) {
+        background: #f8f9fa;
+    }
+}
+
 /* Formula One Session Leaderboard Styles */
 .formula-one-session-leaderboard,
 .formula-one-season-leaderboard {

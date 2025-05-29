@@ -10,6 +10,7 @@ import Components.UserName
 import Dict
 import Helpers.Http
 import Helpers.List
+import Helpers.Table
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes as Attributes
@@ -90,22 +91,74 @@ view model session =
                 Nothing ->
                     Components.Login.youMustBeLoggedInTo "make a prediction"
 
+        viewIneditableResult : Maybe (List Types.FormulaOne.Entrant) -> Html Msg
+        viewIneditableResult mCurrentResults =
+            Components.Section.view
+                { title = "Results"
+                , class = "formula-one-session-results"
+                }
+                [ case mCurrentResults of
+                    Nothing ->
+                        Html.text "Waiting on results"
+
+                    Just currentResults ->
+                        let
+                            viewRow : Int -> Types.FormulaOne.Entrant -> Html Msg
+                            viewRow index entrant =
+                                let
+                                    position : Int
+                                    position =
+                                        index + 1
+
+                                    driver : Html msg
+                                    driver =
+                                        Components.FormulaOneSessionEntry.viewEntrant { showPosition = False } entrant
+                                in
+                                Html.tr
+                                    []
+                                    [ String.fromInt position
+                                        |> Html.text
+                                        |> Helpers.Table.cell
+                                    , Helpers.Table.cell driver
+                                    ]
+                        in
+                        Html.table
+                            [ Attributes.class "formula-one-session-results-table" ]
+                            [ Html.thead
+                                []
+                                [ Html.tr
+                                    []
+                                    [ Html.th [] [ Html.text "Position" ]
+                                    , Html.th [] [ Html.text "Driver" ]
+                                    ]
+                                ]
+                            , Html.tbody
+                                []
+                                (List.indexedMap viewRow currentResults)
+                            ]
+                ]
+
         viewResultEntry : List Types.FormulaOne.Entrant -> Html Msg
         viewResultEntry entrants =
+            let
+                mCurrentResults : Maybe (List Types.FormulaOne.Entrant)
+                mCurrentResults =
+                    Model.getFormulaOneCurrentSessionResults model session.id
+            in
             case Helpers.Http.toMaybe model.userStatus of
                 Nothing ->
-                    Html.Extra.nothing
+                    viewIneditableResult mCurrentResults
 
                 Just user ->
                     case user.isAdmin of
                         False ->
-                            Html.Extra.nothing
+                            viewIneditableResult mCurrentResults
 
                         True ->
                             let
                                 currentResults : List Types.FormulaOne.Entrant
                                 currentResults =
-                                    Model.getFormulaOneCurrentSessionResults model session.id
+                                    mCurrentResults
                                         |> Maybe.withDefault entrants
                             in
                             Components.Section.view
