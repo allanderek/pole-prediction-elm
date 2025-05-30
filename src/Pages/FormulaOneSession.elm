@@ -112,7 +112,9 @@ view model session =
 
                                     driver : Html msg
                                     driver =
-                                        Components.FormulaOneSessionEntry.viewEntrant { showPosition = False } entrant
+                                        Components.FormulaOneSessionEntry.viewEntrant
+                                            { showPosition = False, withHandle = False }
+                                            entrant
                                 in
                                 Html.tr
                                     []

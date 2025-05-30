@@ -7,6 +7,7 @@ class SortableList extends HTMLElement {
   connectedCallback() {
     // Initialize Sortable when the element is added to the DOM
     this.sortableInstance = Sortable.create(this, {
+      handle: '.sortable-handle',
       animation: 150,
       // Enable touch support
       touchStartThreshold: 3,

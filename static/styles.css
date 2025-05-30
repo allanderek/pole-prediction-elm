@@ -1181,12 +1181,15 @@ section.formula-e-event-scores {
     align-items: center;
     padding: 4px;
     border-radius: 8px;
-    cursor: grab;
     background-color: white;
     transition: all 0.2s ease;
     position: relative;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     counter-increment: entrant-counter;
+
+    .sortable-handle {
+        cursor: grab;
+    }
 }
 
 .formula-one-session-results-entry sortable-list>div:hover,
@@ -1197,9 +1200,12 @@ section.formula-e-event-scores {
 
 .formula-one-session-results-entry sortable-list>div:active,
 .formula-one-session-prediction-entry sortable-list>div:active {
-    cursor: grabbing;
     transform: translateY(0);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    .sortable-handle {
+        cursor: grabbing;
+    }
 }
 
 /* Entrant number styling */
@@ -1218,25 +1224,35 @@ section.formula-e-event-scores {
 }
 
 
-/* Driver name - most prominent */
-.entrant-driver {
-    font-weight: 600;
-    font-size: 1.0rem;
-    color: var(--text-primary, #333333);
-    margin-left: 1em;
-}
+.entrant {
 
-.entrant-number {
-    font-weight: 600;
-    font-size: 0.55em;
-    align-self: baseline;
-}
+    /* Driver name - most prominent */
+    .entrant-driver {
+        font-weight: 600;
+        font-size: 1.0rem;
+        color: var(--text-primary, #333333);
+        margin-left: 1em;
+    }
 
-/* Team name - secondary */
-.entrant-team {
-    font-size: 0.55rem;
-    margin-left: 1em;
-    align-self: last baseline;
+    .entrant-number {
+        font-weight: 600;
+        font-size: 0.55em;
+        align-self: baseline;
+    }
+
+    /* Team name - secondary */
+    .entrant-team {
+        font-size: 0.55rem;
+        margin-left: 1em;
+        align-self: last baseline;
+    }
+
+    .sortable-handle {
+        border: 1px solid #ccc;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        margin-left: auto;
+    }
 }
 
 

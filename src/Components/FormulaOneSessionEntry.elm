@@ -52,14 +52,14 @@ view config =
         [ Html.node
             "sortable-list"
             [ Html.Events.on "item-reordered" decodeReorderEvent ]
-            (List.map (viewEntrant { showPosition = True }) config.entrants)
+            (List.map (viewEntrant { showPosition = True, withHandle = True }) config.entrants)
         , Html.button
             [ Html.Events.onClick config.submitMessage ]
             [ Html.text submitText ]
         ]
 
 
-viewEntrant : { showPosition : Bool } -> Types.FormulaOne.Entrant -> Html msg
+viewEntrant : { showPosition : Bool, withHandle : Bool } -> Types.FormulaOne.Entrant -> Html msg
 viewEntrant config entrant =
     let
         teamColor : String
@@ -93,4 +93,12 @@ viewEntrant config entrant =
             , Html.Attributes.style "color" teamColor
             ]
             [ Html.text entrant.teamShortName ]
+        , case config.withHandle of
+            True ->
+                Html.span
+                    [ Html.Attributes.class "sortable-handle" ]
+                    [ Html.text "↕" ]
+
+            False ->
+                Html.Extra.nothing
         ]
