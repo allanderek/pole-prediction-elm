@@ -183,8 +183,11 @@ view model season =
         ]
     , seasonNav
     , eventsSection
-    , leaderboardSection
-    , seasonLeaderboardSection
+    , Html.div
+        [ Attributes.class "formula-one-leaderboards-container" ]
+        [ leaderboardSection
+        , seasonLeaderboardSection
+        ]
     , driverStandingsSection
     , constructorStandingsSection
     ]

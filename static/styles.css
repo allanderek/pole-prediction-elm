@@ -277,6 +277,7 @@ main.profile-page {
 main.formula-e-season-page {
     display: grid;
     grid-template-columns: 1fr;
+    gap: 1rem;
 }
 
 /* Mobile-first: all sections stack vertically */
@@ -292,7 +293,6 @@ main.formula-e-season-page>* {
             "header nav"
             "events leaderboard"
         ;
-        gap: 1em;
 
         h1 {
             grid-area: header;
@@ -300,6 +300,7 @@ main.formula-e-season-page>* {
 
         .season-nav {
             grid-area: nav;
+            align-self: center;
         }
 
         .formula-e-events {
@@ -981,13 +982,21 @@ section.formula-e-event-scores {
 }
 
 
-.formula-one-season-page {
+main.formula-one-season-page {
     display: grid;
     grid-template-columns: 1fr;
+    gap: 1rem;
+
+    .formula-one-leaderboards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
 }
 
 /* Mobile-first: all sections stack vertically */
-.formula-one-season-page>* {
+main.formula-one-season-page>* {
     grid-column: 1;
 }
 
@@ -998,9 +1007,7 @@ section.formula-e-event-scores {
         grid-template-areas:
             "header nav"
             "events leaderboard"
-            "events season-leaderboard"
             "driver-standings constructor-standings";
-        gap: 1em;
 
         h1 {
             grid-area: header;
@@ -1008,18 +1015,15 @@ section.formula-e-event-scores {
 
         .season-nav {
             grid-area: nav;
+            align-self: center;
         }
 
         .formula-one-events {
             grid-area: events;
         }
 
-        .formula-one-leaderboard {
+        .formula-one-leaderboards-container {
             grid-area: leaderboard;
-        }
-
-        .formula-one-season-leaderboard {
-            grid-area: season-leaderboard;
         }
 
         .formula-one-driver-standings {
@@ -1357,15 +1361,11 @@ table.formula-one-session-results-table {
 }
 
 /* Formula One Session Leaderboard Styles */
-.formula-one-session-leaderboard,
-.formula-one-season-leaderboard {
+section.section.formula-one-session-leaderboard,
+section.section.formula-one-season-leaderboard {
     max-width: 800px;
+    box-shadow: none;
 
-    h2 {
-        text-align: center;
-        margin-bottom: 1.5rem;
-        color: #333;
-    }
 
     ul {
         list-style: none;
@@ -1374,9 +1374,7 @@ table.formula-one-session-results-table {
     }
 
     li {
-        margin-bottom: 0.5rem;
         border: 1px solid #ddd;
-        border-radius: 8px;
         overflow: hidden;
         background: white;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
