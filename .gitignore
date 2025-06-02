@@ -10,6 +10,7 @@ devenv.local.nix
 
 elm-stuff
 static/main.js
+static/main-debug.js
 venv
 debug.predictions.db
 predictions.db

@@ -204,6 +204,7 @@ def serve_index(path=None):
             }
         
         user_flags_json = json.dumps(user_flags)
+        main_js_src = "/static/main-debug.js" if config.get('debug', False) else "/static/main.js" 
 
         index_html = f"""<!DOCTYPE html>
                 <html>
@@ -218,7 +219,7 @@ def serve_index(path=None):
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;700;900&display=swap" rel="stylesheet">
                     <link rel="stylesheet" href="/static/styles.css">
                     <script src="/static/custom-elements.js"></script>
-                    <script src="/static/main.js"></script>
+                    <script src="{main_js_src}"></script>
                 </head>
                 <body>
                     <h1>Pole Prediction</h1>

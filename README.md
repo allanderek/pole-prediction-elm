@@ -14,7 +14,7 @@ $ source venv/bin/activate.fish
 - [ ] Am I vulnerable to SQL-injection? See for example getting the leaderboard we just pass in the season.
 - [x] Fix the damn problem with devenv/direnv reloading
 - [x] Make a watcher for the front-end at least, and possibly the backend.
-- [ ] Decide what to do about non-participating entrants, either download them but deal with them on the front-end, filter them out in the SQL query.
+- [ ] Decide what to do about non-participating entrants, either download them but deal with them on the front-end, or filter them out in the SQL query.
 - [ ] Learn about workers and whether I need those to keep the data up to date.
 
 

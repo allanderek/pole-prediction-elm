@@ -1,10 +1,14 @@
-ELMAPP=static/main.js
+ELMDEBUGAPP=static/main-debug.js
+ELMPRODAPP=static/main.js
 
 .PHONY: review
 
-elm: $(ELMAPP) 
-$(ELMAPP): $(shell fd . -e elm src/)
-	elm make src/Main.elm --debug --output=$(ELMAPP) 
+elm: $(ELMDEBUGAPP) 
+$(ELMDEBUGAPP): $(shell fd . -e elm src/)
+	elm make src/Main.elm --debug --output=$(ELMDEBUGAPP) 
+
+$(ELMPRODAPP): $(shell fd . -e elm src/)
+	elm make src/Main.elm --optimize --output=$(ELMPRODAPP) 
 
 review:
 	elm-review
@@ -14,3 +18,9 @@ watch-frontend:
 
 watch-backend:
 	@watchexec -r -e py "echo 'Python file changed, rebuilding backend...' && python app.py config.dev.json"
+
+
+deploy: app.py $(ELMPRODAPP) 
+	@echo "Deploying application..."
+	elm make src/Main.elm --optimize --output=$(ELMPRODAPP)
+	python app.py config.prod.json
