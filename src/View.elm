@@ -15,7 +15,6 @@ import Helpers.Http
 import Helpers.List
 import Html exposing (Html)
 import Html.Attributes as Attributes
-import Html.Events
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Pages.FormulaEEvent
@@ -26,7 +25,6 @@ import Route
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
-import Types.Profile
 
 
 application : Model key -> Browser.Document Msg
@@ -171,6 +169,7 @@ application model =
                                             { toRoute = Route.FormulaEEvent season << .id
                                             , toName = .name
                                             , toStartTime = .startTime
+                                            , toEndDate = .startTime
                                             }
                                     , failedMessage = "Error obtaining the events"
                                     }

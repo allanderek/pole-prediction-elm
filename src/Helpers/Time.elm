@@ -1,6 +1,7 @@
 module Helpers.Time exposing
-    ( isEarlier
-    , orderByDate
+    ( datePassed
+    , dateReached
+    , isEarlier
     )
 
 import Time
@@ -35,6 +36,32 @@ orderByDate zone a b =
 
                 EQ ->
                     compareBy Time.toDay
+
+
+dateReached : { a | zone : Time.Zone, now : Time.Posix } -> Time.Posix -> Bool
+dateReached model startTime =
+    case orderByDate model.zone model.now startTime of
+        LT ->
+            False
+
+        EQ ->
+            True
+
+        GT ->
+            True
+
+
+datePassed : { a | zone : Time.Zone, now : Time.Posix } -> Time.Posix -> Bool
+datePassed model startTime =
+    case orderByDate model.zone model.now startTime of
+        LT ->
+            False
+
+        EQ ->
+            False
+
+        GT ->
+            True
 
 
 getMonthInt : Time.Zone -> Time.Posix -> Int

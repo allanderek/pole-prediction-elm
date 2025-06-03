@@ -523,6 +523,10 @@ section.section {
                 font-weight: bold;
             }
         }
+
+        &.started.not-finished {
+            font-weight: 700;
+        }
     }
 }
 

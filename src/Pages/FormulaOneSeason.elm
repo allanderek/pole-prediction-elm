@@ -46,6 +46,7 @@ view model season =
                                 { toRoute = Route.FormulaOneEvent season << .id
                                 , toName = Types.FormulaOne.eventName
                                 , toStartTime = .startTime
+                                , toEndDate = .finalSessionTime
                                 }
                         , failedMessage = "Error obtaining the events"
                         }

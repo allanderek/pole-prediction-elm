@@ -13,6 +13,7 @@ type alias Config a =
     { toRoute : a -> Route
     , toName : a -> String
     , toStartTime : a -> Time.Posix
+    , toEndDate : a -> Time.Posix
     }
 
 
@@ -26,17 +27,18 @@ view model config events =
                 startTime =
                     config.toStartTime event
 
+                hasStarted : Bool
+                hasStarted =
+                    Helpers.Time.dateReached model startTime
+
                 hasFinished : Bool
                 hasFinished =
-                    case Helpers.Time.orderByDate model.zone startTime model.now of
-                        LT ->
-                            True
-
-                        EQ ->
-                            False
-
-                        GT ->
-                            False
+                    let
+                        endTime : Time.Posix
+                        endTime =
+                            config.toEndDate event
+                    in
+                    Helpers.Time.datePassed model endTime
             in
             Html.li
                 []
@@ -44,6 +46,7 @@ view model config events =
                     [ Attributes.class "event-link"
                     , config.toRoute event
                         |> Route.href
+                    , Helpers.Classes.boolean "started" "not-started" hasStarted
                     , Helpers.Classes.boolean "finished" "not-finished" hasFinished
                     ]
                     [ config.toName event
