@@ -232,6 +232,10 @@ type alias SeasonPredictionRow =
     , teamName : String
     , teamPrimaryColor : String
     , teamSecondaryColor : String
+    , actualTeamName : String
+    , actualTeamPrimaryColor : String
+    , actualTeamSecondaryColor : String
+    , actualPoints : Int
     , difference : Int
     }
 
@@ -245,6 +249,10 @@ seasonPredictionRowDecoder =
         |> Pipeline.required "team" Decode.string
         |> Pipeline.required "team_primary_color" Decode.string
         |> Pipeline.required "team_secondary_color" Decode.string
+        |> Pipeline.required "actual_team_name" Decode.string
+        |> Pipeline.required "actual_team_primary_color" Decode.string
+        |> Pipeline.required "actual_team_secondary_color" Decode.string
+        |> Pipeline.required "actual_total" Decode.int
         |> Pipeline.required "difference" Decode.int
 
 

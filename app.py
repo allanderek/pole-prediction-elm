@@ -876,6 +876,8 @@ def get_formula_one_season_leaderboard(season):
                 case when results.fastest_lap = 'true' and sessions.fastest_lap = 1 then 1 else 0 end
                     as score,
                 teams.shortname as team_name,
+                teams.color as team_color,
+                teams.secondary_color as team_secondary_color,
                 teams.id as team_id
             from results
             inner join formula_one_sessions as sessions on results.session = sessions.id
@@ -889,6 +891,8 @@ def get_formula_one_season_leaderboard(season):
             select 
                 row_number() over (order by sum(score) desc) as position,
                 team_name,
+                team_color,
+                team_secondary_color,
                 team_id,
                 sum(score) as total
             from scored_lines
@@ -912,8 +916,13 @@ def get_formula_one_season_leaderboard(season):
                     0
                 ) as integer)
             else 0
-        end as difference
+        end as difference,
+        c.team_name as actual_team_name,
+        c.team_color as actual_team_primary_color,
+        c.team_secondary_color as actual_team_secondary_color,
+        c.total as actual_total
     from user_predictions up
+    left join constructors c on up.position = c.position
     order by up.user, up.position
     ;"""
         rows = db.execute(query, {'season': season}).fetchall()

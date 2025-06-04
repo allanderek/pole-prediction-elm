@@ -5,6 +5,7 @@ import Components.HttpStatus
 import Components.Leaderboard
 import Components.SeasonNav
 import Components.Section
+import Components.TeamName
 import Components.UserName
 import Dict
 import Helpers.Http
@@ -137,11 +138,29 @@ view model season =
                                                     [ Attributes.class "scored-row-position" ]
                                                     [ Html.text (String.fromInt scoredRow.predictedPosition) ]
                                                 , Html.td
-                                                    [ Attributes.class "scored-row-driver" ]
-                                                    [ Html.text scoredRow.teamName ]
+                                                    [ Attributes.class "scored-row-team" ]
+                                                    [ Components.TeamName.view
+                                                        { name = scoredRow.teamName
+                                                        , class = "team-name"
+                                                        , primary = scoredRow.teamPrimaryColor
+                                                        , secondary = scoredRow.teamSecondaryColor
+                                                        }
+                                                    ]
                                                 , Html.td
                                                     [ Attributes.class "scored-row-score" ]
                                                     [ Html.text (String.fromInt scoredRow.difference) ]
+                                                , Html.td
+                                                    [ Attributes.class "scored-row-actual-team" ]
+                                                    [ Components.TeamName.view
+                                                        { name = scoredRow.actualTeamName
+                                                        , class = "team-name"
+                                                        , primary = scoredRow.actualTeamPrimaryColor
+                                                        , secondary = scoredRow.actualTeamSecondaryColor
+                                                        }
+                                                    ]
+                                                , Html.td
+                                                    [ Attributes.class "scored-row-actual-points" ]
+                                                    [ Html.text (String.fromInt scoredRow.actualPoints) ]
                                                 ]
                                     in
                                     Html.li
@@ -162,7 +181,10 @@ view model season =
                                                 ]
                                             , Html.table
                                                 []
-                                                (List.map viewScoredRow leaderboardRow.rows)
+                                                [ Html.tbody
+                                                    []
+                                                    (List.map viewScoredRow leaderboardRow.rows)
+                                                ]
                                             ]
                                         ]
                             in

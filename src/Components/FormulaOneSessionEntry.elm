@@ -4,6 +4,7 @@ module Components.FormulaOneSessionEntry exposing
     , viewEntrant
     )
 
+import Components.TeamName
 import Html exposing (Html)
 import Html.Attributes
 import Html.Events
@@ -88,11 +89,12 @@ viewEntrant config entrant =
         , Html.span
             [ Html.Attributes.class "entrant-number" ]
             [ Html.text (String.fromInt entrant.number) ]
-        , Html.span
-            [ Html.Attributes.class "entrant-team"
-            , Html.Attributes.style "color" teamColor
-            ]
-            [ Html.text entrant.teamShortName ]
+        , Components.TeamName.view
+            { name = entrant.teamFullName
+            , class = "entrant-team"
+            , primary = entrant.teamPrimaryColor
+            , secondary = entrant.teamSecondaryColor
+            }
         , case config.withHandle of
             True ->
                 Html.span
