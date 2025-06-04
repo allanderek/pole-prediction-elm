@@ -19,8 +19,11 @@ watch-frontend:
 watch-backend:
 	@watchexec -r -e py "echo 'Python file changed, rebuilding backend...' && python app.py config.dev.json"
 
+static/styles.min.css: static/styles.css
+	@echo "Minifying styles..."
+	lightningcss --minify $< -o $@
 
-deploy: app.py $(ELMPRODAPP) 
+deploy: app.py $(ELMPRODAPP) static/styles.min.css
 	@echo "Deploying application..."
 	elm make src/Main.elm --optimize --output=$(ELMPRODAPP)
 	python app.py config.prod.json

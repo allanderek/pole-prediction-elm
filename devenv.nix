@@ -11,6 +11,7 @@
     pkgs.nodePackages.sass
     pkgs.vscode-langservers-extracted
     pkgs.watchexec
+    pkgs.lightningcss
     pkgs.sqlite
     pkgs.litecli
     # Required for copilot

@@ -205,6 +205,7 @@ def serve_index(path=None):
         
         user_flags_json = json.dumps(user_flags)
         main_js_src = "/static/main-debug.js" if config.get('debug', False) else "/static/main.js" 
+        main_css_src ="/static/styles.css" if config.get('debug', False) else "/static/styles.min.css"
 
         index_html = f"""<!DOCTYPE html>
                 <html>
@@ -217,7 +218,7 @@ def serve_index(path=None):
                     <link rel="preconnect" href="https://fonts.googleapis.com">
                     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
                     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Rajdhani:wght@400;700;900&display=swap" rel="stylesheet">
-                    <link rel="stylesheet" href="/static/styles.css">
+                    <link rel="stylesheet" href="{main_css_src}">
                     <script src="/static/custom-elements.js"></script>
                     <script src="{main_js_src}"></script>
                 </head>

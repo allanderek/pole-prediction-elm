@@ -11,6 +11,7 @@ devenv.local.nix
 elm-stuff
 static/main.js
 static/main-debug.js
+static/styles.min.css
 venv
 debug.predictions.db
 predictions.db
