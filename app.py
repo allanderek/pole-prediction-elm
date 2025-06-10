@@ -225,11 +225,57 @@ def serve_index(path=None):
                 <body>
                     <h1>Pole Prediction</h1>
                     <script> 
+                        const safeLocalStorage = {{
+                              getItem(key) {{
+                                try {{
+                                  return localStorage.getItem(key);
+                                }} catch(e) {{
+                                  return null;
+                                }}
+                              }},
+                              setItem(key, value) {{
+                                try {{
+                                  localStorage.setItem(key, value);
+                                }} catch(e) {{
+                                  // 
+                                }}
+                              }},
+                              removeItem(key, value) {{
+                                try {{
+                                  localStorage.removeItem(key, value);
+                                }} catch(e) {{
+                                  // 
+                                }}
+                              }}
+                        }};
+
                         const user_flags = {user_flags_json};
                         const flags = {{ "flags" : {{ "now": Date.now(), ...user_flags }} }}; 
                         var app = Elm.Main.init(flags); 
+
+
+                        app.ports.set_local_storage.subscribe(function (args) {{ 
+                            safeLocalStorage.setItem(args.key, JSON.stringify(args.value)); 
+                        }});
+
+                        app.ports.clear_local_storage.subscribe(function (args) {{ 
+                            safeLocalStorage.removeItem(args); 
+                        }});
+
+
                         app.ports.native_alert.subscribe(function (message) {{ 
                             alert(message); 
+                        }});
+
+                        window.addEventListener('storage', function(event) {{
+                            console.log('local storage event');
+                            console.log(event);
+                            if (event.key === 'user') {{
+                                app.ports.local_storage_changed.send(
+                                    {{ key: event.key,
+                                      newValue: JSON.parse(event.newValue) }}
+                                );
+                            }}
                         }});
                     </script>
                 </body>

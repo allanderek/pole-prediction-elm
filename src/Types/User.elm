@@ -2,10 +2,12 @@ module Types.User exposing
     ( Id
     , User
     , decoder
+    , encode
     )
 
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
+import Json.Encode as Encode
 
 
 type alias Id =
@@ -27,3 +29,13 @@ decoder =
         |> Pipeline.required "username" Decode.string
         |> Pipeline.required "fullname" Decode.string
         |> Pipeline.required "admin" Decode.bool
+
+
+encode : User -> Encode.Value
+encode user =
+    Encode.object
+        [ ( "id", Encode.int user.id )
+        , ( "username", Encode.string user.username )
+        , ( "fullname", Encode.string user.fullname )
+        , ( "admin", Encode.bool user.isAdmin )
+        ]

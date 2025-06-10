@@ -6,11 +6,13 @@ module Msg exposing
 
 import Browser
 import Http
+import Json.Decode
 import Time
 import TimeZone
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
+import Types.LocalStorageNotification exposing (LocalStorageNotification)
 import Types.Profile
 import Types.User exposing (User)
 import Url
@@ -26,6 +28,7 @@ type Msg
     | Tick Time.Posix
     | GetTimeZone (Result TimeZone.Error ( String, Time.Zone ))
     | LegacyGetTimeZone Time.Zone
+    | LocalStorageNotification (Result Json.Decode.Error LocalStorageNotification)
     | LoginIdentityInput String
     | LoginPasswordInput String
     | LoginSubmit

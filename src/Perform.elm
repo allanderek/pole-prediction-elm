@@ -48,6 +48,12 @@ perform model effect =
         Effect.Reload ->
             Browser.Navigation.reload
 
+        Effect.SetLocalStorage key value ->
+            Ports.set_local_storage { key = key, value = value }
+
+        Effect.ClearLocalStorage key ->
+            Ports.clear_local_storage key
+
         Effect.NativeAlert message ->
             Ports.native_alert message
 

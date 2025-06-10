@@ -8,11 +8,14 @@ import Browser.Navigation
 import Effect exposing (Effect)
 import Helpers.Http
 import Json.Decode as Decode exposing (Decoder)
+import Json.Encode as Encode
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Perform
+import Ports
 import Return
 import Time
+import Types.LocalStorageNotification
 import Types.User exposing (User)
 import Update
 import Url
@@ -45,15 +48,33 @@ main =
         subscriptions : Model key -> Sub Msg
         subscriptions _ =
             let
-                second : Float
-                second =
-                    1000
+                tickSubscription : Sub Msg
+                tickSubscription =
+                    let
+                        second : Float
+                        second =
+                            1000
 
-                tenSeconds : Float
-                tenSeconds =
-                    second * 10
+                        tenSeconds : Float
+                        tenSeconds =
+                            second * 10
+                    in
+                    Time.every tenSeconds Msg.Tick
+
+                localStorageChanged : Sub Msg
+                localStorageChanged =
+                    let
+                        toMessage : Encode.Value -> Msg
+                        toMessage jsonValue =
+                            Decode.decodeValue Types.LocalStorageNotification.decoder jsonValue
+                                |> Msg.LocalStorageNotification
+                    in
+                    Ports.local_storage_changed toMessage
             in
-            Time.every tenSeconds Msg.Tick
+            Sub.batch
+                [ tickSubscription
+                , localStorageChanged
+                ]
     in
     Browser.application
         { init = performInit

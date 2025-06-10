@@ -3,6 +3,7 @@ module Effect exposing
     , goto
     )
 
+import Json.Encode
 import Route exposing (Route)
 import Types.Data exposing (Data)
 import Types.FormulaE
@@ -16,8 +17,10 @@ type Effect
     | Batch (List Effect)
     | PushUrl String
     | LoadUrl String
-    | NativeAlert String
     | Reload
+    | SetLocalStorage String Json.Encode.Value
+    | ClearLocalStorage String
+    | NativeAlert String
     | GetTimeZone
     | LegacyGetTimeZone
     | SubmitLogin Types.Login.Form

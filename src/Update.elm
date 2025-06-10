@@ -11,12 +11,14 @@ import Helpers.List
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Return
-import Route
+import Route exposing (Route)
 import Types.Data exposing (Data)
 import Types.FormulaE
 import Types.FormulaOne
+import Types.LocalStorageNotification
 import Types.Login
 import Types.Profile
+import Types.User exposing (User)
 import Url
 
 
@@ -242,6 +244,38 @@ initRoute model =
             Return.noEffect model
 
 
+logoutUser : { clearLocalStorage : Bool } -> Model key -> ( Model key, Effect )
+logoutUser config model =
+    -- It doesn't really matter what the result is, since even with success
+    -- we're just going to reload the current page, so any updates we do here would
+    -- be lost anyway. If this fails, then we could set the user status to the failure,
+    -- but then that would look like you were logged-out when maybe actually you weren't.
+    -- So we just ignore the result and reload the page.
+    ( model
+    , Effect.Batch
+        [ Effect.Reload
+
+        -- Note: This is second so that it occurs first, that is how Cmd.batch works.
+        , case config.clearLocalStorage of
+            True ->
+                Effect.ClearLocalStorage "user"
+
+            False ->
+                Effect.None
+        ]
+    )
+
+
+postLoginNav : Route -> Effect
+postLoginNav route =
+    case route of
+        Route.Login ->
+            Effect.goto Route.Home
+
+        _ ->
+            Effect.None
+
+
 update : Msg -> Model key -> ( Model key, Effect )
 update msg model =
     case msg of
@@ -277,6 +311,41 @@ update msg model =
         Msg.LegacyGetTimeZone zone ->
             Return.noEffect { model | zone = zone }
 
+        Msg.LocalStorageNotification result ->
+            case result of
+                Err _ ->
+                    -- This could of course mean there is an error in the decoder, in normal operation it
+                    -- simply means that it was a local storage key we do not care about.
+                    Return.noEffect model
+
+                Ok (Types.LocalStorageNotification.UserUpdated mNewUser) ->
+                    let
+                        mCurrentUser : Maybe User
+                        mCurrentUser =
+                            Helpers.Http.toMaybe model.userStatus
+                    in
+                    case ( mCurrentUser, mNewUser ) of
+                        ( Just _, Nothing ) ->
+                            -- The user has logged-out on a separate tab.
+                            logoutUser { clearLocalStorage = False } model
+
+                        ( Just _, Just newUser ) ->
+                            -- The user has just changed something, this doesn't happen often but for example will happen
+                            -- with the loginExpiration when the cookie/token is refreshed.
+                            Return.noEffect { model | userStatus = Helpers.Http.Succeeded newUser }
+
+                        ( Nothing, Just newUser ) ->
+                            -- The user has been logged-in on a seperate tab
+                            -- the user profile, let's just assume that this is correct.
+                            ( { model | userStatus = Helpers.Http.Succeeded newUser }
+                            , postLoginNav model.route
+                            )
+
+                        ( Nothing, Nothing ) ->
+                            -- Unlikely, but whatever this means that the user has been logged-out but this application
+                            -- already thinks the user is logged-out so nothing to do.
+                            Return.noEffect model
+
         Msg.LoginIdentityInput input ->
             let
                 form : Types.Login.Form
@@ -311,20 +380,18 @@ update msg model =
                 Err _ ->
                     Effect.None
 
-                Ok _ ->
-                    Effect.goto Route.Home
+                Ok user ->
+                    Effect.Batch
+                        [ postLoginNav model.route
+                        , Effect.SetLocalStorage "user" (Types.User.encode user)
+                        ]
             )
 
         Msg.Logout ->
             ( model, Effect.SubmitLogout )
 
         Msg.LogoutResponse _ ->
-            -- It doesn't really matter what the result is, since even with success
-            -- we're just going to reload the current page, so any updates we do here would
-            -- be lost anyway. If this fails, then we could set the user status to the failure,
-            -- but then that would look like you were logged-out when maybe actually you weren't.
-            -- So we just ignore the result and reload the page.
-            ( model, Effect.Reload )
+            logoutUser { clearLocalStorage = True } model
 
         Msg.EditProfile ->
             Return.noEffect { model | editingProfile = True }
@@ -366,31 +433,37 @@ update msg model =
             )
 
         Msg.SubmitEditedProfileResponse result ->
-            Return.noEffect
-                { model
-                    | profileStatus = Helpers.Http.fromResult result
-                    , userStatus =
-                        case result of
-                            Ok user ->
-                                Helpers.Http.Succeeded user
+            ( { model
+                | profileStatus = Helpers.Http.fromResult result
+                , userStatus =
+                    case result of
+                        Ok user ->
+                            Helpers.Http.Succeeded user
 
-                            Err _ ->
-                                model.userStatus
-                    , editingProfile =
-                        case result of
-                            Ok _ ->
-                                False
+                        Err _ ->
+                            model.userStatus
+                , editingProfile =
+                    case result of
+                        Ok _ ->
+                            False
 
-                            Err _ ->
-                                True
-                    , profileForm =
-                        case result of
-                            Ok _ ->
-                                Nothing
+                        Err _ ->
+                            True
+                , profileForm =
+                    case result of
+                        Ok _ ->
+                            Nothing
 
-                            Err _ ->
-                                model.profileForm
-                }
+                        Err _ ->
+                            model.profileForm
+              }
+            , case result of
+                Ok user ->
+                    Effect.SetLocalStorage "user" (Types.User.encode user)
+
+                Err _ ->
+                    Effect.None
+            )
 
         Msg.ReorderFormulaOneSessionPredictionEntry sessionId oldIndex newIndex ->
             let
