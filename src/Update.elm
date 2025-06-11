@@ -378,7 +378,7 @@ update msg model =
             ( { model | userStatus = Helpers.Http.fromResult result }
             , case result of
                 Err _ ->
-                    Effect.None
+                    Effect.NativeAlert "Login failed. Please check your username and password."
 
                 Ok user ->
                     Effect.Batch
@@ -390,8 +390,22 @@ update msg model =
         Msg.Logout ->
             ( model, Effect.SubmitLogout )
 
-        Msg.LogoutResponse _ ->
-            logoutUser { clearLocalStorage = True } model
+        Msg.LogoutResponse result ->
+            let
+                clearLocalStorage : Bool
+                clearLocalStorage =
+                    case result of
+                        Ok _ ->
+                            True
+
+                        Err _ ->
+                            False
+            in
+            -- We don't care about the result of the logout since we're about to reload the page anyway.
+            -- If the logout was successful, this will logout the user, if it failed, then the user will
+            -- still be logged-in after the reload. However, we do want to clear the local storage only if
+            -- the logout was successful.
+            logoutUser { clearLocalStorage = clearLocalStorage } model
 
         Msg.EditProfile ->
             Return.noEffect { model | editingProfile = True }
