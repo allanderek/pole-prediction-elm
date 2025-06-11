@@ -24,6 +24,7 @@ view model =
     Html.form
         [ Html.Events.onSubmit Msg.LoginSubmit
         , Attributes.disabled disabled
+        , Attributes.class "login-form"
         ]
         [ Html.label
             [ Attributes.class "form-label" ]
