@@ -43,14 +43,18 @@ longFormat zone time =
 
 shortFormat : Time.Zone -> Time.Posix -> Html msg
 shortFormat zone time =
+    let
+        dayString : String
+        dayString =
+            Time.toDay zone time
+                |> String.fromInt
+    in
     Html.time
         [ Attributes.datetime (Iso8601.fromTime time)
         , Attributes.class "time"
         ]
-        [ Time.toDay zone time
-            |> String.fromInt
-            |> ordinalSuffix
-            |> Html.text
+        [ Html.text dayString
+        , Html.sup [] [ ordinalSuffix dayString |> Html.text ]
         , Helpers.Html.nbsp
         , Time.toMonth zone time
             |> monthToShortString
@@ -124,7 +128,7 @@ ordinalSuffix numberString =
                         _ ->
                             ""
     in
-    String.append numberString suffix
+    suffix
 
 
 monthToString : Time.Month -> String
