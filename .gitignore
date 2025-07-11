@@ -15,4 +15,5 @@ static/styles.min.css
 venv
 debug.predictions.db
 predictions.db
+backup-dbs
 __pycache__

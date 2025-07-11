@@ -79,39 +79,50 @@ ordinalSuffix numberString =
     let
         suffix : String
         suffix =
-            case String.right 1 numberString of
-                "1" ->
-                    "st"
-
-                "2" ->
-                    "nd"
-
-                "3" ->
-                    "rd"
-
-                "4" ->
+            case numberString of
+                "11" ->
                     "th"
 
-                "5" ->
+                "12" ->
                     "th"
 
-                "6" ->
-                    "th"
-
-                "7" ->
-                    "th"
-
-                "8" ->
-                    "th"
-
-                "9" ->
-                    "th"
-
-                "10" ->
+                "13" ->
                     "th"
 
                 _ ->
-                    ""
+                    case String.right 1 numberString of
+                        "1" ->
+                            "st"
+
+                        "2" ->
+                            "nd"
+
+                        "3" ->
+                            "rd"
+
+                        "4" ->
+                            "th"
+
+                        "5" ->
+                            "th"
+
+                        "6" ->
+                            "th"
+
+                        "7" ->
+                            "th"
+
+                        "8" ->
+                            "th"
+
+                        "9" ->
+                            "th"
+
+                        "0" ->
+                            "th"
+
+                        _ ->
+                            ""
     in
     String.append numberString suffix
 
