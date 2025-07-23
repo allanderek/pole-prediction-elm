@@ -993,6 +993,8 @@ def get_formula_e_leaderboard(season):
                 users.id as user_id,
                 users.fullname as user_fullname,
                 case when predictions.first = results.first then 1 else 0 end as race_wins,
+                case when predictions.pole = results.pole then 1 else 0 end as poles,
+                case when predictions.second = results.second then 1 else 0 end as seconds,
                 case when predictions.pole = results.pole then 10 else 0 end +
                 case when predictions.fam = results.fam then 10 else 0 end + 
                 case when predictions.fl = results.fl then 10 else 0 end +
@@ -1013,15 +1015,17 @@ def get_formula_e_leaderboard(season):
             user_id, 
             user_fullname,
             cast(coalesce(sum(total), 0) as integer) as 'Total score',
-            cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins'
+            cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins',
+            cast(coalesce(sum(poles), 0) as integer) as 'Poles',
+            cast(coalesce(sum(seconds), 0) as integer) as 'Seconds'
         from scored_predictions
         group by user_id
-        order by sum(total) desc, sum(race_wins) desc
+        order by sum(total) desc, sum(race_wins) desc, sum(poles + seconds) desc
     ;"""
 
         rows = db.execute(query, {'season': season}).fetchall()
 
-        return { 'columns' : [ 'Total', 'Race wins'],
+        return { 'columns' : [ 'Total', 'Race wins', 'Poles', 'Seconds' ],
                  'rows' : create_leaderboard_rows(rows)
                 }
 
