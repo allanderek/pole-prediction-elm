@@ -20,7 +20,16 @@
     pkgs.elmPackages.elm-json
     ];
 
-  # https://devenv.sh/languages/
   languages.elm.enable = true;
-  languages.python.enable = true;
+  languages.python = {
+    enable = true;
+    venv.enable = true;
+    venv.requirements = ./requirements.txt;
+  };
+
+  enterShell = ''
+    python --version
+    which python
+    which pip
+  '';
 }
