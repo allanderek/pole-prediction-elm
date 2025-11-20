@@ -127,7 +127,7 @@ application model =
                             Components.SeasonNav.view
                                 { currentSeason = Types.FormulaE.currentSeason
                                 , viewedSeason = season
-                                , allSeasons = [ "2025-26", "2024-25", "2023-24", "2022-23" ]
+                                , allSeasons = Types.FormulaE.allSeasons
                                 , toRoute = Route.FormulaE << Just
                                 , toName = identity
                                 }

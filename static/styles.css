@@ -576,13 +576,16 @@ section.section {
     }
 
     fieldset {
-        .formula-e-event-entrant-selector {
+
+        .formula-e-event-entrant-selector,
+        .formula-e-event-team-selector {
             label {
                 min-width: 120px;
                 font-size: 1rem;
             }
 
-            .formula-e-event-entrant-select {
+            .formula-e-event-entrant-select,
+            .formula-e-event-team-select {
                 font-size: 1rem;
             }
         }
@@ -737,7 +740,8 @@ fieldset {
         }
     }
 
-    .formula-e-event-entrant-selector {
+    .formula-e-event-entrant-selector,
+    .formula-e-event-team-selector {
         margin-bottom: 1.5rem;
         display: flex;
         flex-direction: column;
@@ -751,7 +755,8 @@ fieldset {
             font-size: 0.95rem;
         }
 
-        .formula-e-event-entrant-select {
+        .formula-e-event-entrant-select,
+        .formula-e-event-team-select {
             flex: 1;
             padding: 0.75rem;
             border: 2px solid #dee2e6;
@@ -775,7 +780,9 @@ fieldset {
 
     /* Medium screens and up */
     @media (min-width: 768px) {
-        .formula-e-event-entrant-selector {
+
+        .formula-e-event-entrant-selector,
+        .formula-e-event-team-selector {
             flex-direction: row;
             align-items: center;
         }

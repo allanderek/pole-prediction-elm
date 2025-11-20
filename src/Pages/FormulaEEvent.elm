@@ -6,7 +6,7 @@ import Components.Login
 import Components.Section
 import Components.Selector
 import Components.Time
-import Dict
+import Dict exposing (Dict)
 import Helpers.Attributes
 import Helpers.Classes
 import Helpers.Events
@@ -29,6 +29,10 @@ import Types.User exposing (User)
 view : Model key -> Types.FormulaE.Season -> Types.FormulaE.Event -> List (Html Msg)
 view model season event =
     let
+        scoringVersion : Types.FormulaE.ScoringVersion
+        scoringVersion =
+            Types.FormulaE.scoringVersion season
+
         info : Html msg
         info =
             Components.Info.view
@@ -151,6 +155,33 @@ view model season event =
                                                                         Nothing ->
                                                                             Helpers.Table.stringCell "Unknown - driver"
 
+                                                                hstCell : Html Msg
+                                                                hstCell =
+                                                                    case scoringVersion of
+                                                                        Types.FormulaE.V1 ->
+                                                                            Html.Extra.nothing
+
+                                                                        Types.FormulaE.V2 ->
+                                                                            let
+                                                                                teamId : Types.FormulaE.TeamId
+                                                                                teamId =
+                                                                                    prediction.hst
+                                                                            in
+                                                                            case Helpers.List.findWith teamId .teamId entrants of
+                                                                                Just entrant ->
+                                                                                    Html.div
+                                                                                        [ scoredAttribute <|
+                                                                                            matchesResult .hst teamId
+                                                                                        ]
+                                                                                        [ Html.span
+                                                                                            [ Html.Attributes.class "team-name" ]
+                                                                                            [ Html.text entrant.teamFullName ]
+                                                                                        ]
+                                                                                        |> Helpers.Table.cell
+
+                                                                                Nothing ->
+                                                                                    Helpers.Table.stringCell "Unknown - team"
+
                                                                 prediction : Types.FormulaE.Prediction
                                                                 prediction =
                                                                     scoredPrediction.prediction
@@ -186,13 +217,38 @@ view model season event =
                                                                 , Helpers.Table.intCell scoredPrediction.score
                                                                 , entrantCell .pole
                                                                 , entrantCell .fam
+                                                                , case scoringVersion of
+                                                                    Types.FormulaE.V1 ->
+                                                                        Html.Extra.nothing
+
+                                                                    Types.FormulaE.V2 ->
+                                                                        entrantCell .sam
                                                                 , entrantCell .fastestLap
                                                                 , entrantCell .hgc
                                                                 , entrantCell .first
                                                                 , entrantCell .second
                                                                 , entrantCell .third
                                                                 , entrantCell .fdnf
+                                                                , hstCell
                                                                 , safetyCar
+                                                                ]
+
+                                                        columns : List String
+                                                        columns =
+                                                            Helpers.List.filterByFirst
+                                                                [ ( True, "User" )
+                                                                , ( True, "Score" )
+                                                                , ( True, "Pole" )
+                                                                , ( True, "FAM" )
+                                                                , ( scoringVersion == Types.FormulaE.V2, "SAM" )
+                                                                , ( True, "FL" )
+                                                                , ( True, "HGC" )
+                                                                , ( True, "First" )
+                                                                , ( True, "Second" )
+                                                                , ( True, "Third" )
+                                                                , ( True, "FDNF" )
+                                                                , ( scoringVersion == Types.FormulaE.V2, "HST" )
+                                                                , ( True, "Safety car" )
                                                                 ]
                                                     in
                                                     Html.div
@@ -201,20 +257,7 @@ view model season event =
                                                             [ Html.Attributes.class "scores-table" ]
                                                             [ Html.thead
                                                                 []
-                                                                [ Helpers.Table.headerRow
-                                                                    [ "User"
-                                                                    , "Score"
-                                                                    , "Pole"
-                                                                    , "FAM"
-                                                                    , "FL"
-                                                                    , "HGC"
-                                                                    , "First"
-                                                                    , "Second"
-                                                                    , "Third"
-                                                                    , "FDNF"
-                                                                    , "Safety car"
-                                                                    ]
-                                                                ]
+                                                                [ Helpers.Table.headerRow columns ]
                                                             , Html.tbody
                                                                 []
                                                                 (List.map viewRow leaderboard.predictions)
@@ -356,6 +399,60 @@ viewInput model eventId user kind entrants =
                 ]
                 []
 
+        highestScoringTeamInput : Html Msg
+        highestScoringTeamInput =
+            let
+                teams : List ( Types.FormulaE.TeamId, String )
+                teams =
+                    let
+                        addTeam : Types.FormulaE.Entrant -> Dict Types.FormulaE.TeamId String -> Dict Types.FormulaE.TeamId String
+                        addTeam entrant dict =
+                            Dict.insert entrant.teamId entrant.teamFullName dict
+                    in
+                    List.foldl addTeam Dict.empty entrants
+                        |> Dict.toList
+
+                options : List Components.Selector.Option
+                options =
+                    let
+                        makeOption : ( Types.FormulaE.TeamId, String ) -> Components.Selector.Option
+                        makeOption ( teamId, teamName ) =
+                            { name = teamName
+                            , value = String.fromInt teamId
+                            }
+                    in
+                    List.map makeOption teams
+
+                onInput : String -> Msg
+                onInput valueString =
+                    let
+                        teamId : Types.FormulaE.TeamId
+                        teamId =
+                            String.toInt valueString
+                                |> Maybe.withDefault 0
+                    in
+                    Msg.SetHst teamId
+                        |> toMessage
+
+                selectorConfig : Components.Selector.Config Msg
+                selectorConfig =
+                    { classPrefix = "formula-e-event-team"
+                    , groups = Components.Selector.flatNoGroups options
+                    , onInput = onInput
+                    , onBlur = Nothing
+                    , current = String.fromInt current.hst
+                    , disabled = False
+                    , pleaseSelect = Just "Please select"
+                    }
+            in
+            Html.div
+                [ Html.Attributes.class "formula-e-event-team-selector" ]
+                [ Html.label
+                    []
+                    [ Html.text "HST" ]
+                , Components.Selector.view selectorConfig
+                ]
+
         invalidationMessage : Maybe String
         invalidationMessage =
             case kind of
@@ -376,6 +473,7 @@ viewInput model eventId user kind entrants =
                     Helpers.List.firstJust
                         [ unselectedEntrantId current.pole "Pole not selected"
                         , unselectedEntrantId current.fam "FAM not selected"
+                        , unselectedEntrantId current.sam "SAM not selected"
                         , unselectedEntrantId current.fastestLap "Fastest lap not selected"
                         , unselectedEntrantId current.hgc "HGC not selected"
                         , unselectedEntrantId current.first "First not selected"
@@ -400,6 +498,12 @@ viewInput model eventId user kind entrants =
                             False ->
                                 Nothing
                         , unselectedEntrantId current.fdnf "FDNF not selected"
+                        , case current.hst of
+                            0 ->
+                                Just "HST not selected"
+
+                            _ ->
+                                Nothing
                         , case current.safetyCar of
                             Just True ->
                                 Nothing
@@ -450,12 +554,14 @@ viewInput model eventId user kind entrants =
         [ legend
         , viewSelector { label = "Pole", current = current.pole, onInput = Msg.SetPole }
         , viewSelector { label = "FAM", current = current.fam, onInput = Msg.SetFam }
+        , viewSelector { label = "SAM", current = current.sam, onInput = Msg.SetSam }
         , viewSelector { label = "Fastest lap", current = current.fastestLap, onInput = Msg.SetFastestLap }
         , viewSelector { label = "HGC", current = current.hgc, onInput = Msg.SetHgc }
         , viewSelector { label = "First", current = current.first, onInput = Msg.SetFirst }
         , viewSelector { label = "Second", current = current.second, onInput = Msg.SetSecond }
         , viewSelector { label = "Third", current = current.third, onInput = Msg.SetThird }
         , viewSelector { label = "FDNF", current = current.fdnf, onInput = Msg.SetFdnf }
+        , highestScoringTeamInput
         , Html.div
             []
             [ Html.label [] [ Html.text "Safety car: " ]

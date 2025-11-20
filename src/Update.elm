@@ -779,6 +779,9 @@ updateFormulaEPrediction msg prediction =
         Msg.SetFam entrantId ->
             { prediction | fam = entrantId }
 
+        Msg.SetSam entrantId ->
+            { prediction | sam = entrantId }
+
         Msg.SetFastestLap entrantId ->
             { prediction | fastestLap = entrantId }
 
@@ -796,6 +799,9 @@ updateFormulaEPrediction msg prediction =
 
         Msg.SetFdnf entrantId ->
             { prediction | fdnf = entrantId }
+
+        Msg.SetHst teamId ->
+            { prediction | hst = teamId }
 
         Msg.SetSafetyCar safetyCar ->
             { prediction | safetyCar = Just safetyCar }

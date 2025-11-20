@@ -7,7 +7,10 @@ module Types.FormulaE exposing
     , Prediction
     , Result
     , ScoredPrediction
+    , ScoringVersion(..)
     , Season
+    , TeamId
+    , allSeasons
     , currentChampion
     , currentSeason
     , emptyPrediction
@@ -15,6 +18,7 @@ module Types.FormulaE exposing
     , entrantDecoder
     , eventDecoder
     , eventLeaderboardDecoder
+    , scoringVersion
     )
 
 import Helpers.Decode
@@ -38,6 +42,26 @@ currentChampion =
 currentSeason : Season
 currentSeason =
     "2025-26"
+
+
+allSeasons : List Season
+allSeasons =
+    [ "2025-26", "2024-25", "2023-24", "2022-23" ]
+
+
+type ScoringVersion
+    = V1
+    | V2
+
+
+scoringVersion : Season -> ScoringVersion
+scoringVersion season =
+    case season of
+        "2025-26" ->
+            V2
+
+        _ ->
+            V1
 
 
 type alias EventId =
@@ -67,6 +91,10 @@ eventDecoder =
         |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
 
 
+type alias TeamId =
+    Int
+
+
 type alias EntrantId =
     Int
 
@@ -75,6 +103,7 @@ type alias Entrant =
     { id : EntrantId
     , number : Int
     , driver : String
+    , teamId : TeamId
     , teamFullName : String
     , teamShortName : String
     , teamPrimaryColor : String
@@ -87,6 +116,7 @@ entrantDecoder =
         |> Pipeline.required "id" Decode.int
         |> Pipeline.required "number" Decode.int
         |> Pipeline.required "driver_name" Decode.string
+        |> Pipeline.required "team_id" Decode.int
         |> Pipeline.required "team_full_name" Decode.string
         |> Pipeline.required "team_short_name" Decode.string
         |> Pipeline.required "team_primary_color" Decode.string
@@ -95,12 +125,14 @@ entrantDecoder =
 type alias Prediction =
     { pole : EntrantId
     , fam : EntrantId
+    , sam : EntrantId
     , fastestLap : EntrantId
     , hgc : EntrantId
     , first : EntrantId
     , second : EntrantId
     , third : EntrantId
     , fdnf : EntrantId
+    , hst : TeamId
     , safetyCar : Maybe Bool
     }
 
@@ -109,12 +141,14 @@ emptyPrediction : Prediction
 emptyPrediction =
     { pole = 0
     , fam = 0
+    , sam = 0
     , fastestLap = 0
     , hgc = 0
     , first = 0
     , second = 0
     , third = 0
     , fdnf = 0
+    , hst = 0
     , safetyCar = Nothing
     }
 
@@ -137,12 +171,14 @@ encodePrediction prediction =
     Encode.object
         [ ( "pole", Encode.int prediction.pole )
         , ( "fam", Encode.int prediction.fam )
+        , ( "sam", Encode.int prediction.sam )
         , ( "fl", Encode.int prediction.fastestLap )
         , ( "hgc", Encode.int prediction.hgc )
         , ( "first", Encode.int prediction.first )
         , ( "second", Encode.int prediction.second )
         , ( "third", Encode.int prediction.third )
         , ( "fdnf", Encode.int prediction.fdnf )
+        , ( "hst", Encode.int prediction.hst )
         , ( "safety_car", Encode.string safetyCar )
         ]
 
@@ -185,12 +221,14 @@ predictionDecoder =
     Decode.succeed Prediction
         |> Pipeline.required "pole" Decode.int
         |> Pipeline.required "fam" Decode.int
+        |> Pipeline.required "sam" Helpers.Decode.nullableInt
         |> Pipeline.required "fl" Decode.int
         |> Pipeline.required "hgc" Decode.int
         |> Pipeline.required "first" Decode.int
         |> Pipeline.required "second" Decode.int
         |> Pipeline.required "third" Decode.int
         |> Pipeline.required "fdnf" Decode.int
+        |> Pipeline.required "hst" Helpers.Decode.nullableInt
         |> Pipeline.required "safety_car" safetyCar
 
 

@@ -1,10 +1,24 @@
 module Helpers.Decode exposing
     ( emptyString
     , intAsBool
+    , nullableInt
     , stringAsInt
     )
 
 import Json.Decode as Decode exposing (Decoder)
+
+
+nullableAs : a -> Decoder a -> Decoder a
+nullableAs defaultValue decoder =
+    Decode.oneOf
+        [ decoder
+        , Decode.null defaultValue
+        ]
+
+
+nullableInt : Decoder Int
+nullableInt =
+    nullableAs 0 Decode.int
 
 
 emptyString : a -> Decoder a

@@ -72,3 +72,11 @@ from (
 cross join races
 where races.season = '2025-26'
 ;
+
+-- For predictions table
+alter table predictions add column sam integer references entrants(id);
+alter table predictions add column hst integer references teams(id);
+
+-- For results table  
+alter table results add column sam integer references entrants(id);
+alter table results add column hst integer references teams(id);

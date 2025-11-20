@@ -74,10 +74,12 @@ type Msg
 type UpdateFormulaEPredictionMsg
     = SetPole Types.FormulaE.EntrantId
     | SetFam Types.FormulaE.EntrantId
+    | SetSam Types.FormulaE.EntrantId
     | SetFastestLap Types.FormulaE.EntrantId
     | SetHgc Types.FormulaE.EntrantId
     | SetFirst Types.FormulaE.EntrantId
     | SetSecond Types.FormulaE.EntrantId
     | SetThird Types.FormulaE.EntrantId
     | SetFdnf Types.FormulaE.EntrantId
+    | SetHst Types.FormulaE.TeamId
     | SetSafetyCar Bool
