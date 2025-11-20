@@ -119,9 +119,22 @@ view model season event =
                                                         viewRow : Types.FormulaE.ScoredPrediction -> Html Msg
                                                         viewRow scoredPrediction =
                                                             let
-                                                                scoredAttribute : Bool -> Html.Attribute msg
-                                                                scoredAttribute scored =
-                                                                    Helpers.Classes.boolean "scored" "not-scored" scored
+                                                                scoredAttribute : Bool -> Bool -> Html.Attribute msg
+                                                                scoredAttribute secondary scored =
+                                                                    let
+                                                                        className : String
+                                                                        className =
+                                                                            case ( scored, secondary ) of
+                                                                                ( True, _ ) ->
+                                                                                    "scored"
+
+                                                                                ( _, True ) ->
+                                                                                    "half-scored"
+
+                                                                                ( False, False ) ->
+                                                                                    "not-scored"
+                                                                    in
+                                                                    Html.Attributes.class className
 
                                                                 matchesResult : (Types.FormulaE.Prediction -> a) -> a -> Bool
                                                                 matchesResult getResultValue predictionValue =
@@ -130,8 +143,8 @@ view model season event =
                                                                         |> Maybe.map ((==) predictionValue)
                                                                         |> Maybe.withDefault False
 
-                                                                entrantCell : (Types.FormulaE.Prediction -> Types.FormulaE.EntrantId) -> Html Msg
-                                                                entrantCell getEntrantId =
+                                                                entrantCell : Bool -> (Types.FormulaE.Prediction -> Types.FormulaE.EntrantId) -> Html Msg
+                                                                entrantCell halfScoreInPodium getEntrantId =
                                                                     let
                                                                         entrantId : Types.FormulaE.EntrantId
                                                                         entrantId =
@@ -139,8 +152,20 @@ view model season event =
                                                                     in
                                                                     case Helpers.List.findWith entrantId .id entrants of
                                                                         Just entrant ->
+                                                                            let
+                                                                                secondary : Bool
+                                                                                secondary =
+                                                                                    case halfScoreInPodium of
+                                                                                        False ->
+                                                                                            False
+
+                                                                                        True ->
+                                                                                            matchesResult .first entrantId
+                                                                                                || matchesResult .second entrantId
+                                                                                                || matchesResult .third entrantId
+                                                                            in
                                                                             Html.div
-                                                                                [ scoredAttribute <|
+                                                                                [ scoredAttribute secondary <|
                                                                                     matchesResult getEntrantId entrantId
                                                                                 ]
                                                                                 [ Html.span
@@ -170,7 +195,7 @@ view model season event =
                                                                             case Helpers.List.findWith teamId .teamId entrants of
                                                                                 Just entrant ->
                                                                                     Html.div
-                                                                                        [ scoredAttribute <|
+                                                                                        [ scoredAttribute False <|
                                                                                             matchesResult .hst teamId
                                                                                         ]
                                                                                         [ Html.span
@@ -207,7 +232,7 @@ view model season event =
                                                                                 && matchesResult .safetyCar prediction.safetyCar
                                                                     in
                                                                     Html.span
-                                                                        [ scoredAttribute scoresPoints ]
+                                                                        [ scoredAttribute False scoresPoints ]
                                                                         [ Html.text value ]
                                                                         |> Helpers.Table.cell
                                                             in
@@ -215,20 +240,20 @@ view model season event =
                                                                 []
                                                                 [ Helpers.Table.stringCell scoredPrediction.userName
                                                                 , Helpers.Table.intCell scoredPrediction.score
-                                                                , entrantCell .pole
-                                                                , entrantCell .fam
+                                                                , entrantCell False .pole
+                                                                , entrantCell False .fam
                                                                 , case scoringVersion of
                                                                     Types.FormulaE.V1 ->
                                                                         Html.Extra.nothing
 
                                                                     Types.FormulaE.V2 ->
-                                                                        entrantCell .sam
-                                                                , entrantCell .fastestLap
-                                                                , entrantCell .hgc
-                                                                , entrantCell .first
-                                                                , entrantCell .second
-                                                                , entrantCell .third
-                                                                , entrantCell .fdnf
+                                                                        entrantCell False .sam
+                                                                , entrantCell False .fastestLap
+                                                                , entrantCell False .hgc
+                                                                , entrantCell True .first
+                                                                , entrantCell True .second
+                                                                , entrantCell True .third
+                                                                , entrantCell False .fdnf
                                                                 , hstCell
                                                                 , safetyCar
                                                                 ]

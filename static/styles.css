@@ -967,15 +967,23 @@ section.formula-e-event-scores {
                 }
 
                 /* Styling for scoring predictions */
-                .scored {
-                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-                    color: #155724;
+                .scored,
+                .half-scored {
                     font-weight: 700;
                     padding: 0.25rem 0.5rem;
                     border-radius: 4px;
-                    border: 1px solid #c3e6cb;
                     width: 100%;
                     box-sizing: border-box;
+                }
+
+                .scored {
+                    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+                    color: #155724;
+                }
+
+                .half-scored {
+                    background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+                    color: #856404;
                 }
             }
 
