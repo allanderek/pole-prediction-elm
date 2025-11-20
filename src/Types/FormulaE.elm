@@ -37,7 +37,7 @@ currentChampion =
 
 currentSeason : Season
 currentSeason =
-    "2024-25"
+    "2025-26"
 
 
 type alias EventId =
