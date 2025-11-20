@@ -101,7 +101,7 @@ view model season event =
                                             [ Components.Login.youMustBeLoggedInTo "to make predictions" ]
 
                                         Just user ->
-                                            [ viewInput model event.id user Prediction entrants ]
+                                            [ viewInput model event.id user scoringVersion Prediction entrants ]
 
                                 False ->
                                     let
@@ -285,7 +285,7 @@ view model season event =
                                                     [ viewLeaderboard ]
 
                                                 True ->
-                                                    [ viewInput model event.id user Result entrants
+                                                    [ viewInput model event.id user scoringVersion Result entrants
                                                     , viewLeaderboard
                                                     ]
                     in
@@ -310,8 +310,8 @@ type alias EntrantSelectorConfig =
     }
 
 
-viewInput : Model key -> Types.FormulaE.EventId -> User -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
-viewInput model eventId user kind entrants =
+viewInput : Model key -> Types.FormulaE.EventId -> User -> Types.FormulaE.ScoringVersion -> InputKind -> List Types.FormulaE.Entrant -> Html Msg
+viewInput model eventId user scoringSystem kind entrants =
     let
         spec : { eventId : Types.FormulaE.EventId }
         spec =
@@ -401,57 +401,62 @@ viewInput model eventId user kind entrants =
 
         highestScoringTeamInput : Html Msg
         highestScoringTeamInput =
-            let
-                teams : List ( Types.FormulaE.TeamId, String )
-                teams =
-                    let
-                        addTeam : Types.FormulaE.Entrant -> Dict Types.FormulaE.TeamId String -> Dict Types.FormulaE.TeamId String
-                        addTeam entrant dict =
-                            Dict.insert entrant.teamId entrant.teamFullName dict
-                    in
-                    List.foldl addTeam Dict.empty entrants
-                        |> Dict.toList
+            case scoringSystem of
+                Types.FormulaE.V1 ->
+                    Html.Extra.nothing
 
-                options : List Components.Selector.Option
-                options =
+                Types.FormulaE.V2 ->
                     let
-                        makeOption : ( Types.FormulaE.TeamId, String ) -> Components.Selector.Option
-                        makeOption ( teamId, teamName ) =
-                            { name = teamName
-                            , value = String.fromInt teamId
+                        teams : List ( Types.FormulaE.TeamId, String )
+                        teams =
+                            let
+                                addTeam : Types.FormulaE.Entrant -> Dict Types.FormulaE.TeamId String -> Dict Types.FormulaE.TeamId String
+                                addTeam entrant dict =
+                                    Dict.insert entrant.teamId entrant.teamFullName dict
+                            in
+                            List.foldl addTeam Dict.empty entrants
+                                |> Dict.toList
+
+                        options : List Components.Selector.Option
+                        options =
+                            let
+                                makeOption : ( Types.FormulaE.TeamId, String ) -> Components.Selector.Option
+                                makeOption ( teamId, teamName ) =
+                                    { name = teamName
+                                    , value = String.fromInt teamId
+                                    }
+                            in
+                            List.map makeOption teams
+
+                        onInput : String -> Msg
+                        onInput valueString =
+                            let
+                                teamId : Types.FormulaE.TeamId
+                                teamId =
+                                    String.toInt valueString
+                                        |> Maybe.withDefault 0
+                            in
+                            Msg.SetHst teamId
+                                |> toMessage
+
+                        selectorConfig : Components.Selector.Config Msg
+                        selectorConfig =
+                            { classPrefix = "formula-e-event-team"
+                            , groups = Components.Selector.flatNoGroups options
+                            , onInput = onInput
+                            , onBlur = Nothing
+                            , current = String.fromInt current.hst
+                            , disabled = False
+                            , pleaseSelect = Just "Please select"
                             }
                     in
-                    List.map makeOption teams
-
-                onInput : String -> Msg
-                onInput valueString =
-                    let
-                        teamId : Types.FormulaE.TeamId
-                        teamId =
-                            String.toInt valueString
-                                |> Maybe.withDefault 0
-                    in
-                    Msg.SetHst teamId
-                        |> toMessage
-
-                selectorConfig : Components.Selector.Config Msg
-                selectorConfig =
-                    { classPrefix = "formula-e-event-team"
-                    , groups = Components.Selector.flatNoGroups options
-                    , onInput = onInput
-                    , onBlur = Nothing
-                    , current = String.fromInt current.hst
-                    , disabled = False
-                    , pleaseSelect = Just "Please select"
-                    }
-            in
-            Html.div
-                [ Html.Attributes.class "formula-e-event-team-selector" ]
-                [ Html.label
-                    []
-                    [ Html.text "HST" ]
-                , Components.Selector.view selectorConfig
-                ]
+                    Html.div
+                        [ Html.Attributes.class "formula-e-event-team-selector" ]
+                        [ Html.label
+                            []
+                            [ Html.text "HST" ]
+                        , Components.Selector.view selectorConfig
+                        ]
 
         invalidationMessage : Maybe String
         invalidationMessage =
@@ -473,7 +478,12 @@ viewInput model eventId user kind entrants =
                     Helpers.List.firstJust
                         [ unselectedEntrantId current.pole "Pole not selected"
                         , unselectedEntrantId current.fam "FAM not selected"
-                        , unselectedEntrantId current.sam "SAM not selected"
+                        , case scoringSystem == Types.FormulaE.V2 of
+                            False ->
+                                Nothing
+
+                            True ->
+                                unselectedEntrantId current.sam "SAM not selected"
                         , unselectedEntrantId current.fastestLap "Fastest lap not selected"
                         , unselectedEntrantId current.hgc "HGC not selected"
                         , unselectedEntrantId current.first "First not selected"
@@ -498,11 +508,11 @@ viewInput model eventId user kind entrants =
                             False ->
                                 Nothing
                         , unselectedEntrantId current.fdnf "FDNF not selected"
-                        , case current.hst of
-                            0 ->
+                        , case current.hst == 0 && scoringSystem == Types.FormulaE.V2 of
+                            True ->
                                 Just "HST not selected"
 
-                            _ ->
+                            False ->
                                 Nothing
                         , case current.safetyCar of
                             Just True ->
@@ -554,7 +564,12 @@ viewInput model eventId user kind entrants =
         [ legend
         , viewSelector { label = "Pole", current = current.pole, onInput = Msg.SetPole }
         , viewSelector { label = "FAM", current = current.fam, onInput = Msg.SetFam }
-        , viewSelector { label = "SAM", current = current.sam, onInput = Msg.SetSam }
+        , case scoringSystem of
+            Types.FormulaE.V1 ->
+                Html.Extra.nothing
+
+            Types.FormulaE.V2 ->
+                viewSelector { label = "SAM", current = current.sam, onInput = Msg.SetSam }
         , viewSelector { label = "Fastest lap", current = current.fastestLap, onInput = Msg.SetFastestLap }
         , viewSelector { label = "HGC", current = current.hgc, onInput = Msg.SetHgc }
         , viewSelector { label = "First", current = current.first, onInput = Msg.SetFirst }
