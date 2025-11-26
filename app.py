@@ -1129,7 +1129,8 @@ def get_formula_e_leaderboard(season):
                 cast(coalesce(sum(total), 0) as integer) as 'Total score',
                 cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins',
                 cast(coalesce(sum(poles), 0) as integer) as 'Poles',
-                cast(coalesce(sum(seconds), 0) as integer) as 'Seconds'
+                cast(coalesce(sum(seconds), 0) as integer) as 'Seconds',
+                cast(coalesce(sum(thirds), 0) as integer) as 'Thirds'
             from scored_predictions
             group by user_id
             order by sum(total) desc, sum(race_wins) desc, sum(poles) desc, sum(seconds) desc, sum(thirds) desc
