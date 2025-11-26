@@ -1231,13 +1231,13 @@ def get_scored_formula_e_race_predictions(db, user_id, race_id):
                     total += check_prediction("safety_car", 10)
             elif rules_version == 2:
                 total += check_prediction("pole", 20)
-                total += check_prediction("fam", 10)
-                total += check_prediction("sam", 10)
+                total += check_prediction("fam", 5)
+                total += check_prediction("sam", 5)
                 total += check_prediction("fl", 10)
                 total += check_prediction("hgc", 10)
-                total += check_podium("first", 0, 20)
-                total += check_podium("second", 1, 15)
-                total += check_podium("third", 2, 10)
+                total += check_podium("first", 0, 15)
+                total += check_podium("second", 1, 10)
+                total += check_podium("third", 2, 5)
                 total += check_prediction("fdnf", 10)
                 total += check_prediction("hst", 10)
                 if result_row["safety_car"] in ["yes", "no"]:
