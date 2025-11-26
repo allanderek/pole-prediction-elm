@@ -1047,49 +1047,100 @@ def create_leaderboard_rows(rows, id="user_id", name="user_fullname"):
 
 @app.route("/api/formula-e/leaderboard/<season>", method="GET")
 def get_formula_e_leaderboard(season):
+    rules_version = get_formula_e_points_version(season)
     with db_transaction() as db:
-        query = """with
-        scored_predictions
-        as ( select
-                users.id as user_id,
-                users.fullname as user_fullname,
-                case when predictions.first = results.first then 1 else 0 end as race_wins,
-                case when predictions.pole = results.pole then 1 else 0 end as poles,
-                case when predictions.second = results.second then 1 else 0 end as seconds,
-                case when predictions.pole = results.pole then 10 else 0 end +
-                case when predictions.fam = results.fam then 10 else 0 end + 
-                case when predictions.fl = results.fl then 10 else 0 end +
-                case when predictions.hgc = results.hgc then 10 else 0 end +
-                case when predictions.first = results.first then 20 else 0 end +
-                case when predictions.second = results.second then 10 else 0 end +
-                case when predictions.third = results.third then 10 else 0 end +
-                case when predictions.fdnf = results.fdnf then 10 else 0 end +
-                case when predictions.safety_car = results.safety_car then 10 else 0 end
-                as total
-             from predictions
-             inner join races on predictions.race = races.id 
-             join results on predictions.race = results.race
-             join users on predictions.user = users.id
-             where races.season = :season and races.cancelled = 0
-            )
-        select 
-            user_id, 
-            user_fullname,
-            cast(coalesce(sum(total), 0) as integer) as 'Total score',
-            cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins',
-            cast(coalesce(sum(poles), 0) as integer) as 'Poles',
-            cast(coalesce(sum(seconds), 0) as integer) as 'Seconds'
-        from scored_predictions
-        group by user_id
-        order by sum(total) desc, sum(race_wins) desc, sum(poles + seconds) desc
-    ;"""
+        if rules_version == 1:
+            query = """with
+            scored_predictions
+            as ( select
+                    users.id as user_id,
+                    users.fullname as user_fullname,
+                    case when predictions.first = results.first then 1 else 0 end as race_wins,
+                    case when predictions.pole = results.pole then 1 else 0 end as poles,
+                    case when predictions.second = results.second then 1 else 0 end as seconds,
+                    case when predictions.pole = results.pole then 10 else 0 end +
+                    case when predictions.fam = results.fam then 10 else 0 end + 
+                    case when predictions.fl = results.fl then 10 else 0 end +
+                    case when predictions.hgc = results.hgc then 10 else 0 end +
+                    case when predictions.first = results.first then 20 else 0 end +
+                    case when predictions.second = results.second then 10 else 0 end +
+                    case when predictions.third = results.third then 10 else 0 end +
+                    case when predictions.fdnf = results.fdnf then 10 else 0 end +
+                    case when predictions.safety_car = results.safety_car then 10 else 0 end
+                    as total
+                 from predictions
+                 inner join races on predictions.race = races.id 
+                 join results on predictions.race = results.race
+                 join users on predictions.user = users.id
+                 where races.season = :season and races.cancelled = 0
+                )
+            select 
+                user_id, 
+                user_fullname,
+                cast(coalesce(sum(total), 0) as integer) as 'Total score',
+                cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins',
+                cast(coalesce(sum(poles), 0) as integer) as 'Poles',
+                cast(coalesce(sum(seconds), 0) as integer) as 'Seconds'
+            from scored_predictions
+            group by user_id
+            order by sum(total) desc, sum(race_wins) desc, sum(poles + seconds) desc
+        ;"""
 
-        rows = db.execute(query, {"season": season}).fetchall()
+            rows = db.execute(query, {"season": season}).fetchall()
 
-        return {
-            "columns": ["Total", "Race wins", "Poles", "Seconds"],
-            "rows": create_leaderboard_rows(rows),
-        }
+            return {
+                "columns": ["Total", "Race wins", "Poles", "Seconds"],
+                "rows": create_leaderboard_rows(rows),
+            }
+        else:
+            query = """with
+            scored_predictions
+            as ( select
+                    users.id as user_id,
+                    users.fullname as user_fullname,
+                    case when predictions.first = results.first then 1 else 0 end as race_wins,
+                    case when predictions.pole = results.pole then 1 else 0 end as poles,
+                    case when predictions.second = results.second then 1 else 0 end as seconds,
+                    case when predictions.third = results.third then 1 else 0 end as thirds,
+                    case when predictions.pole = results.pole then 20 else 0 end +
+                    case when predictions.fam = results.fam then 5 else 0 end + 
+                    case when predictions.sam = results.sam then 5 else 0 end + 
+                    case when predictions.fl = results.fl then 10 else 0 end +
+                    case when predictions.hgc = results.hgc then 10 else 0 end +
+                    case when predictions.first = results.first then 15 else 0 end +
+                    case when predictions.first in (results.first, results.second, results.third) then 5 else 0 end +
+                    case when predictions.second = results.second then 10 else 0 end +
+                    case when predictions.second in (results.first, results.second, results.third) then 5 else 0 end +
+                    case when predictions.third = results.third then 5 else 0 end +
+                    case when predictions.third in (results.first, results.second, results.third) then 5 else 0 end +
+                    case when predictions.fdnf = results.fdnf then 10 else 0 end +
+                    case when predictions.hst = results.hst then 10 else 0 end +
+                    case when predictions.safety_car = results.safety_car then 10 else 0 end
+                    as total
+                 from predictions
+                 inner join races on predictions.race = races.id 
+                 join results on predictions.race = results.race
+                 join users on predictions.user = users.id
+                 where races.season = :season and races.cancelled = 0
+                )
+            select 
+                user_id, 
+                user_fullname,
+                cast(coalesce(sum(total), 0) as integer) as 'Total score',
+                cast(coalesce(sum(race_wins), 0) as integer) as 'Race wins',
+                cast(coalesce(sum(poles), 0) as integer) as 'Poles',
+                cast(coalesce(sum(seconds), 0) as integer) as 'Seconds'
+            from scored_predictions
+            group by user_id
+            order by sum(total) desc, sum(race_wins) desc, sum(poles) desc, sum(seconds) desc, sum(thirds) desc
+        ;"""
+
+            rows = db.execute(query, {"season": season}).fetchall()
+
+            return {
+                "columns": ["Total", "Race wins", "Poles", "Seconds", "Thirds"],
+                "rows": create_leaderboard_rows(rows),
+            }
 
 
 @app.route("/api/formula-e/season-events/<season>", method="GET")
@@ -1132,6 +1183,12 @@ def get_formula_e_race_predictions(race_id):
     with db_transaction() as db:
         user_id = get_user_id_from_cookie()
         return get_scored_formula_e_race_predictions(db, user_id, race_id)
+
+
+def get_formula_e_points_version(season):
+    if season in ["2022-23", "2023-24", "2024-25"]:
+        return 1
+    return 2
 
 
 def get_scored_formula_e_race_predictions(db, user_id, race_id):
@@ -1192,9 +1249,7 @@ def get_scored_formula_e_race_predictions(db, user_id, race_id):
         """
         result_row = db.execute(query, {"race_id": race_id}).fetchone()
 
-    rules_version = 2
-    if race["season"] in ["2022-23", "2023-24", "2024-25"]:
-        rules_version = 1
+    rules_version = get_formula_e_points_version(race["season"])
 
     def transform_prediction(prediction):
         total = 0
