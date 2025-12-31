@@ -23,6 +23,11 @@ static/styles.min.css: static/styles.css
 	@echo "Minifying styles..."
 	lightningcss --minify $< -o $@
 
+
+.PHONY: new_secret
+new_secret:
+	python -c "import secrets; print(secrets.token_urlsafe(32))"
+
 deploy: app.py $(ELMPRODAPP) static/styles.min.css
 	@echo "Deploying application..."
 	elm make src/Main.elm --optimize --output=$(ELMPRODAPP)
