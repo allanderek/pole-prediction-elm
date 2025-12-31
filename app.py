@@ -1,4 +1,9 @@
-import bottle
+from fastapi import FastAPI, Request, HTTPException, Depends, Response, status
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, field_validator
+from typing import Optional
+import uvicorn
 import os
 import jwt
 import contextlib
@@ -14,54 +19,27 @@ import inspect
 import base64
 import hmac
 
+# Global config variable
+config = {}
 
-# Load configuration from command line argument
-def load_config():
-    if len(sys.argv) < 2:
-        print("Usage: python app.py <config_file.json>")
-        sys.exit(1)
+# Create FastAPI app
+app = FastAPI()
 
-    config_file = sys.argv[1]
-    try:
-        with open(config_file, "r") as f:
-            config = json.load(f)
-        return config
-    except Exception as e:
-        print(f"Error loading configuration: {e}")
-        sys.exit(1)
+# Make sure the static directory exists and mount it
+os.makedirs('./static', exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
-# Load config
-config = load_config()
-
-app = bottle.Bottle()
-
-
-# Secret key for JWT from config
-JWT_SECRET = config["jwtSecret"]
-JWT_ALGORITHM = "HS256"
+# JWT and cookie configuration constants
 COOKIE_NAME = "auth_token"
 COOKIE_MAX_DAYS = 360
 COOKIE_MAX_AGE = COOKIE_MAX_DAYS * 24 * 60 * 60  # 360 days in seconds
 
 
-# Configure logging based on config
-if config.get("prettyLogging", False):
-    import logging
-
-    logging.basicConfig(
-        level=logging.DEBUG if config.get("logLevel", 0) <= 0 else logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    logger = logging.getLogger(__name__)
-    logger.info(f"Starting application with config: {config['dbFilepath']}")
-
-
 @contextlib.contextmanager
 def db_transaction():
     """Context manager for SQLite database transactions."""
-    db = sqlite3.connect(config["dbFilepath"])  # Replace with your actual DB file path
+    db = sqlite3.connect(config["dbFilepath"])
     db.row_factory = sqlite3.Row  # Enable dictionary-like access
 
     try:
@@ -69,69 +47,59 @@ def db_transaction():
         db.commit()
     except sqlite3.IntegrityError as e:
         db.rollback()
-        bottle.response.status = 500
-        raise bottle.HTTPError(500, f"Database integrity error: {str(e)}")
-    except bottle.HTTPError:
+        raise HTTPException(status_code=500, detail=f"Database integrity error: {str(e)}")
+    except HTTPException:
         db.rollback()
-        raise
-    except bottle.HTTPResponse as e:
-        db.commit()
         raise
     except Exception as e:
         db.rollback()
-        bottle.response.status = 500
-        raise bottle.HTTPError(500, f"Database error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     finally:
         db.close()
 
 
-# Authentication decorator
-def require_auth(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        user_id = get_user_id_from_cookie()
-        if not user_id:
-            bottle.response.status = 401
-            return {"error": "Authentication required"}
-        kwargs["user_id"] = user_id
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-## Note, no longer a decorator
-def require_admin(db):
-    user_id = get_user_id_from_cookie()
-    if not user_id:
-        bottle.response.status = 401
-        return {"error": "Authentication required"}
-
-    if not db:
-        bottle.response.status = 500
-        return {"error": "Database connection error"}
-
-    # Check if user is admin
-    query = "SELECT admin FROM users WHERE id = ?"
-    result = db.execute(query, (user_id,)).fetchone()
-
-    if not result or result["admin"] != 1:
-        bottle.response.status = 403
-        return {"error": "Admin privileges required"}
-
-    return user_id
-
-
 # Extract user_id from cookie
-def get_user_id_from_cookie():
-    token = bottle.request.get_cookie(COOKIE_NAME)
+def get_user_id_from_cookie(request: Request) -> Optional[int]:
+    """Extract user_id from JWT cookie"""
+    token = request.cookies.get(COOKIE_NAME)
     if not token:
         return None
 
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(token, config["jwtSecret"], algorithms=[config.get("jwtAlgorithm", "HS256")])
         return payload.get("user_id")
     except jwt.PyJWTError:
         return None
+
+
+# FastAPI dependencies for authentication
+def get_current_user_id(request: Request) -> int:
+    """FastAPI dependency for required authentication"""
+    user_id = get_user_id_from_cookie(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+    return user_id
+
+
+def get_optional_user_id(request: Request) -> Optional[int]:
+    """FastAPI dependency for optional authentication"""
+    return get_user_id_from_cookie(request)
+
+
+def require_admin_user(request: Request) -> int:
+    """FastAPI dependency for admin authentication"""
+    user_id = get_user_id_from_cookie(request)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    with db_transaction() as db:
+        query = "SELECT admin FROM users WHERE id = ?"
+        result = db.execute(query, (user_id,)).fetchone()
+
+        if not result or result['admin'] != 1:
+            raise HTTPException(status_code=403, detail="Admin privileges required")
+
+    return user_id
 
 
 def verify_password(stored_password, provided_password):
@@ -180,20 +148,94 @@ def verify_password(stored_password, provided_password):
     return hmac.compare_digest(computed_hash, stored_hash_bytes)
 
 
-# Serve static files from the 'static' directory
-@app.route("/static/<filepath:path>")
-def serve_static(filepath):
-    return bottle.static_file(filepath, root="./static")
+def set_auth_cookie(response: Response, user_id: int):
+    """Create JWT token and set authentication cookie"""
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=COOKIE_MAX_DAYS),
+    }
+    token = jwt.encode(payload, config["jwtSecret"], algorithm=config.get("jwtAlgorithm", "HS256"))
+
+    # Set HTTP-Only secure cookie
+    secure_cookie = not config.get('debug', False)
+    response.set_cookie(
+        COOKIE_NAME,
+        token,
+        httponly=True,
+        secure=secure_cookie,
+        samesite='strict',
+        max_age=COOKIE_MAX_AGE,
+        path='/'
+    )
+
+
+def get_current_user(db, user_id):
+    """Get current user from database"""
+    query = "SELECT id, username, fullname, admin FROM users WHERE id = ?"
+    user = db.execute(query, (user_id,)).fetchone()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        'id': user['id'],
+        'username': user['username'],
+        'fullname': user['fullname'],
+        'admin': bool(user['admin'])
+    }
+
+
+# Pydantic models for request validation
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class ProfileUpdateRequest(BaseModel):
+    fullname: str
+
+
+class FormulaPredictionRequest(BaseModel):
+    positions: list[int]
+    fastest_lap: Optional[int] = None
+
+    @field_validator('positions')
+    @classmethod
+    def validate_positions_length(cls, v):
+        if len(v) != 20:
+            raise ValueError('Must have exactly 20 positions')
+        return v
+
+
+class FormulaEPredictionRequest(BaseModel):
+    pole: Optional[int] = None
+    fam: Optional[int] = None
+    sam: Optional[int] = None
+    fl: Optional[int] = None
+    hgc: Optional[int] = None
+    first: Optional[int] = None
+    second: Optional[int] = None
+    third: Optional[int] = None
+    fdnf: Optional[int] = None
+    hst: Optional[int] = None
+    safety_car: Optional[str] = None
+
+    @field_validator('safety_car')
+    @classmethod
+    def validate_safety_car(cls, v):
+        if v is not None and v not in ['yes', 'no']:
+            raise ValueError('safety_car must be "yes" or "no"')
+        return v
 
 
 # Serve index.html for '/' and any path starting with '/app'
-@app.route("/")
-@app.route("/app")
-@app.route("/app/<path:path>")
-def serve_index(path=None):
+@app.get("/", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
+@app.get("/app/{path:path}", response_class=HTMLResponse)
+def serve_index(request: Request, path: str = None):
     with db_transaction() as db:
         user = None
-        user_id = get_user_id_from_cookie()
+        user_id = get_user_id_from_cookie(request)
         if user_id:
             query = (
                 "SELECT id, username, fullname, password, admin FROM users WHERE id = ?"
@@ -298,47 +340,24 @@ def serve_index(path=None):
 
 
 # Authentication routes
-@app.route("/api/login", method="POST")
-def login():
+@app.post('/api/login')
+def login(login_data: LoginRequest, response: Response):
     with db_transaction() as db:
-        data = bottle.request.json
-
-        username = data.get("username")
-        password = data.get("password")
+        username = login_data.username
+        password = login_data.password
 
         if not username or not password:
-            bottle.response.status = 400
-            return {"success": False, "message": "Username and password required"}
+            raise HTTPException(status_code=400, detail="Username and password required")
 
         # Get user from database
         query = "SELECT id, username, fullname, password, admin FROM users WHERE username = ?"
         user = db.execute(query, (username,)).fetchone()
 
         if not user or not verify_password(user["password"], password):
-            bottle.response.status = 401
-            return {"success": False, "message": "Invalid credentials"}
+            raise HTTPException(status_code=401, detail="Invalid credentials")
 
-        # Create JWT token with user_id embedded
-        payload = {
-            "user_id": user["id"],
-            "exp": datetime.datetime.now(datetime.UTC)
-            + datetime.timedelta(days=COOKIE_MAX_DAYS),
-        }
-        token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
-
-        # Set HTTP-Only secure cookie
-        secure_cookie = not config.get(
-            "debug", False
-        )  # Don't require HTTPS in debug mode
-        bottle.response.set_cookie(
-            COOKIE_NAME,
-            token,
-            httponly=True,  # Prevents JavaScript access
-            secure=secure_cookie,  # Only sent over HTTPS (disabled in debug mode)
-            samesite="strict",  # Prevents CSRF
-            max_age=COOKIE_MAX_AGE,
-            path="/",  # Available across the entire domain
-        )
+        # Set authentication cookie
+        set_auth_cookie(response, user['id'])
 
         return {
             "success": True,
@@ -352,46 +371,25 @@ def login():
         }
 
 
-@app.route("/api/logout", method="POST")
-def logout():
-    bottle.response.delete_cookie(COOKIE_NAME, path="/")
-    return {"success": True, "message": "Logged out successfully"}
+@app.post('/api/logout')
+def logout(response: Response):
+    response.delete_cookie(COOKIE_NAME, path='/')
+    return {'success': True, 'message': 'Logged out successfully'}
 
 
-@app.route("/api/me", method="GET")
-@require_auth
-def get_me(user_id):
+@app.get('/api/me')
+def get_me(user_id: int = Depends(get_current_user_id)):
     with db_transaction() as db:
         return get_current_user(db, user_id)
 
 
-def get_current_user(db, user_id):
-    query = "SELECT id, username, fullname, admin FROM users WHERE id = ?"
-    user = db.execute(query, (user_id,)).fetchone()
-
-    if not user:
-        bottle.response.status = 404
-        return {"error": "User not found"}
-
-    return {
-        "id": user["id"],
-        "username": user["username"],
-        "fullname": user["fullname"],
-        "admin": bool(user["admin"]),
-    }
-
-
-@app.route("/api/profile", method="POST")
-@require_auth
-def update_profile(user_id):
+@app.post('/api/profile')
+def update_profile(profile_data: ProfileUpdateRequest, user_id: int = Depends(get_current_user_id)):
     with db_transaction() as db:
-        data = bottle.request.json
-
-        fullname = data.get("fullname")
+        fullname = profile_data.fullname
 
         if not fullname:
-            bottle.response.status = 400
-            return {"error": "Full name is required and cannot be empty"}
+            raise HTTPException(status_code=400, detail="Full name is required and cannot be empty")
 
         db.execute(
             "update users set fullname = :fullname where id = :user_id;",
@@ -401,35 +399,28 @@ def update_profile(user_id):
         return get_current_user(db, user_id)
 
 
-# Protected API routes
-@app.route("/api/protected-resource", methods=["GET"])
-@require_auth
-def protected_resource(user_id):
-    return {"status": "ok", "data": "This is protected data", "user_id": user_id}
-
-
-@app.route("/api/formula-one/season-events/<season>", method="GET")
-def get_formula_one_events(season):
+# Formula One API routes
+@app.get("/api/formula-one/season-events/{season}")
+def get_formula_one_events(season: str):
     with db_transaction() as db:
         query = """ select * from formula_one_events_view
     where season = :season
     ;"""
         rows = db.execute(query, {"season": season}).fetchall()
-        bottle.response.content_type = "application/json"
-        return json.dumps([dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
-@app.route("/api/formula-one/event-sessions/<event_id>", method="GET")
-def get_formula_one_sessions_by_event(event_id):
+@app.get("/api/formula-one/event-sessions/{event_id}")
+def get_formula_one_sessions_by_event(event_id: int):
     with db_transaction() as db:
-        query = """select 
-        s.id, 
+        query = """select
+        s.id,
         e.season,
         s.event,
-        s.name, 
-        s.half_points, 
-        s.start_time, 
-        s.cancelled, 
+        s.name,
+        s.half_points,
+        s.start_time,
+        s.cancelled,
         s.fastest_lap
     from formula_one_sessions s
     join formula_one_events e on s.event = e.id
@@ -437,12 +428,11 @@ def get_formula_one_sessions_by_event(event_id):
     order BY s.start_time
     ;"""
         rows = db.execute(query, {"event_id": event_id}).fetchall()
-        bottle.response.content_type = "application/json"
-        return json.dumps([dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
-@app.route("/api/formula-one/session-entrants/<session_id>", method="GET")
-def get_formula_one_session_entrants(session_id):
+@app.get("/api/formula-one/session-entrants/{session_id}")
+def get_formula_one_session_entrants(session_id: int):
     with db_transaction() as db:
         query = """select
         e.id,
@@ -464,14 +454,16 @@ def get_formula_one_session_entrants(session_id):
     order by e.rank desc, e.number
     ;"""
         rows = db.execute(query, {"session_id": session_id}).fetchall()
-        bottle.response.content_type = "application/json"
-        return json.dumps([dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
-@app.route("/api/formula-one/session-leaderboard/<session_id>", method="GET")
-def get_formula_one_session_leaderboard(session_id):
+@app.get("/api/formula-one/session-leaderboard/{session_id}")
+def get_formula_one_session_leaderboard(
+    session_id: int,
+    request: Request,
+    user_id: Optional[int] = Depends(get_optional_user_id)
+):
     with db_transaction() as db:
-        user_id = get_user_id_from_cookie()
         return get_formula_one_session_scored_predictions(db, user_id, session_id)
 
 
@@ -482,8 +474,7 @@ def get_formula_one_session_scored_predictions(db, user_id, session_id):
     ).fetchone()
 
     if not session:
-        bottle.response.status = 404
-        return {"error": "Session not found"}
+        raise HTTPException(status_code=404, detail="Session not found")
 
     # Check if predictions are still allowed (before session start)
     session_started = is_db_time_earlier_than_now(session["start_time"])
@@ -557,7 +548,7 @@ order by
 ;"""
     rows = db.execute(query, {"session_id": session_id, "user_id": user_id}).fetchall()
 
-    return json.dumps([dict(row) for row in rows])
+    return [dict(row) for row in rows]
 
 
 def parse_sqlite_datetime(dt_str):
@@ -576,22 +567,15 @@ def is_db_time_earlier_than_now(db_time_str):
     return db_time < current_time
 
 
-@app.route("/api/formula-one/session-prediction/<session_id>", method="POST")
-@require_auth
-def save_formula_one_prediction(user_id, session_id):
+@app.post("/api/formula-one/session-prediction/{session_id}")
+def save_formula_one_prediction(
+    session_id: int,
+    prediction_data: FormulaPredictionRequest,
+    user_id: int = Depends(get_current_user_id)
+):
     with db_transaction() as db:
-        prediction_data = bottle.request.json
-
-        # Validate we have all required data
-        if (
-            not prediction_data.get("positions")
-            or len(prediction_data["positions"]) != 20
-        ):
-            bottle.response.status = 400
-            return {"error": "Prediction must include positions for all 20 drivers"}
-
         # Get fastest lap prediction, could be None
-        fastest_lap = prediction_data.get("fastest_lap")
+        fastest_lap = prediction_data.fastest_lap
 
         # Get the session details to check start time
         session = db.execute(
@@ -600,15 +584,14 @@ def save_formula_one_prediction(user_id, session_id):
         ).fetchone()
 
         if not session:
-            bottle.response.status = 404
-            return {"error": "Session not found"}
+            raise HTTPException(status_code=404, detail="Session not found")
 
         # Check if predictions are still allowed (before session start)
         if is_db_time_earlier_than_now(session["start_time"]):
-            bottle.response.status = 403
-            return {
-                "error": f"Predictions for {session['name']} are no longer accepted - session has started"
-            }
+            raise HTTPException(
+                status_code=403,
+                detail=f"Predictions for {session['name']} are no longer accepted - session has started"
+            )
 
         # First delete any existing predictions for this user and session
         db.execute(
@@ -619,7 +602,7 @@ def save_formula_one_prediction(user_id, session_id):
         # Prepare batch insert data
         rows_to_insert = []
 
-        for position, entrant_id in enumerate(prediction_data["positions"], start=1):
+        for position, entrant_id in enumerate(prediction_data.positions, start=1):
             # Only set fastest_lap to "true" if it's specified and matches this entrant
             is_fastest_lap = (
                 "true"
@@ -638,7 +621,7 @@ def save_formula_one_prediction(user_id, session_id):
 
         # Perform batch insert
         query = """
-        insert into formula_one_prediction_lines 
+        insert into formula_one_prediction_lines
             (user, session, fastest_lap, position, entrant)
         values
             (:user, :session, :fastest_lap, :position, :entrant)
@@ -648,25 +631,15 @@ def save_formula_one_prediction(user_id, session_id):
         return {"status": "success"}
 
 
-@app.route("/api/formula-one/session-result/<session_id>", method="POST")
-def save_formula_one_session_result(session_id):
+@app.post("/api/formula-one/session-result/{session_id}")
+def save_formula_one_session_result(
+    session_id: int,
+    prediction_data: FormulaPredictionRequest,
+    admin_user_id: int = Depends(require_admin_user)
+):
     with db_transaction() as db:
-        admin_user_id = require_admin(db)
-        if hasattr(admin_user_id, "error"):
-            return admin_user_id
-
-        prediction_data = bottle.request.json
-
-        # Validate we have all required data
-        if (
-            not prediction_data.get("positions")
-            or len(prediction_data["positions"]) != 20
-        ):
-            bottle.response.status = 400
-            return {"error": "Prediction must include positions for all 20 drivers"}
-
         # Get fastest lap prediction, could be None
-        fastest_lap = prediction_data.get("fastest_lap")
+        fastest_lap = prediction_data.fastest_lap
 
         # First delete any existing predictions for this user and session
         db.execute(
@@ -677,7 +650,7 @@ def save_formula_one_session_result(session_id):
         # Prepare batch insert data
         rows_to_insert = []
 
-        for position, entrant_id in enumerate(prediction_data["positions"], start=1):
+        for position, entrant_id in enumerate(prediction_data.positions, start=1):
             # Only set fastest_lap to "true" if it's specified and matches this entrant
             is_fastest_lap = (
                 "true"
@@ -696,7 +669,7 @@ def save_formula_one_session_result(session_id):
 
         # Perform batch insert
         query = """
-        insert into formula_one_prediction_lines 
+        insert into formula_one_prediction_lines
             (user, session, fastest_lap, position, entrant)
         values
             (:user, :session, :fastest_lap, :position, :entrant)
@@ -707,8 +680,8 @@ def save_formula_one_session_result(session_id):
         return get_formula_one_session_scored_predictions(db, admin_user_id, session_id)
 
 
-@app.route("/api/formula-one/leaderboard/<season>", method="GET")
-def get_formula_one_leaderboard(season):
+@app.get("/api/formula-one/leaderboard/{season}")
+def get_formula_one_leaderboard(season: str):
     with db_transaction() as db:
         query = """
     with
@@ -771,8 +744,8 @@ def get_formula_one_leaderboard(season):
         }
 
 
-@app.route("/api/formula-one/constructor-standings/<season>", method="GET")
-def get_formula_one_constructor_standings(season):
+@app.get("/api/formula-one/constructor-standings/{season}")
+def get_formula_one_constructor_standings(season: str):
     with db_transaction() as db:
         query = """with
         results as (
@@ -842,8 +815,8 @@ def get_formula_one_constructor_standings(season):
         }
 
 
-@app.route("/api/formula-one/driver-standings/<season>", method="GET")
-def get_formula_one_driver_standings(season):
+@app.get("/api/formula-one/driver-standings/{season}")
+def get_formula_one_driver_standings(season: str):
     with db_transaction() as db:
         query = """with
         results as (
@@ -912,8 +885,8 @@ def get_formula_one_driver_standings(season):
         }
 
 
-@app.route("/api/formula-one/season-leaderboard/<season>", method="GET")
-def get_formula_one_season_leaderboard(season):
+@app.get("/api/formula-one/season-leaderboard/{season}")
+def get_formula_one_season_leaderboard(season: str):
     with db_transaction() as db:
         query = """with
         -- First, get all the season predictions from users
@@ -1045,8 +1018,8 @@ def create_leaderboard_rows(rows, id="user_id", name="user_fullname"):
     return [make_row(dict(row)) for row in rows]
 
 
-@app.route("/api/formula-e/leaderboard/<season>", method="GET")
-def get_formula_e_leaderboard(season):
+@app.get("/api/formula-e/leaderboard/{season}")
+def get_formula_e_leaderboard(season: str):
     rules_version = get_formula_e_points_version(season)
     with db_transaction() as db:
         if rules_version == 1:
@@ -1144,17 +1117,16 @@ def get_formula_e_leaderboard(season):
             }
 
 
-@app.route("/api/formula-e/season-events/<season>", method="GET")
-def get_formula_one_events(season):
+@app.get("/api/formula-e/season-events/{season}")
+def get_formula_e_events(season: str):
     with db_transaction() as db:
         query = """select * from races where season = :season ;"""
         rows = db.execute(query, {"season": season}).fetchall()
-        bottle.response.content_type = "application/json"
-        return json.dumps([dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
-@app.route("/api/formula-e/event-entrants/<race_id>", method="GET")
-def get_formula_e_event_entrants(race_id):
+@app.get("/api/formula-e/event-entrants/{race_id}")
+def get_formula_e_event_entrants(race_id: int):
     with db_transaction() as db:
         query = """select
         e.id,
@@ -1175,14 +1147,16 @@ def get_formula_e_event_entrants(race_id):
     order by t.shortname, e.number
     ;"""
         rows = db.execute(query, {"race_id": race_id}).fetchall()
-        bottle.response.content_type = "application/json"
-        return json.dumps([dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
-@app.route("/api/formula-e/race-predictions/<race_id>", method="GET")
-def get_formula_e_race_predictions(race_id):
+@app.get("/api/formula-e/race-predictions/{race_id}")
+def get_formula_e_race_predictions(
+    race_id: int,
+    request: Request,
+    user_id: Optional[int] = Depends(get_optional_user_id)
+):
     with db_transaction() as db:
-        user_id = get_user_id_from_cookie()
         return get_scored_formula_e_race_predictions(db, user_id, race_id)
 
 
@@ -1199,8 +1173,7 @@ def get_scored_formula_e_race_predictions(db, user_id, race_id):
     ).fetchone()
 
     if not race:
-        bottle.response.status = 404
-        return {"error": "Event not found"}
+        raise HTTPException(status_code=404, detail="Event not found")
 
     # Check if predictions are still allowed (before session start)
     session_started = is_db_time_earlier_than_now(race["date"])
@@ -1308,60 +1281,30 @@ def get_scored_formula_e_race_predictions(db, user_id, race_id):
         "result": dict(result_row) if result_row else None,
     }
 
-    bottle.response.content_type = "application/json"
-    return json.dumps(response_data)
+    return response_data
 
 
-@app.route("/api/formula-e/race-prediction/<race_id>", method="POST")
-@require_auth
-def save_formula_e_race_prediction(user_id, race_id):
+@app.post("/api/formula-e/race-prediction/{race_id}")
+def save_formula_e_race_prediction(
+    race_id: int,
+    prediction_data: FormulaEPredictionRequest,
+    user_id: int = Depends(get_current_user_id)
+):
     with db_transaction() as db:
-        prediction_data = bottle.request.json
-
-        # Validate we have all required fields
-        required_fields = [
-            "pole",
-            "fam",
-            "sam",
-            "fl",
-            "hgc",
-            "first",
-            "second",
-            "third",
-            "fdnf",
-            "hst",
-            "safety_car",
-        ]
-        missing_fields = [
-            field for field in required_fields if field not in prediction_data
-        ]
-
-        if missing_fields:
-            bottle.response.status = 400
-            return {
-                "error": f"Prediction missing required fields: {', '.join(missing_fields)}"
-            }
-
-        # Validate safety_car is either "yes" or "no"
-        if prediction_data["safety_car"] not in ["yes", "no"]:
-            bottle.response.status = 400
-            return {"error": 'safety_car must be either "yes" or "no"'}
-
         # Get the race details to check start time
         race = db.execute(
             "select date, name from races where id = ?", (race_id,)
         ).fetchone()
 
         if not race:
-            bottle.response.status = 404
-            return {"error": "Event not found"}
+            raise HTTPException(status_code=404, detail="Event not found")
 
         # Check if predictions are still allowed (before session start)
         if is_db_time_earlier_than_now(race["date"]):
-            bottle.response.status = 403
-            return {
-                "error": f"Predictions for {race['name']} are no longer accepted - session has started"
-            }
+            raise HTTPException(
+                status_code=403,
+                detail=f"Predictions for {race['name']} are no longer accepted - session has started"
+            )
 
         # First delete any existing prediction for this race
         db.execute(
@@ -1382,35 +1325,31 @@ def save_formula_e_race_prediction(user_id, race_id):
             {
                 "user": user_id,
                 "race": race_id,
-                "pole": prediction_data["pole"],
-                "fam": prediction_data["fam"],
-                "sam": prediction_data["sam"],
-                "fl": prediction_data["fl"],
-                "hgc": prediction_data["hgc"],
-                "first": prediction_data["first"],
-                "second": prediction_data["second"],
-                "third": prediction_data["third"],
-                "fdnf": prediction_data["fdnf"],
-                "hst": prediction_data["hst"],
-                "safety_car": prediction_data["safety_car"],
+                "pole": prediction_data.pole,
+                "fam": prediction_data.fam,
+                "sam": prediction_data.sam,
+                "fl": prediction_data.fl,
+                "hgc": prediction_data.hgc,
+                "first": prediction_data.first,
+                "second": prediction_data.second,
+                "third": prediction_data.third,
+                "fdnf": prediction_data.fdnf,
+                "hst": prediction_data.hst,
+                "safety_car": prediction_data.safety_car,
             },
         )
 
-        # Return the predictions for this race, even if that is only the current user's prediction
-        # Arguably, it must be otherwise we wouldn't be allowing them to save it, so we could probably
-        # save work here by just returning the new prediction.
+        # Return the predictions for this race
         return get_scored_formula_e_race_predictions(db, user_id, race_id)
 
 
-@app.route("/api/formula-e/race-result/<race_id>", method="POST")
-def save_formula_e_race_result(race_id):
+@app.post("/api/formula-e/race-result/{race_id}")
+def save_formula_e_race_result(
+    race_id: int,
+    prediction_data: FormulaEPredictionRequest,
+    admin_user_id: int = Depends(require_admin_user)
+):
     with db_transaction() as db:
-        admin_user_id = require_admin(db)
-        if hasattr(admin_user_id, "error"):
-            return admin_user_id
-
-        prediction_data = bottle.request.json
-
         # No validation, none of the fields are required because you can input a partial result
         # for example after qualifying.
 
@@ -1429,17 +1368,17 @@ def save_formula_e_race_result(race_id):
             query,
             {
                 "race": race_id,
-                "pole": prediction_data["pole"],
-                "fam": prediction_data["fam"],
-                "sam": prediction_data["sam"],
-                "fl": prediction_data["fl"],
-                "hgc": prediction_data["hgc"],
-                "first": prediction_data["first"],
-                "second": prediction_data["second"],
-                "third": prediction_data["third"],
-                "fdnf": prediction_data["fdnf"],
-                "hst": prediction_data["hst"],
-                "safety_car": prediction_data["safety_car"],
+                "pole": prediction_data.pole,
+                "fam": prediction_data.fam,
+                "sam": prediction_data.sam,
+                "fl": prediction_data.fl,
+                "hgc": prediction_data.hgc,
+                "first": prediction_data.first,
+                "second": prediction_data.second,
+                "third": prediction_data.third,
+                "fdnf": prediction_data.fdnf,
+                "hst": prediction_data.hst,
+                "safety_car": prediction_data.safety_car,
             },
         )
 
@@ -1447,14 +1386,45 @@ def save_formula_e_race_result(race_id):
         return get_scored_formula_e_race_predictions(db, admin_user_id, race_id)
 
 
-# Make sure the static directory exists
-os.makedirs("./static", exist_ok=True)
+def configure_app(config_dict):
+    """Configure JWT and logging after config is loaded."""
+    global config
+    config = config_dict
 
-if __name__ == "__main__":
+    config['jwtSecret'] = os.getenv(config['jwtSecretVar'])
+
+    # Configure logging based on config
+    if config.get('prettyLogging', False):
+        import logging
+
+        logging.basicConfig(
+            level=logging.DEBUG if config.get('logLevel', 0) <= 0 else logging.INFO,
+            format='%(asctime)s [%(levelname)s] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        logger = logging.getLogger(__name__)
+        logger.info(f"Starting application with config: {config['dbFilepath']}")
+
+
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print("Usage: python app.py <config_file.json>")
+        sys.exit(1)
+
+    config_file = sys.argv[1]
+    try:
+        with open(config_file, 'r') as f:
+            config_dict = json.load(f)
+    except Exception as e:
+        print(f"Error loading configuration: {e}")
+        sys.exit(1)
+
+    configure_app(config_dict)
+
     # Run the application with settings from config
-    bottle.run(
+    uvicorn.run(
         app,
-        host="localhost",
-        port=config.get("port", 8080),
-        debug=config.get("debug", False),
+        host='localhost',
+        port=config.get('port', 8080),
+        log_level="debug" if config.get('debug', False) else "info"
     )
