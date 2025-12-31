@@ -1,4 +1,4 @@
-insert into seasons (year) values ("2025-26");
+insert into seasons (year) values ('2025-26');
 
 INSERT INTO races (round, name, country, circuit, date, season, cancelled) VALUES
   (1,  'São Paulo ePrix',   'Brazil',        'São Paulo Street Circuit',          '2025-12-06T12:40:00Z', '2025-26', 0),
