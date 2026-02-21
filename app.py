@@ -223,8 +223,8 @@ class FormulaEPredictionRequest(BaseModel):
     @field_validator('safety_car')
     @classmethod
     def validate_safety_car(cls, v):
-        if v is not None and v not in ['yes', 'no']:
-            raise ValueError('safety_car must be "yes" or "no"')
+        if v is not None and v not in ['yes', 'no', '']:
+            raise ValueError('safety_car must be "yes", "no", or ""')
         return v
 
 
