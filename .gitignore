@@ -17,5 +17,6 @@ static/styles.min.css
 venv
 debug.predictions.db
 predictions.db
+pre-2026-snapshot.db
 backup-dbs
 __pycache__

@@ -202,8 +202,8 @@ class FormulaPredictionRequest(BaseModel):
     @field_validator('positions')
     @classmethod
     def validate_positions_length(cls, v):
-        if len(v) != 20:
-            raise ValueError('Must have exactly 20 positions')
+        if len(v) != 22:
+            raise ValueError('Must have exactly 22 positions')
         return v
 
 
@@ -998,7 +998,7 @@ def get_formula_one_season_leaderboard(season: str):
     order by up.user, up.position
     ;"""
         rows = db.execute(query, {"season": season}).fetchall()
-        return json.dumps([dict(row) for row in rows])
+        return [dict(row) for row in rows]
 
 
 def create_leaderboard_rows(rows, id="user_id", name="user_fullname"):

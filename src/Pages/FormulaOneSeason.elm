@@ -26,7 +26,7 @@ view model season =
             Components.SeasonNav.view
                 { currentSeason = Types.FormulaOne.currentSeason
                 , viewedSeason = season
-                , allSeasons = [ "2025", "2024" ]
+                , allSeasons = [ "2026", "2025", "2024" ]
                 , toRoute = Route.FormulaOne << Just
                 , toName = identity
                 }
