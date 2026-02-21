@@ -90,7 +90,7 @@ viewEntrant config entrant =
             [ Html.Attributes.class "entrant-number" ]
             [ Html.text (String.fromInt entrant.number) ]
         , Components.TeamName.view
-            { name = entrant.teamFullName
+            { name = entrant.teamShortName
             , class = "entrant-team"
             , primary = entrant.teamPrimaryColor
             , secondary = entrant.teamSecondaryColor

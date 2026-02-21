@@ -162,7 +162,7 @@ view model season =
                                         ]
                                         [ Html.span [ Attributes.class "entrant-position" ] []
                                         , Components.TeamName.view
-                                            { name = team.fullname
+                                            { name = team.shortname
                                             , class = "entrant-team"
                                             , primary = team.color
                                             , secondary = team.secondaryColor
