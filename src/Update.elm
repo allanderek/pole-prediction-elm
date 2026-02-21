@@ -821,8 +821,18 @@ update msg model =
             , Effect.SubmitFormulaOneSeasonPrediction { season = season } teamIds
             )
 
-        Msg.FormulaOneSeasonPredictionResponse _ _ ->
-            Return.noEffect model
+        Msg.FormulaOneSeasonPredictionResponse _ result ->
+            let
+                alertMessage : String
+                alertMessage =
+                    case result of
+                        Ok _ ->
+                            "Season prediction submitted successfully!"
+
+                        Err _ ->
+                            "Failed to submit season prediction."
+            in
+            ( model, Effect.NativeAlert alertMessage )
 
 
 updateFormulaEPrediction : Msg.UpdateFormulaEPredictionMsg -> Types.FormulaE.Prediction -> Types.FormulaE.Prediction
