@@ -31,6 +31,7 @@ type Effect
     | SubmitFormulaEResult { eventId : Types.FormulaE.EventId } Types.FormulaE.Result
     | SubmitFormulaOneSessionPrediction { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSessionResult { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
+    | SubmitFormulaOneSeasonPrediction { season : Types.FormulaOne.Season } (List Types.FormulaOne.TeamId)
 
 
 goto : Route -> Effect

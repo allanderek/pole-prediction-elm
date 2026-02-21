@@ -1378,6 +1378,95 @@ table.formula-one-session-results-table {
     }
 }
 
+/* Formula One Season Prediction Entry Styling */
+
+.formula-one-season-prediction-entry sortable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 1rem;
+    counter-reset: entrant-counter;
+    background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
+}
+
+.formula-one-season-prediction-entry sortable-list>div.entrant {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 6px;
+    border-radius: 8px;
+    background-color: white;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    counter-increment: entrant-counter;
+
+    .sortable-handle {
+        cursor: grab;
+        border: 1px solid #ccc;
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+        margin-left: auto;
+    }
+
+    .entrant-position {
+        &::before {
+            content: counter(entrant-counter);
+        }
+        font-weight: 900;
+        font-size: 1.0rem;
+        min-width: 2.0em;
+        box-sizing: border-box;
+        color: var(--text-secondary, #666666);
+        text-align: center;
+        align-self: center;
+    }
+
+    .entrant-team {
+        font-weight: 600;
+        font-size: 1.0rem;
+        margin-left: 0.5em;
+    }
+}
+
+.formula-one-season-prediction-entry sortable-list>div:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.formula-one-season-prediction-entry sortable-list>div:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+
+    .sortable-handle {
+        cursor: grabbing;
+    }
+}
+
+.formula-one-season-prediction-entry button {
+    width: 100%;
+    padding: 12px;
+    background: var(--primary-color, #2196f3);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 1rem;
+
+    &:hover {
+        background: #1976d2;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .formula-one-season-prediction-entry sortable-list>div.entrant {
+        padding: 14px 12px;
+    }
+}
+
+
 /* Formula One Session Leaderboard Styles */
 section.section.formula-one-session-leaderboard,
 section.section.formula-one-season-leaderboard {

@@ -207,6 +207,10 @@ class FormulaPredictionRequest(BaseModel):
         return v
 
 
+class FormulaOneSeasonPredictionRequest(BaseModel):
+    teams: list[int]
+
+
 class FormulaEPredictionRequest(BaseModel):
     pole: Optional[int] = None
     fam: Optional[int] = None
@@ -883,6 +887,48 @@ def get_formula_one_driver_standings(season: str):
             "columns": ["total"],
             "rows": create_leaderboard_rows(rows, id="driver_id", name="driver_name"),
         }
+
+
+@app.get("/api/formula-one/season-teams/{season}")
+def get_formula_one_season_teams(season: str):
+    with db_transaction() as db:
+        query = """
+    select
+        t.id,
+        t.fullname,
+        t.shortname,
+        coalesce(t.color, '#000000') as color,
+        coalesce(t.secondary_color, '#000000') as secondary_color
+    from formula_one_teams t
+    where t.season = :season
+    order by (
+        select max(e.rank) from formula_one_entrants e where e.team = t.id
+    ) desc
+    ;"""
+        rows = db.execute(query, {"season": season}).fetchall()
+        return [dict(row) for row in rows]
+
+
+@app.post("/api/formula-one/season-prediction/{season}")
+def save_formula_one_season_prediction(
+    season: str,
+    prediction_data: FormulaOneSeasonPredictionRequest,
+    user_id: int = Depends(get_current_user_id)
+):
+    with db_transaction() as db:
+        db.execute(
+            "delete from formula_one_season_prediction_lines where user = :user_id and season = :season",
+            {"user_id": user_id, "season": season}
+        )
+        rows_to_insert = [
+            {"user": user_id, "season": season, "position": position, "team": team_id}
+            for position, team_id in enumerate(prediction_data.teams, start=1)
+        ]
+        db.executemany(
+            "insert into formula_one_season_prediction_lines (user, season, position, team) values (:user, :season, :position, :team)",
+            rows_to_insert
+        )
+        return {"status": "success"}
 
 
 @app.get("/api/formula-one/season-leaderboard/{season}")

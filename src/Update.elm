@@ -99,6 +99,12 @@ getData data model =
                         | formulaEEventLeaderboards =
                             Dict.insert spec.eventId Helpers.Http.Inflight model.formulaEEventLeaderboards
                     }
+
+                Types.Data.FormulaOneSeasonTeams spec ->
+                    { model
+                        | formulaOneSeasonTeams =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneSeasonTeams
+                    }
     in
     ( newModel, Effect.GetData data )
 
@@ -129,7 +135,7 @@ initRoute model =
 
         Route.FormulaOne mSeason ->
             let
-                season : Types.FormulaE.Season
+                season : Types.FormulaOne.Season
                 season =
                     mSeason
                         |> Maybe.withDefault Types.FormulaOne.currentSeason
@@ -145,6 +151,7 @@ initRoute model =
                     , Types.Data.FormulaOneEvents spec
                     , Types.Data.FormulaOneConstructorStandings spec
                     , Types.Data.FormulaOneDriverStandings spec
+                    , Types.Data.FormulaOneSeasonTeams spec
                     ]
 
         Route.FormulaOneEvent season eventId ->
@@ -768,6 +775,54 @@ update msg model =
                     | formulaOneDriverStandings =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneDriverStandings
                 }
+
+        Msg.FormulaOneSeasonTeamsResponse spec result ->
+            let
+                initialEntry teams =
+                    case Dict.member spec.season model.formulaOneSeasonPredictionEntry of
+                        True ->
+                            model.formulaOneSeasonPredictionEntry
+
+                        False ->
+                            Dict.insert spec.season (List.map Types.FormulaOne.teamId teams) model.formulaOneSeasonPredictionEntry
+            in
+            Return.noEffect
+                { model
+                    | formulaOneSeasonTeams =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneSeasonTeams
+                    , formulaOneSeasonPredictionEntry =
+                        case result of
+                            Err _ ->
+                                model.formulaOneSeasonPredictionEntry
+
+                            Ok teams ->
+                                initialEntry teams
+                }
+
+        Msg.ReorderFormulaOneSeasonPrediction season oldIndex newIndex ->
+            let
+                currentOrder : List Types.FormulaOne.TeamId
+                currentOrder =
+                    Dict.get season model.formulaOneSeasonPredictionEntry
+                        |> Maybe.withDefault []
+
+                newOrder : List Types.FormulaOne.TeamId
+                newOrder =
+                    Helpers.List.moveByIndex oldIndex newIndex currentOrder
+            in
+            Return.noEffect
+                { model
+                    | formulaOneSeasonPredictionEntry =
+                        Dict.insert season newOrder model.formulaOneSeasonPredictionEntry
+                }
+
+        Msg.SubmitFormulaOneSeasonPrediction season teamIds ->
+            ( model
+            , Effect.SubmitFormulaOneSeasonPrediction { season = season } teamIds
+            )
+
+        Msg.FormulaOneSeasonPredictionResponse _ _ ->
+            Return.noEffect model
 
 
 updateFormulaEPrediction : Msg.UpdateFormulaEPredictionMsg -> Types.FormulaE.Prediction -> Types.FormulaE.Prediction

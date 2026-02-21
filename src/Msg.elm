@@ -54,6 +54,10 @@ type Msg
     | FormulaOneSeasonLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Types.FormulaOne.SeasonLeaderboard)
     | FormulaOneConstructorStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneDriverStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
+    | FormulaOneSeasonTeamsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.FormulaOneTeam))
+    | ReorderFormulaOneSeasonPrediction Types.FormulaOne.Season Int Int
+    | SubmitFormulaOneSeasonPrediction Types.FormulaOne.Season (List Types.FormulaOne.TeamId)
+    | FormulaOneSeasonPredictionResponse { season : Types.FormulaOne.Season } (HttpResult ())
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)
     | FormulaEEventsResponse { season : Types.FormulaE.Season } (HttpResult (List Types.FormulaE.Event))
     | FormulaEEventEntrantsResponse { eventId : Types.FormulaE.EventId } (HttpResult (List Types.FormulaE.Entrant))

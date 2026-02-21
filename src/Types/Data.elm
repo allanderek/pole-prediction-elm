@@ -13,6 +13,7 @@ type Data
     | FormulaOneSeasonLeaderboard { season : Types.FormulaOne.Season }
     | FormulaOneConstructorStandings { season : Types.FormulaOne.Season }
     | FormulaOneDriverStandings { season : Types.FormulaOne.Season }
+    | FormulaOneSeasonTeams { season : Types.FormulaOne.Season }
     | FormulaELeaderboard { season : Types.FormulaE.Season }
     | FormulaEEvents { season : Types.FormulaE.Season }
     | FormulaEEventEntrants { eventId : Types.FormulaE.EventId }

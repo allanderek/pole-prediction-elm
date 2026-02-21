@@ -9,11 +9,16 @@ import Components.TeamName
 import Components.UserName
 import Dict
 import Helpers.Http
+import Helpers.List
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Events as Events
+import Json.Decode as Decode
+import Json.Decode.Pipeline as Pipeline
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
+import Time
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 
@@ -113,6 +118,89 @@ view model season =
             in
             Components.Section.view { title = "Constructor Standings", class = "formula-one-constructor-standings" } content
 
+        isPredictionOpen : Bool
+        isPredictionOpen =
+            Time.posixToMillis model.now < Time.posixToMillis Types.FormulaOne.seasonPredictionDeadline
+
+        showPredictionSection : Bool
+        showPredictionSection =
+            isPredictionOpen && season == Types.FormulaOne.currentSeason
+
+        seasonPredictionSection : Html Msg
+        seasonPredictionSection =
+            let
+                decodeReorderEvent : Decode.Decoder Msg
+                decodeReorderEvent =
+                    Decode.succeed (Msg.ReorderFormulaOneSeasonPrediction season)
+                        |> Pipeline.required "oldIndex" Decode.int
+                        |> Pipeline.required "newIndex" Decode.int
+                        |> Decode.field "detail"
+
+                content : List (Html Msg)
+                content =
+                    case Helpers.Http.toMaybe model.userStatus of
+                        Nothing ->
+                            [ Html.p [] [ Html.text "Please log in to submit your season prediction." ] ]
+
+                        Just _ ->
+                            let
+                                teamsStatus : Helpers.Http.Status (List Types.FormulaOne.FormulaOneTeam)
+                                teamsStatus =
+                                    Dict.get season model.formulaOneSeasonTeams
+                                        |> Maybe.withDefault Helpers.Http.Ready
+
+                                teamIds : List Types.FormulaOne.TeamId
+                                teamIds =
+                                    Dict.get season model.formulaOneSeasonPredictionEntry
+                                        |> Maybe.withDefault []
+
+                                viewTeam : Types.FormulaOne.FormulaOneTeam -> Html Msg
+                                viewTeam team =
+                                    Html.div
+                                        [ Attributes.attribute "data-id" (String.fromInt team.id)
+                                        , Attributes.class "entrant"
+                                        ]
+                                        [ Html.span [ Attributes.class "entrant-position" ] []
+                                        , Components.TeamName.view
+                                            { name = team.fullname
+                                            , class = "entrant-team"
+                                            , primary = team.color
+                                            , secondary = team.secondaryColor
+                                            }
+                                        , Html.span
+                                            [ Attributes.class "sortable-handle" ]
+                                            [ Html.text "↕" ]
+                                        ]
+
+                                viewTeams : List Types.FormulaOne.FormulaOneTeam -> Html Msg
+                                viewTeams teams =
+                                    let
+                                        orderedTeams : List Types.FormulaOne.FormulaOneTeam
+                                        orderedTeams =
+                                            List.filterMap
+                                                (\id -> Helpers.List.findWith id .id teams)
+                                                teamIds
+                                    in
+                                    Html.div
+                                        [ Attributes.class "formula-one-season-prediction-entry" ]
+                                        [ Html.node
+                                            "sortable-list"
+                                            [ Events.on "item-reordered" decodeReorderEvent ]
+                                            (List.map viewTeam orderedTeams)
+                                        , Html.button
+                                            [ Events.onClick (Msg.SubmitFormulaOneSeasonPrediction season teamIds) ]
+                                            [ Html.text "Submit Season Prediction" ]
+                                        ]
+                            in
+                            [ Components.HttpStatus.view
+                                { viewFn = viewTeams
+                                , failedMessage = "Error obtaining season teams"
+                                }
+                                teamsStatus
+                            ]
+            in
+            Components.Section.view { title = "Season Prediction", class = "formula-one-season-prediction" } content
+
         seasonLeaderboardSection : Html Msg
         seasonLeaderboardSection =
             let
@@ -209,7 +297,12 @@ view model season =
     , Html.div
         [ Attributes.class "formula-one-leaderboards-container" ]
         [ leaderboardSection
-        , seasonLeaderboardSection
+        , case showPredictionSection of
+            True ->
+                seasonPredictionSection
+
+            False ->
+                seasonLeaderboardSection
         ]
     , driverStandingsSection
     , constructorStandingsSection

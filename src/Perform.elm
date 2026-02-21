@@ -221,6 +221,15 @@ perform model effect =
                         , expect = Http.expectJson (Msg.FormulaEEventLeaderboardResponse spec) Types.FormulaE.eventLeaderboardDecoder
                         }
 
+                Types.Data.FormulaOneSeasonTeams spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "season-teams", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneSeasonTeamsResponse spec)
+                                (Decode.list Types.FormulaOne.teamDecoder)
+                        }
+
         Effect.SubmitFormulaEPrediction spec prediction ->
             Http.post
                 { url = apiUrl [ "formula-e", "race-prediction", String.fromInt spec.eventId ]
@@ -268,4 +277,22 @@ perform model effect =
                     Http.expectJson
                         (Msg.SubmitFormulaOneSessionResultResponse spec.sessionId)
                         decoder
+                }
+
+        Effect.SubmitFormulaOneSeasonPrediction spec teamIds ->
+            let
+                successDecoder : Decoder ()
+                successDecoder =
+                    Decode.field "status" Decode.string
+                        |> Decode.map (\_ -> ())
+            in
+            Http.post
+                { url = apiUrl [ "formula-one", "season-prediction", spec.season ]
+                , body =
+                    Encode.object [ ( "teams", Encode.list Encode.int teamIds ) ]
+                        |> Http.jsonBody
+                , expect =
+                    Http.expectJson
+                        (Msg.FormulaOneSeasonPredictionResponse spec)
+                        successDecoder
                 }

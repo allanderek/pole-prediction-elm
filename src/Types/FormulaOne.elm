@@ -3,6 +3,7 @@ module Types.FormulaOne exposing
     , EntrantId
     , Event
     , EventId
+    , FormulaOneTeam
     , ScoredPredictionRow
     , Season
     , SeasonLeaderboard
@@ -12,6 +13,7 @@ module Types.FormulaOne exposing
     , SessionId
     , SessionLeaderboard
     , SessionLeaderboardRow
+    , TeamId
     , currentChampion
     , currentSeason
     , entrantDecoder
@@ -20,8 +22,11 @@ module Types.FormulaOne exposing
     , scoredPredictionRowDecoder
     , scoredPredictionRowsToSessionLeaderboard
     , seasonLeaderboardFromSeasonPredictionRows
+    , seasonPredictionDeadline
     , seasonPredictionRowDecoder
     , sessionDecoder
+    , teamDecoder
+    , teamId
     )
 
 import Dict exposing (Dict)
@@ -45,6 +50,15 @@ currentChampion =
 currentSeason : Season
 currentSeason =
     "2026"
+
+
+
+-- FP1 of the 2026 Australian Grand Prix: 2026-03-06T01:30:00Z
+
+
+seasonPredictionDeadline : Time.Posix
+seasonPredictionDeadline =
+    Time.millisToPosix 1772760600000
 
 
 type alias EventId =
@@ -136,6 +150,34 @@ entrantDecoder =
         |> Pipeline.required "team_short_name" Decode.string
         |> Pipeline.required "team_primary_color" Decode.string
         |> Pipeline.required "team_secondary_color" Decode.string
+
+
+type alias TeamId =
+    Int
+
+
+type alias FormulaOneTeam =
+    { id : TeamId
+    , fullname : String
+    , shortname : String
+    , color : String
+    , secondaryColor : String
+    }
+
+
+teamId : FormulaOneTeam -> TeamId
+teamId team =
+    team.id
+
+
+teamDecoder : Decoder FormulaOneTeam
+teamDecoder =
+    Decode.succeed FormulaOneTeam
+        |> Pipeline.required "id" Decode.int
+        |> Pipeline.required "fullname" Decode.string
+        |> Pipeline.required "shortname" Decode.string
+        |> Pipeline.required "color" Decode.string
+        |> Pipeline.required "secondary_color" Decode.string
 
 
 type alias ScoredPredictionRow =
