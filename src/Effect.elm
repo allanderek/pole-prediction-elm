@@ -10,6 +10,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.Login
 import Types.Profile
+import Types.Register
 
 
 type Effect
@@ -24,6 +25,7 @@ type Effect
     | GetTimeZone
     | LegacyGetTimeZone
     | SubmitLogin Types.Login.Form
+    | SubmitRegister Types.Register.Form
     | SubmitLogout
     | SubmitProfile Types.Profile.Form
     | GetData Data

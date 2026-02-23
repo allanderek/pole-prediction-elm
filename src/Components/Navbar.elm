@@ -28,7 +28,7 @@ view model =
                     viewLink (String.append "Profile: " user.username) Route.Profile
 
                 Nothing ->
-                    viewLink "Login" Route.Login
+                    viewLink "Login / Register" Route.Login
     in
     Html.aside
         []

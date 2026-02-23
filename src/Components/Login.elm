@@ -15,49 +15,61 @@ import Route
 
 view : Model key -> Html Msg
 view model =
-    -- TODO: This should be disabled if the request is inflight
     let
         disabled : Bool
         disabled =
             Helpers.Http.isInflight model.userStatus
     in
-    Html.form
-        [ Html.Events.onSubmit Msg.LoginSubmit
-        , Attributes.disabled disabled
-        , Attributes.class "login-form"
-        ]
-        [ Html.label
-            [ Attributes.class "form-label" ]
-            [ Html.text "Username"
-            , Html.input
-                [ Attributes.type_ "text"
-                , Attributes.value model.loginForm.username
-                , Attributes.name "username"
-                , Html.Events.onInput Msg.LoginIdentityInput
-                , Attributes.placeholder "username"
-                , Attributes.disabled disabled
-                ]
-                []
-            ]
-        , Html.label
-            [ Attributes.class "form-label" ]
-            [ Html.text "Password"
-            , Html.input
-                [ Attributes.type_ "password"
-                , Attributes.value model.loginForm.password
-                , Attributes.name "password"
-                , Attributes.disabled disabled
-                , Html.Events.onInput Msg.LoginPasswordInput
-                ]
-                []
-            ]
-        , Html.button
-            [ Attributes.type_ "submit"
-            , Attributes.name "submit"
-            , Attributes.value "submit"
+    Html.div
+        []
+        [ Html.form
+            [ Html.Events.onSubmit Msg.LoginSubmit
             , Attributes.disabled disabled
+            , Attributes.class "login-form"
             ]
-            [ Html.text "Submit" ]
+            [ Html.label
+                [ Attributes.class "form-label" ]
+                [ Html.text "Username"
+                , Html.input
+                    [ Attributes.type_ "text"
+                    , Attributes.value model.loginForm.username
+                    , Attributes.name "username"
+                    , Html.Events.onInput Msg.LoginIdentityInput
+                    , Attributes.placeholder "username"
+                    , Attributes.disabled disabled
+                    ]
+                    []
+                ]
+            , Html.label
+                [ Attributes.class "form-label" ]
+                [ Html.text "Password"
+                , Html.input
+                    [ Attributes.type_ "password"
+                    , Attributes.value model.loginForm.password
+                    , Attributes.name "password"
+                    , Attributes.disabled disabled
+                    , Html.Events.onInput Msg.LoginPasswordInput
+                    ]
+                    []
+                ]
+            , Html.button
+                [ Attributes.type_ "submit"
+                , Attributes.name "submit"
+                , Attributes.value "submit"
+                , Attributes.disabled disabled
+                ]
+                [ Html.text "Submit" ]
+            ]
+        , Html.p
+            [ Attributes.class "oauth-login" ]
+            [ Html.text "Or "
+            , Html.a [ Attributes.href Route.googleOAuthPath ] [ Html.text "log in with Google" ]
+            ]
+        , Html.p
+            [ Attributes.class "register-link" ]
+            [ Html.text "Don't have an account? "
+            , Html.a [ Route.href Route.Register ] [ Html.text "Register here." ]
+            ]
         ]
 
 

@@ -19,6 +19,7 @@ import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 import Types.Login
 import Types.Profile
+import Types.Register
 import Types.User exposing (User)
 import Url exposing (Url)
 
@@ -30,6 +31,7 @@ type alias Model key =
     , zone : Time.Zone
     , userStatus : Helpers.Http.Status User
     , loginForm : Types.Login.Form
+    , registerForm : Types.Register.Form
     , editingProfile : Bool
     , profileForm : Maybe Types.Profile.Form
     , profileStatus : Helpers.Http.Status User
@@ -64,6 +66,7 @@ initial key url now userStatus =
     , zone = Time.utc
     , userStatus = userStatus
     , loginForm = Types.Login.emptyForm
+    , registerForm = Types.Register.emptyForm
     , editingProfile = False
     , profileForm = Nothing
     , profileStatus = Helpers.Http.Ready

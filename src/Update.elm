@@ -18,6 +18,7 @@ import Types.FormulaOne
 import Types.LocalStorageNotification
 import Types.Login
 import Types.Profile
+import Types.Register
 import Types.User exposing (User)
 import Url
 
@@ -131,6 +132,9 @@ initRoute model =
             Return.noEffect model
 
         Route.Login ->
+            Return.noEffect model
+
+        Route.Register ->
             Return.noEffect model
 
         Route.FormulaOne mSeason ->
@@ -279,6 +283,9 @@ postLoginNav route =
         Route.Login ->
             Effect.goto Route.Home
 
+        Route.Register ->
+            Effect.goto Route.Home
+
         _ ->
             Effect.None
 
@@ -289,9 +296,19 @@ update msg model =
         Msg.LinkClicked urlRequest ->
             case urlRequest of
                 Browser.Internal url ->
-                    ( model
-                    , Effect.PushUrl (Url.toString url)
-                    )
+                    let
+                        urlString : String
+                        urlString =
+                            Url.toString url
+                    in
+                    -- The Google OAuth link is a same-domain path (/api/auth/google/login)
+                    -- so Elm intercepts it as "internal". We need a full browser redirect.
+                    case url.path == Route.googleOAuthPath of
+                        True ->
+                            ( model, Effect.LoadUrl urlString )
+
+                        False ->
+                            ( model, Effect.PushUrl urlString )
 
                 Browser.External href ->
                     ( model
@@ -386,6 +403,61 @@ update msg model =
             , case result of
                 Err _ ->
                     Effect.NativeAlert "Login failed. Please check your username and password."
+
+                Ok user ->
+                    Effect.Batch
+                        [ postLoginNav model.route
+                        , Effect.SetLocalStorage "user" (Types.User.encode user)
+                        ]
+            )
+
+        Msg.RegisterUsernameInput input ->
+            let
+                form : Types.Register.Form
+                form =
+                    model.registerForm
+            in
+            Return.noEffect { model | registerForm = { form | username = input } }
+
+        Msg.RegisterPasswordInput input ->
+            let
+                form : Types.Register.Form
+                form =
+                    model.registerForm
+            in
+            Return.noEffect { model | registerForm = { form | password = input } }
+
+        Msg.RegisterEmailInput input ->
+            let
+                form : Types.Register.Form
+                form =
+                    model.registerForm
+            in
+            Return.noEffect { model | registerForm = { form | email = input } }
+
+        Msg.RegisterFullNameInput input ->
+            let
+                form : Types.Register.Form
+                form =
+                    model.registerForm
+            in
+            Return.noEffect { model | registerForm = { form | fullName = input } }
+
+        Msg.RegisterSubmit ->
+            case Types.Register.isValidForm model.registerForm of
+                False ->
+                    Return.noEffect model
+
+                True ->
+                    ( { model | userStatus = Helpers.Http.Inflight }
+                    , Effect.SubmitRegister model.registerForm
+                    )
+
+        Msg.RegisterSubmitResponse result ->
+            ( { model | userStatus = Helpers.Http.fromResult result }
+            , case result of
+                Err _ ->
+                    Effect.NativeAlert "Registration failed. The username may already be taken."
 
                 Ok user ->
                     Effect.Batch

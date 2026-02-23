@@ -21,6 +21,7 @@ import Pages.FormulaEEvent
 import Pages.FormulaOneSeason
 import Pages.FormulaOneSession
 import Pages.Profile
+import Pages.Register
 import Route
 import Types.FormulaE
 import Types.FormulaOne
@@ -50,6 +51,11 @@ application model =
                             [ Html.text "Login" ]
                         , Components.Login.view model
                         ]
+                    }
+
+                Route.Register ->
+                    { class = "register-page"
+                    , contents = Pages.Register.view model
                     }
 
                 Route.FormulaOne mSeason ->

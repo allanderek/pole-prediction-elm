@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException, Depends, Response, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 from typing import Optional
@@ -13,11 +13,13 @@ import binascii
 import re
 import json
 import sys
+import secrets
 from functools import wraps
 import sqlite3
 import inspect
 import base64
 import hmac
+from authlib.integrations.requests_client import OAuth2Session
 
 # Global config variable
 config = {}
@@ -34,6 +36,14 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 COOKIE_NAME = "auth_token"
 COOKIE_MAX_DAYS = 360
 COOKIE_MAX_AGE = COOKIE_MAX_DAYS * 24 * 60 * 60  # 360 days in seconds
+
+# Google OAuth URLs
+GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
+GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
+
+# In-memory store for OAuth state parameters (prevents CSRF)
+oauth_states: dict = {}
 
 
 @contextlib.contextmanager
@@ -148,6 +158,20 @@ def verify_password(stored_password, provided_password):
     return hmac.compare_digest(computed_hash, stored_hash_bytes)
 
 
+def hash_password(password: str) -> str:
+    """Hash a password using PBKDF2-SHA256, matching the format used by verify_password."""
+    salt = binascii.hexlify(os.urandom(16)).decode('utf-8')
+    iterations = 260000
+    computed_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        iterations,
+    )
+    hash_base64 = base64.b64encode(computed_hash).decode('utf-8')
+    return f"pdkdf2_sha256${salt}${iterations}${hash_base64}"
+
+
 def set_auth_cookie(response: Response, user_id: int):
     """Create JWT token and set authentication cookie"""
     payload = {
@@ -163,7 +187,7 @@ def set_auth_cookie(response: Response, user_id: int):
         token,
         httponly=True,
         secure=secure_cookie,
-        samesite='strict',
+        samesite='lax',
         max_age=COOKIE_MAX_AGE,
         path='/'
     )
@@ -193,6 +217,13 @@ class LoginRequest(BaseModel):
 
 class ProfileUpdateRequest(BaseModel):
     fullname: str
+
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    email: Optional[str] = None
+    fullname: Optional[str] = None
 
 
 class FormulaPredictionRequest(BaseModel):
@@ -357,7 +388,13 @@ def login(login_data: LoginRequest, response: Response):
         query = "SELECT id, username, fullname, password, admin FROM users WHERE username = ?"
         user = db.execute(query, (username,)).fetchone()
 
-        if not user or not verify_password(user["password"], password):
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+
+        if not user["password"]:
+            raise HTTPException(status_code=401, detail="This account uses social login. Please log in with Google.")
+
+        if not verify_password(user["password"], password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # Set authentication cookie
@@ -379,6 +416,137 @@ def login(login_data: LoginRequest, response: Response):
 def logout(response: Response):
     response.delete_cookie(COOKIE_NAME, path='/')
     return {'success': True, 'message': 'Logged out successfully'}
+
+
+@app.post('/api/register')
+def register(register_data: RegisterRequest, response: Response):
+    with db_transaction() as db:
+        username = register_data.username.strip()
+        password = register_data.password
+        email = register_data.email.strip() if register_data.email else None
+        fullname = register_data.fullname.strip() if register_data.fullname else username
+
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Username and password are required")
+
+        if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
+            raise HTTPException(status_code=409, detail="Username already taken")
+
+        if email and db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+            raise HTTPException(status_code=409, detail="Email already registered")
+
+        hashed = hash_password(password)
+        db.execute(
+            "INSERT INTO users (username, fullname, email, password) VALUES (?, ?, ?, ?)",
+            (username, fullname, email, hashed),
+        )
+        user_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+        set_auth_cookie(response, user_id)
+        user = get_current_user(db, user_id)
+        return {"success": True, "message": "Registration successful", "user": user}
+
+
+def process_oauth_login(db, provider: str, user_info: dict) -> int:
+    """Look up or create a user for the given OAuth provider account, return user_id."""
+    provider_user_id = str(user_info.get('id') or user_info.get('sub', ''))
+    email = user_info.get('email')
+    display_name = user_info.get('name') or user_info.get('given_name') or email or 'User'
+
+    # If this OAuth account is already linked, return the existing user.
+    existing_oauth = db.execute(
+        "SELECT user_id FROM user_oauth_accounts WHERE provider = ? AND provider_user_id = ?",
+        (provider, provider_user_id),
+    ).fetchone()
+    if existing_oauth:
+        return existing_oauth['user_id']
+
+    # If an email was provided, check whether a user with that email already exists.
+    user_id = None
+    if email:
+        existing_user = db.execute(
+            "SELECT id FROM users WHERE email = ?", (email,)
+        ).fetchone()
+        if existing_user:
+            user_id = existing_user['id']
+
+    # Otherwise create a brand-new user (no password — OAuth-only).
+    if user_id is None:
+        base_username = email.split('@')[0] if email else display_name.lower().replace(' ', '_')
+        username = base_username
+        counter = 1
+        while db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        db.execute(
+            "INSERT INTO users (username, fullname, email, password) VALUES (?, ?, ?, NULL)",
+            (username, display_name, email),
+        )
+        user_id = db.execute("SELECT last_insert_rowid()").fetchone()[0]
+
+    # Link this OAuth account to the user.
+    db.execute(
+        "INSERT INTO user_oauth_accounts (user_id, provider, provider_user_id, email) VALUES (?, ?, ?, ?)",
+        (user_id, provider, provider_user_id, email),
+    )
+
+    return user_id
+
+
+@app.get('/api/auth/google/login')
+def google_oauth_login():
+    """Redirect the browser to Google's OAuth consent screen."""
+    google_client_id = os.getenv('GOOGLE_CLIENT_ID')
+    if not google_client_id:
+        raise HTTPException(status_code=500, detail="Google OAuth is not configured")
+
+    state = secrets.token_urlsafe(32)
+    oauth = OAuth2Session(
+        google_client_id,
+        redirect_uri=f"{config['base_url']}/api/auth/google/callback",
+        scope='openid email profile',
+    )
+    authorization_url, _ = oauth.create_authorization_url(GOOGLE_AUTHORIZE_URL, state=state)
+    oauth_states[state] = True
+    return RedirectResponse(url=authorization_url)
+
+
+@app.get('/api/auth/google/callback')
+def google_oauth_callback(
+    request: Request,
+    response: Response,
+    code: Optional[str] = None,
+    state: Optional[str] = None,
+    error: Optional[str] = None,
+):
+    """Handle the redirect back from Google after the user consents."""
+    if error:
+        return RedirectResponse(url=f"{config['base_url']}/app/login")
+
+    if not state or state not in oauth_states:
+        raise HTTPException(status_code=400, detail="Invalid OAuth state")
+    del oauth_states[state]
+
+    google_client_id = os.getenv('GOOGLE_CLIENT_ID')
+    google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+
+    oauth = OAuth2Session(
+        google_client_id,
+        google_client_secret,
+        redirect_uri=f"{config['base_url']}/api/auth/google/callback",
+    )
+    oauth.fetch_token(GOOGLE_TOKEN_URL, code=code)
+
+    user_info_response = oauth.get(GOOGLE_USERINFO_URL)
+    user_info = user_info_response.json()
+
+    with db_transaction() as db:
+        user_id = process_oauth_login(db, 'google', user_info)
+
+    redirect_response = RedirectResponse(url=f"{config['base_url']}/")
+    set_auth_cookie(redirect_response, user_id)
+    return redirect_response
 
 
 @app.get('/api/me')
@@ -1438,6 +1606,7 @@ def configure_app(config_dict):
     config = config_dict
 
     config['jwtSecret'] = os.getenv(config['jwtSecretVar'])
+    config.setdefault('base_url', 'https://dev.poleprediction.com')
 
     # Configure logging based on config
     if config.get('prettyLogging', False):

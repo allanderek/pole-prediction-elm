@@ -16,6 +16,7 @@ import Types.FormulaOne
 import Types.Leaderboard
 import Types.Login
 import Types.Profile
+import Types.Register
 import Types.User exposing (User)
 
 
@@ -84,6 +85,19 @@ perform model effect =
                 { url = url
                 , body = body
                 , expect = Http.expectJson Msg.LoginSubmitResponse decoder
+                }
+
+        Effect.SubmitRegister form ->
+            let
+                decoder : Decoder User
+                decoder =
+                    Types.User.decoder
+                        |> Decode.field "user"
+            in
+            Http.post
+                { url = apiUrl [ "register" ]
+                , body = form |> Types.Register.encodeForm |> Http.jsonBody
+                , expect = Http.expectJson Msg.RegisterSubmitResponse decoder
                 }
 
         Effect.SubmitLogout ->

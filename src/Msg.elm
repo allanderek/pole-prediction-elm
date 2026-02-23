@@ -14,6 +14,7 @@ import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 import Types.LocalStorageNotification exposing (LocalStorageNotification)
 import Types.Profile
+import Types.Register
 import Types.User exposing (User)
 import Url
 
@@ -33,6 +34,12 @@ type Msg
     | LoginPasswordInput String
     | LoginSubmit
     | LoginSubmitResponse (HttpResult User)
+    | RegisterUsernameInput String
+    | RegisterPasswordInput String
+    | RegisterEmailInput String
+    | RegisterFullNameInput String
+    | RegisterSubmit
+    | RegisterSubmitResponse (HttpResult User)
     | Logout
     | LogoutResponse (HttpResult ())
     | EditProfile

@@ -2,6 +2,7 @@ module Route exposing
     ( Route(..)
     , formulaESeason
     , formulaOneSeason
+    , googleOAuthPath
     , href
     , parse
     , unparse
@@ -19,6 +20,7 @@ import Url.Parser as Parser exposing ((</>))
 type Route
     = Home
     | Login
+    | Register
     | FormulaOne (Maybe Types.FormulaOne.Season)
     | FormulaOneEvent Types.FormulaOne.Season Types.FormulaOne.EventId
     | FormulaOneSession Types.FormulaOne.Season Types.FormulaOne.EventId Types.FormulaOne.SessionId
@@ -31,6 +33,11 @@ type Route
 appPrefix : String
 appPrefix =
     "app"
+
+
+googleOAuthPath : String
+googleOAuthPath =
+    "/api/auth/google/login"
 
 
 parse : Url.Url -> Route
@@ -70,6 +77,7 @@ parse url =
                                 </> Parser.int
                                 |> Parser.map FormulaEEvent
                             , Parser.s "login" |> Parser.map Login
+                            , Parser.s "register" |> Parser.map Register
                             , Parser.s "profile" |> Parser.map Profile
                             ]
                 ]
@@ -125,6 +133,9 @@ unparse route =
 
                 Login ->
                     [ "login" ]
+
+                Register ->
+                    [ "register" ]
 
                 FormulaOne Nothing ->
                     [ "formula-one" ]
