@@ -28,7 +28,7 @@ config = {}
 app = FastAPI()
 
 # Make sure the static directory exists and mount it
-os.makedirs('./static', exist_ok=True)
+os.makedirs("./static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -57,7 +57,9 @@ def db_transaction():
         db.commit()
     except sqlite3.IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Database integrity error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Database integrity error: {str(e)}"
+        )
     except HTTPException:
         db.rollback()
         raise
@@ -76,7 +78,9 @@ def get_user_id_from_cookie(request: Request) -> Optional[int]:
         return None
 
     try:
-        payload = jwt.decode(token, config["jwtSecret"], algorithms=[config.get("jwtAlgorithm", "HS256")])
+        payload = jwt.decode(
+            token, config["jwtSecret"], algorithms=[config.get("jwtAlgorithm", "HS256")]
+        )
         return payload.get("user_id")
     except jwt.PyJWTError:
         return None
@@ -106,7 +110,7 @@ def require_admin_user(request: Request) -> int:
         query = "SELECT admin FROM users WHERE id = ?"
         result = db.execute(query, (user_id,)).fetchone()
 
-        if not result or result['admin'] != 1:
+        if not result or result["admin"] != 1:
             raise HTTPException(status_code=403, detail="Admin privileges required")
 
     return user_id
@@ -160,7 +164,7 @@ def verify_password(stored_password, provided_password):
 
 def hash_password(password: str) -> str:
     """Hash a password using PBKDF2-SHA256, matching the format used by verify_password."""
-    salt = binascii.hexlify(os.urandom(16)).decode('utf-8')
+    salt = binascii.hexlify(os.urandom(16)).decode("utf-8")
     iterations = 260000
     computed_hash = hashlib.pbkdf2_hmac(
         "sha256",
@@ -168,28 +172,31 @@ def hash_password(password: str) -> str:
         salt.encode("utf-8"),
         iterations,
     )
-    hash_base64 = base64.b64encode(computed_hash).decode('utf-8')
+    hash_base64 = base64.b64encode(computed_hash).decode("utf-8")
     return f"pdkdf2_sha256${salt}${iterations}${hash_base64}"
 
 
 def set_auth_cookie(response: Response, user_id: int):
     """Create JWT token and set authentication cookie"""
     payload = {
-        'user_id': user_id,
-        'exp': datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=COOKIE_MAX_DAYS),
+        "user_id": user_id,
+        "exp": datetime.datetime.now(datetime.UTC)
+        + datetime.timedelta(days=COOKIE_MAX_DAYS),
     }
-    token = jwt.encode(payload, config["jwtSecret"], algorithm=config.get("jwtAlgorithm", "HS256"))
+    token = jwt.encode(
+        payload, config["jwtSecret"], algorithm=config.get("jwtAlgorithm", "HS256")
+    )
 
     # Set HTTP-Only secure cookie
-    secure_cookie = not config.get('debug', False)
+    secure_cookie = not config.get("debug", False)
     response.set_cookie(
         COOKIE_NAME,
         token,
         httponly=True,
         secure=secure_cookie,
-        samesite='lax',
+        samesite="lax",
         max_age=COOKIE_MAX_AGE,
-        path='/'
+        path="/",
     )
 
 
@@ -202,10 +209,10 @@ def get_current_user(db, user_id):
         raise HTTPException(status_code=404, detail="User not found")
 
     return {
-        'id': user['id'],
-        'username': user['username'],
-        'fullname': user['fullname'],
-        'admin': bool(user['admin'])
+        "id": user["id"],
+        "username": user["username"],
+        "fullname": user["fullname"],
+        "admin": bool(user["admin"]),
     }
 
 
@@ -230,11 +237,11 @@ class FormulaPredictionRequest(BaseModel):
     positions: list[int]
     fastest_lap: Optional[int] = None
 
-    @field_validator('positions')
+    @field_validator("positions")
     @classmethod
     def validate_positions_length(cls, v):
         if len(v) != 22:
-            raise ValueError('Must have exactly 22 positions')
+            raise ValueError("Must have exactly 22 positions")
         return v
 
 
@@ -255,10 +262,10 @@ class FormulaEPredictionRequest(BaseModel):
     hst: Optional[int] = None
     safety_car: Optional[str] = None
 
-    @field_validator('safety_car')
+    @field_validator("safety_car")
     @classmethod
     def validate_safety_car(cls, v):
-        if v is not None and v not in ['yes', 'no', '']:
+        if v is not None and v not in ["yes", "no", ""]:
             raise ValueError('safety_car must be "yes", "no", or ""')
         return v
 
@@ -375,14 +382,16 @@ def serve_index(request: Request, path: str = None):
 
 
 # Authentication routes
-@app.post('/api/login')
+@app.post("/api/login")
 def login(login_data: LoginRequest, response: Response):
     with db_transaction() as db:
         username = login_data.username
         password = login_data.password
 
         if not username or not password:
-            raise HTTPException(status_code=400, detail="Username and password required")
+            raise HTTPException(
+                status_code=400, detail="Username and password required"
+            )
 
         # Get user from database
         query = "SELECT id, username, fullname, password, admin FROM users WHERE username = ?"
@@ -392,13 +401,16 @@ def login(login_data: LoginRequest, response: Response):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         if not user["password"]:
-            raise HTTPException(status_code=401, detail="This account uses social login. Please log in with Google.")
+            raise HTTPException(
+                status_code=401,
+                detail="This account uses social login. Please log in with Google.",
+            )
 
         if not verify_password(user["password"], password):
             raise HTTPException(status_code=401, detail="Invalid credentials")
 
         # Set authentication cookie
-        set_auth_cookie(response, user['id'])
+        set_auth_cookie(response, user["id"])
 
         return {
             "success": True,
@@ -412,27 +424,36 @@ def login(login_data: LoginRequest, response: Response):
         }
 
 
-@app.post('/api/logout')
+@app.post("/api/logout")
 def logout(response: Response):
-    response.delete_cookie(COOKIE_NAME, path='/')
-    return {'success': True, 'message': 'Logged out successfully'}
+    response.delete_cookie(COOKIE_NAME, path="/")
+    return {"success": True, "message": "Logged out successfully"}
 
 
-@app.post('/api/register')
+@app.post("/api/register")
 def register(register_data: RegisterRequest, response: Response):
     with db_transaction() as db:
         username = register_data.username.strip()
         password = register_data.password
         email = register_data.email.strip() if register_data.email else None
-        fullname = register_data.fullname.strip() if register_data.fullname else username
+        fullname = (
+            register_data.fullname.strip() if register_data.fullname else username
+        )
 
         if not username or not password:
-            raise HTTPException(status_code=400, detail="Username and password are required")
+            raise HTTPException(
+                status_code=400, detail="Username and password are required"
+            )
 
-        if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
+        if db.execute(
+            "SELECT id FROM users WHERE username = ?", (username,)
+        ).fetchone():
             raise HTTPException(status_code=409, detail="Username already taken")
 
-        if email and db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone():
+        if (
+            email
+            and db.execute("SELECT id FROM users WHERE email = ?", (email,)).fetchone()
+        ):
             raise HTTPException(status_code=409, detail="Email already registered")
 
         hashed = hash_password(password)
@@ -449,9 +470,11 @@ def register(register_data: RegisterRequest, response: Response):
 
 def process_oauth_login(db, provider: str, user_info: dict) -> int:
     """Look up or create a user for the given OAuth provider account, return user_id."""
-    provider_user_id = str(user_info.get('id') or user_info.get('sub', ''))
-    email = user_info.get('email')
-    display_name = user_info.get('name') or user_info.get('given_name') or email or 'User'
+    provider_user_id = str(user_info.get("id") or user_info.get("sub", ""))
+    email = user_info.get("email")
+    display_name = (
+        user_info.get("name") or user_info.get("given_name") or email or "User"
+    )
 
     # If this OAuth account is already linked, return the existing user.
     existing_oauth = db.execute(
@@ -459,7 +482,7 @@ def process_oauth_login(db, provider: str, user_info: dict) -> int:
         (provider, provider_user_id),
     ).fetchone()
     if existing_oauth:
-        return existing_oauth['user_id']
+        return existing_oauth["user_id"]
 
     # If an email was provided, check whether a user with that email already exists.
     user_id = None
@@ -468,14 +491,18 @@ def process_oauth_login(db, provider: str, user_info: dict) -> int:
             "SELECT id FROM users WHERE email = ?", (email,)
         ).fetchone()
         if existing_user:
-            user_id = existing_user['id']
+            user_id = existing_user["id"]
 
     # Otherwise create a brand-new user (no password — OAuth-only).
     if user_id is None:
-        base_username = email.split('@')[0] if email else display_name.lower().replace(' ', '_')
+        base_username = (
+            email.split("@")[0] if email else display_name.lower().replace(" ", "_")
+        )
         username = base_username
         counter = 1
-        while db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone():
+        while db.execute(
+            "SELECT id FROM users WHERE username = ?", (username,)
+        ).fetchone():
             username = f"{base_username}{counter}"
             counter += 1
 
@@ -494,10 +521,10 @@ def process_oauth_login(db, provider: str, user_info: dict) -> int:
     return user_id
 
 
-@app.get('/api/auth/google/login')
+@app.get("/api/auth/google/login")
 def google_oauth_login():
     """Redirect the browser to Google's OAuth consent screen."""
-    google_client_id = os.getenv('GOOGLE_CLIENT_ID')
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     if not google_client_id:
         raise HTTPException(status_code=500, detail="Google OAuth is not configured")
 
@@ -505,14 +532,16 @@ def google_oauth_login():
     oauth = OAuth2Session(
         google_client_id,
         redirect_uri=f"{config['base_url']}/api/auth/google/callback",
-        scope='openid email profile',
+        scope="openid email profile",
     )
-    authorization_url, _ = oauth.create_authorization_url(GOOGLE_AUTHORIZE_URL, state=state)
+    authorization_url, _ = oauth.create_authorization_url(
+        GOOGLE_AUTHORIZE_URL, state=state
+    )
     oauth_states[state] = True
     return RedirectResponse(url=authorization_url)
 
 
-@app.get('/api/auth/google/callback')
+@app.get("/api/auth/google/callback")
 def google_oauth_callback(
     request: Request,
     response: Response,
@@ -528,8 +557,8 @@ def google_oauth_callback(
         raise HTTPException(status_code=400, detail="Invalid OAuth state")
     del oauth_states[state]
 
-    google_client_id = os.getenv('GOOGLE_CLIENT_ID')
-    google_client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+    google_client_id = os.getenv("GOOGLE_CLIENT_ID")
+    google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
 
     oauth = OAuth2Session(
         google_client_id,
@@ -542,26 +571,30 @@ def google_oauth_callback(
     user_info = user_info_response.json()
 
     with db_transaction() as db:
-        user_id = process_oauth_login(db, 'google', user_info)
+        user_id = process_oauth_login(db, "google", user_info)
 
     redirect_response = RedirectResponse(url=f"{config['base_url']}/")
     set_auth_cookie(redirect_response, user_id)
     return redirect_response
 
 
-@app.get('/api/me')
+@app.get("/api/me")
 def get_me(user_id: int = Depends(get_current_user_id)):
     with db_transaction() as db:
         return get_current_user(db, user_id)
 
 
-@app.post('/api/profile')
-def update_profile(profile_data: ProfileUpdateRequest, user_id: int = Depends(get_current_user_id)):
+@app.post("/api/profile")
+def update_profile(
+    profile_data: ProfileUpdateRequest, user_id: int = Depends(get_current_user_id)
+):
     with db_transaction() as db:
         fullname = profile_data.fullname
 
         if not fullname:
-            raise HTTPException(status_code=400, detail="Full name is required and cannot be empty")
+            raise HTTPException(
+                status_code=400, detail="Full name is required and cannot be empty"
+            )
 
         db.execute(
             "update users set fullname = :fullname where id = :user_id;",
@@ -633,7 +666,7 @@ def get_formula_one_session_entrants(session_id: int):
 def get_formula_one_session_leaderboard(
     session_id: int,
     request: Request,
-    user_id: Optional[int] = Depends(get_optional_user_id)
+    user_id: Optional[int] = Depends(get_optional_user_id),
 ):
     with db_transaction() as db:
         return get_formula_one_session_scored_predictions(db, user_id, session_id)
@@ -743,7 +776,7 @@ def is_db_time_earlier_than_now(db_time_str):
 def save_formula_one_prediction(
     session_id: int,
     prediction_data: FormulaPredictionRequest,
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     with db_transaction() as db:
         # Get fastest lap prediction, could be None
@@ -762,7 +795,7 @@ def save_formula_one_prediction(
         if is_db_time_earlier_than_now(session["start_time"]):
             raise HTTPException(
                 status_code=403,
-                detail=f"Predictions for {session['name']} are no longer accepted - session has started"
+                detail=f"Predictions for {session['name']} are no longer accepted - session has started",
             )
 
         # First delete any existing predictions for this user and session
@@ -807,7 +840,7 @@ def save_formula_one_prediction(
 def save_formula_one_session_result(
     session_id: int,
     prediction_data: FormulaPredictionRequest,
-    admin_user_id: int = Depends(require_admin_user)
+    admin_user_id: int = Depends(require_admin_user),
 ):
     with db_transaction() as db:
         # Get fastest lap prediction, could be None
@@ -1081,12 +1114,12 @@ def get_formula_one_season_teams(season: str):
 def save_formula_one_season_prediction(
     season: str,
     prediction_data: FormulaOneSeasonPredictionRequest,
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     with db_transaction() as db:
         db.execute(
             "delete from formula_one_season_prediction_lines where user = :user_id and season = :season",
-            {"user_id": user_id, "season": season}
+            {"user_id": user_id, "season": season},
         )
         rows_to_insert = [
             {"user": user_id, "season": season, "position": position, "team": team_id}
@@ -1094,7 +1127,7 @@ def save_formula_one_season_prediction(
         ]
         db.executemany(
             "insert into formula_one_season_prediction_lines (user, season, position, team) values (:user, :season, :position, :team)",
-            rows_to_insert
+            rows_to_insert,
         )
         return {"status": "success"}
 
@@ -1368,7 +1401,7 @@ def get_formula_e_event_entrants(race_id: int):
 def get_formula_e_race_predictions(
     race_id: int,
     request: Request,
-    user_id: Optional[int] = Depends(get_optional_user_id)
+    user_id: Optional[int] = Depends(get_optional_user_id),
 ):
     with db_transaction() as db:
         return get_scored_formula_e_race_predictions(db, user_id, race_id)
@@ -1502,7 +1535,7 @@ def get_scored_formula_e_race_predictions(db, user_id, race_id):
 def save_formula_e_race_prediction(
     race_id: int,
     prediction_data: FormulaEPredictionRequest,
-    user_id: int = Depends(get_current_user_id)
+    user_id: int = Depends(get_current_user_id),
 ):
     with db_transaction() as db:
         # Get the race details to check start time
@@ -1517,7 +1550,7 @@ def save_formula_e_race_prediction(
         if is_db_time_earlier_than_now(race["date"]):
             raise HTTPException(
                 status_code=403,
-                detail=f"Predictions for {race['name']} are no longer accepted - session has started"
+                detail=f"Predictions for {race['name']} are no longer accepted - session has started",
             )
 
         # First delete any existing prediction for this race
@@ -1561,7 +1594,7 @@ def save_formula_e_race_prediction(
 def save_formula_e_race_result(
     race_id: int,
     prediction_data: FormulaEPredictionRequest,
-    admin_user_id: int = Depends(require_admin_user)
+    admin_user_id: int = Depends(require_admin_user),
 ):
     with db_transaction() as db:
         # No validation, none of the fields are required because you can input a partial result
@@ -1605,30 +1638,30 @@ def configure_app(config_dict):
     global config
     config = config_dict
 
-    config['jwtSecret'] = os.getenv(config['jwtSecretVar'])
-    config.setdefault('base_url', 'https://dev.poleprediction.com')
+    config["jwtSecret"] = os.getenv(config["jwtSecretVar"])
+    config.setdefault("base_url", "https://dev.poleprediction.com")
 
     # Configure logging based on config
-    if config.get('prettyLogging', False):
+    if config.get("prettyLogging", False):
         import logging
 
         logging.basicConfig(
-            level=logging.DEBUG if config.get('logLevel', 0) <= 0 else logging.INFO,
-            format='%(asctime)s [%(levelname)s] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S'
+            level=logging.DEBUG if config.get("logLevel", 0) <= 0 else logging.INFO,
+            format="%(asctime)s [%(levelname)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
         )
         logger = logging.getLogger(__name__)
         logger.info(f"Starting application with config: {config['dbFilepath']}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: python app.py <config_file.json>")
         sys.exit(1)
 
     config_file = sys.argv[1]
     try:
-        with open(config_file, 'r') as f:
+        with open(config_file, "r") as f:
             config_dict = json.load(f)
     except Exception as e:
         print(f"Error loading configuration: {e}")
@@ -1639,7 +1672,7 @@ if __name__ == '__main__':
     # Run the application with settings from config
     uvicorn.run(
         app,
-        host='localhost',
-        port=config.get('port', 8080),
-        log_level="debug" if config.get('debug', False) else "info"
+        host="localhost",
+        port=config.get("port", 8080),
+        log_level="debug" if config.get("debug", False) else "info",
     )

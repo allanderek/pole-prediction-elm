@@ -4,12 +4,17 @@
 1. pip install authlib requests (or pip install -r requirements.txt)
 2. Run sql/add-email-oauth-accounts.sql against predictions.db
     sqlite3 predictions.db < sql/add-email-oauth-accounts.sql
+    sqlite3 predictions.db < sql/fix-prediction-position-constraint.sql
 3. Add your Google credentials to .env
 4. Restart the server
 
 
 
 ## TODOS:
+
+- [ ] We need to style the register page.
+- [ ] Fix prediction entry
+- [ ] Fix season predictions not showing the current prediction order when you refresh the page.
 
 - [ ] Am I vulnerable to SQL-injection? See for example getting the leaderboard we just pass in the season.
 - [x] Fix the damn problem with devenv/direnv reloading
