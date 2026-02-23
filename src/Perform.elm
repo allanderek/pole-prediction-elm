@@ -3,6 +3,7 @@ module Perform exposing (perform)
 import Browser.Navigation
 import Effect exposing (Effect)
 import Http
+import Helpers.Rfc3339
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Msg exposing (Msg)
@@ -176,8 +177,10 @@ perform model effect =
                     let
                         decoder : Decoder Types.FormulaOne.SeasonLeaderboard
                         decoder =
-                            Decode.list Types.FormulaOne.seasonPredictionRowDecoder
-                                |> Decode.map Types.FormulaOne.seasonLeaderboardFromSeasonPredictionRows
+                            Decode.map2
+                                Types.FormulaOne.seasonLeaderboardFromSeasonPredictionRows
+                                (Decode.field "prediction_deadline" Helpers.Rfc3339.decoder)
+                                (Decode.field "rows" (Decode.list Types.FormulaOne.seasonPredictionRowDecoder))
                     in
                     Http.get
                         { url = apiUrl [ "formula-one", "season-leaderboard", spec.season ]

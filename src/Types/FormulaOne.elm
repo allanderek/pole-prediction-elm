@@ -22,7 +22,6 @@ module Types.FormulaOne exposing
     , scoredPredictionRowDecoder
     , scoredPredictionRowsToSessionLeaderboard
     , seasonLeaderboardFromSeasonPredictionRows
-    , seasonPredictionDeadline
     , seasonPredictionRowDecoder
     , sessionDecoder
     , teamDecoder
@@ -50,16 +49,6 @@ currentChampion =
 currentSeason : Season
 currentSeason =
     "2026"
-
-
-
--- FP1 of the 2026 Australian Grand Prix: 2026-03-06T01:30:00Z
-
-
-seasonPredictionDeadline : Time.Posix
-seasonPredictionDeadline =
-    Time.millisToPosix 1772760600000
-
 
 type alias EventId =
     Int
@@ -301,7 +290,9 @@ seasonPredictionRowDecoder =
 
 
 type alias SeasonLeaderboard =
-    List SeasonLeaderboardRow
+    { predictionDeadline : Time.Posix
+    , rows : List SeasonLeaderboardRow
+    }
 
 
 type alias SeasonLeaderboardRow =
@@ -312,8 +303,8 @@ type alias SeasonLeaderboardRow =
     }
 
 
-seasonLeaderboardFromSeasonPredictionRows : List SeasonPredictionRow -> SeasonLeaderboard
-seasonLeaderboardFromSeasonPredictionRows rows =
+seasonLeaderboardFromSeasonPredictionRows : Time.Posix -> List SeasonPredictionRow -> SeasonLeaderboard
+seasonLeaderboardFromSeasonPredictionRows deadline predictionRows =
     let
         processRow : SeasonPredictionRow -> Dict Types.User.Id SeasonLeaderboardRow -> Dict Types.User.Id SeasonLeaderboardRow
         processRow row accumulator =
@@ -338,7 +329,10 @@ seasonLeaderboardFromSeasonPredictionRows rows =
             in
             Dict.update row.userId updateLeaderboardRow accumulator
     in
-    List.foldl processRow Dict.empty rows
-        |> Dict.values
-        -- We do not reverse this because actually the lower the difference the better.
-        |> List.sortBy .total
+    { predictionDeadline = deadline
+    , rows =
+        List.foldl processRow Dict.empty predictionRows
+            |> Dict.values
+            -- We do not reverse this because actually the lower the difference the better.
+            |> List.sortBy .total
+    }

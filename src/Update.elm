@@ -945,7 +945,7 @@ update msg model =
 
 userPredictionFromSeasonLeaderboard : Types.User.Id -> Types.FormulaOne.SeasonLeaderboard -> Maybe (List Types.FormulaOne.TeamId)
 userPredictionFromSeasonLeaderboard userId leaderboard =
-    case List.filter (\row -> row.userId == userId) leaderboard of
+    case List.filter (\row -> row.userId == userId) leaderboard.rows of
         [] ->
             Nothing
 

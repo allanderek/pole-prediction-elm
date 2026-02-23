@@ -45,9 +45,6 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 # In-memory store for OAuth state parameters (prevents CSRF)
 oauth_states: dict = {}
 
-# Season prediction deadline: FP1 of the 2026 Australian GP (matches Elm Types.FormulaOne.seasonPredictionDeadline)
-F1_SEASON_PREDICTION_DEADLINE = datetime.datetime(2026, 3, 6, 1, 30, 0, tzinfo=datetime.timezone.utc)
-
 
 @contextlib.contextmanager
 def db_transaction():
@@ -1140,12 +1137,18 @@ def get_formula_one_season_leaderboard(
     season: str,
     user_id: Optional[int] = Depends(get_optional_user_id),
 ):
-    deadline_passed = datetime.datetime.now(datetime.timezone.utc) > F1_SEASON_PREDICTION_DEADLINE
-    # Before the deadline only return the current user's own predictions
-    user_filter_clause = "" if deadline_passed else "and lines.user = :user_id"
-    if not deadline_passed and user_id is None:
-        return []
     with db_transaction() as db:
+        season_row = db.execute(
+            "SELECT prediction_deadline FROM formula_one_seasons WHERE year = ?", (season,)
+        ).fetchone()
+        prediction_deadline = season_row["prediction_deadline"] if season_row else None
+        deadline_passed = (
+            prediction_deadline is None or is_db_time_earlier_than_now(prediction_deadline)
+        )
+        # Before the deadline only return the current user's own predictions
+        user_filter_clause = "" if deadline_passed else "and lines.user = :user_id"
+        if not deadline_passed and user_id is None:
+            return {"prediction_deadline": prediction_deadline, "rows": []}
         query = f"""with
         -- First, get all the season predictions from users
         user_predictions as (
@@ -1257,7 +1260,10 @@ def get_formula_one_season_leaderboard(
     order by up.user, up.position
     ;"""
         rows = db.execute(query, {"season": season, "user_id": user_id}).fetchall()
-        return [dict(row) for row in rows]
+        return {
+            "prediction_deadline": prediction_deadline,
+            "rows": [dict(row) for row in rows],
+        }
 
 
 def create_leaderboard_rows(rows, id="user_id", name="user_fullname"):

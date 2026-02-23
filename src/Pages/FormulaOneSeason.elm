@@ -6,6 +6,7 @@ import Components.Leaderboard
 import Components.SeasonNav
 import Components.Section
 import Components.TeamName
+import Components.Time
 import Components.UserName
 import Dict
 import Helpers.Http
@@ -118,9 +119,21 @@ view model season =
             in
             Components.Section.view { title = "Constructor Standings", class = "formula-one-constructor-standings" } content
 
+        mPredictionDeadline : Maybe Time.Posix
+        mPredictionDeadline =
+            Dict.get season model.formulaOneSeasonLeaderboards
+                |> Maybe.andThen Helpers.Http.toMaybe
+                |> Maybe.map .predictionDeadline
+
         isPredictionOpen : Bool
         isPredictionOpen =
-            Time.posixToMillis model.now < Time.posixToMillis Types.FormulaOne.seasonPredictionDeadline
+            case mPredictionDeadline of
+                Nothing ->
+                    -- Assume open while leaderboard is still loading
+                    True
+
+                Just deadline ->
+                    Time.posixToMillis model.now < Time.posixToMillis deadline
 
         showPredictionSection : Bool
         showPredictionSection =
@@ -136,8 +149,21 @@ view model season =
                         |> Pipeline.required "newIndex" Decode.int
                         |> Decode.field "detail"
 
-                content : List (Html Msg)
-                content =
+                deadlineView : Html Msg
+                deadlineView =
+                    case mPredictionDeadline of
+                        Nothing ->
+                            Html.text ""
+
+                        Just deadline ->
+                            Html.p
+                                [ Attributes.class "prediction-deadline" ]
+                                [ Html.text "Submit before "
+                                , Components.Time.longFormat model.zone deadline
+                                ]
+
+                userContent : List (Html Msg)
+                userContent =
                     case Helpers.Http.toMaybe model.userStatus of
                         Nothing ->
                             [ Html.p [] [ Html.text "Please log in to submit your season prediction." ] ]
@@ -198,6 +224,10 @@ view model season =
                                 }
                                 teamsStatus
                             ]
+
+                content : List (Html Msg)
+                content =
+                    deadlineView :: userContent
             in
             Components.Section.view { title = "Season Prediction", class = "formula-one-season-prediction" } content
 
@@ -276,7 +306,7 @@ view model season =
                                             ]
                                         ]
                             in
-                            Html.ul [] (List.map viewRow seasonLeaderboard)
+                            Html.ul [] (List.map viewRow seasonLeaderboard.rows)
                     in
                     [ Components.HttpStatus.view
                         { viewFn = viewLeaderboard
