@@ -13,7 +13,7 @@
 
 ## TODOS:
 
-- [ ] We need to style the register page.
+- [x] We need to style the register page.
 - [x] Fix prediction entry
 - [x] Fix season predictions not showing the current prediction order when you refresh the page.
 

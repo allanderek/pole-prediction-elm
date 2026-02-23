@@ -49,13 +49,13 @@ view model =
             ]
         , Html.label
             [ Attributes.class "form-label" ]
-            [ Html.text "Full Name (optional)"
+            [ Html.text "Display Name (optional)"
             , Html.input
                 [ Attributes.type_ "text"
                 , Attributes.value model.registerForm.fullName
                 , Attributes.name "fullname"
                 , Html.Events.onInput Msg.RegisterFullNameInput
-                , Attributes.placeholder "Full Name"
+                , Attributes.placeholder "Display name"
                 , Attributes.disabled disabled
                 ]
                 []
