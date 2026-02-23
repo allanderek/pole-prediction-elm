@@ -271,6 +271,7 @@ type alias SeasonPredictionRow =
     { userId : Types.User.Id
     , userName : String
     , predictedPosition : Int
+    , teamId : TeamId
     , teamName : String
     , teamPrimaryColor : String
     , teamSecondaryColor : String
@@ -288,6 +289,7 @@ seasonPredictionRowDecoder =
         |> Pipeline.required "user_id" Decode.int
         |> Pipeline.required "fullname" Decode.string
         |> Pipeline.required "position" Decode.int
+        |> Pipeline.required "team_id" Decode.int
         |> Pipeline.required "team" Decode.string
         |> Pipeline.required "team_primary_color" Decode.string
         |> Pipeline.required "team_secondary_color" Decode.string

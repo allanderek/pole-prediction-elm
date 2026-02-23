@@ -835,10 +835,30 @@ update msg model =
                 }
 
         Msg.FormulaOneSeasonLeaderboardResponse spec result ->
+            let
+                restoredEntry =
+                    case result of
+                        Err _ ->
+                            model.formulaOneSeasonPredictionEntry
+
+                        Ok leaderboard ->
+                            case Helpers.Http.toMaybe model.userStatus of
+                                Nothing ->
+                                    model.formulaOneSeasonPredictionEntry
+
+                                Just user ->
+                                    case userPredictionFromSeasonLeaderboard user.id leaderboard of
+                                        Nothing ->
+                                            model.formulaOneSeasonPredictionEntry
+
+                                        Just teamIds ->
+                                            Dict.insert spec.season teamIds model.formulaOneSeasonPredictionEntry
+            in
             Return.noEffect
                 { model
                     | formulaOneSeasonLeaderboards =
                         Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneSeasonLeaderboards
+                    , formulaOneSeasonPredictionEntry = restoredEntry
                 }
 
         Msg.FormulaOneDriverStandingsResponse spec result ->
@@ -856,7 +876,23 @@ update msg model =
                             model.formulaOneSeasonPredictionEntry
 
                         False ->
-                            Dict.insert spec.season (List.map Types.FormulaOne.teamId teams) model.formulaOneSeasonPredictionEntry
+                            let
+                                defaultOrder =
+                                    List.map Types.FormulaOne.teamId teams
+
+                                teamIds =
+                                    case Helpers.Http.toMaybe model.userStatus of
+                                        Nothing ->
+                                            defaultOrder
+
+                                        Just user ->
+                                            model.formulaOneSeasonLeaderboards
+                                                |> Dict.get spec.season
+                                                |> Maybe.andThen Helpers.Http.toMaybe
+                                                |> Maybe.andThen (userPredictionFromSeasonLeaderboard user.id)
+                                                |> Maybe.withDefault defaultOrder
+                            in
+                            Dict.insert spec.season teamIds model.formulaOneSeasonPredictionEntry
             in
             Return.noEffect
                 { model
@@ -905,6 +941,26 @@ update msg model =
                             "Failed to submit season prediction."
             in
             ( model, Effect.NativeAlert alertMessage )
+
+
+userPredictionFromSeasonLeaderboard : Types.User.Id -> Types.FormulaOne.SeasonLeaderboard -> Maybe (List Types.FormulaOne.TeamId)
+userPredictionFromSeasonLeaderboard userId leaderboard =
+    case List.filter (\row -> row.userId == userId) leaderboard of
+        [] ->
+            Nothing
+
+        row :: _ ->
+            let
+                teamIds =
+                    row.rows
+                        |> List.sortBy .predictedPosition
+                        |> List.map .teamId
+            in
+            if List.isEmpty teamIds then
+                Nothing
+
+            else
+                Just teamIds
 
 
 updateFormulaEPrediction : Msg.UpdateFormulaEPredictionMsg -> Types.FormulaE.Prediction -> Types.FormulaE.Prediction

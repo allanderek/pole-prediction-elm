@@ -13,7 +13,7 @@
 ## TODOS:
 
 - [ ] We need to style the register page.
-- [ ] Fix prediction entry
+- [x] Fix prediction entry
 - [ ] Fix season predictions not showing the current prediction order when you refresh the page.
 
 - [ ] Am I vulnerable to SQL-injection? See for example getting the leaderboard we just pass in the season.

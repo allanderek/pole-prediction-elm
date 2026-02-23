@@ -45,6 +45,9 @@ GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 # In-memory store for OAuth state parameters (prevents CSRF)
 oauth_states: dict = {}
 
+# Season prediction deadline: FP1 of the 2026 Australian GP (matches Elm Types.FormulaOne.seasonPredictionDeadline)
+F1_SEASON_PREDICTION_DEADLINE = datetime.datetime(2026, 3, 6, 1, 30, 0, tzinfo=datetime.timezone.utc)
+
 
 @contextlib.contextmanager
 def db_transaction():
@@ -1133,9 +1136,17 @@ def save_formula_one_season_prediction(
 
 
 @app.get("/api/formula-one/season-leaderboard/{season}")
-def get_formula_one_season_leaderboard(season: str):
+def get_formula_one_season_leaderboard(
+    season: str,
+    user_id: Optional[int] = Depends(get_optional_user_id),
+):
+    deadline_passed = datetime.datetime.now(datetime.timezone.utc) > F1_SEASON_PREDICTION_DEADLINE
+    # Before the deadline only return the current user's own predictions
+    user_filter_clause = "" if deadline_passed else "and lines.user = :user_id"
+    if not deadline_passed and user_id is None:
+        return []
     with db_transaction() as db:
-        query = """with
+        query = f"""with
         -- First, get all the season predictions from users
         user_predictions as (
             select
@@ -1149,7 +1160,7 @@ def get_formula_one_season_leaderboard(season: str):
             from formula_one_season_prediction_lines as lines
             inner join users on lines.user = users.id
             inner join formula_one_teams as teams on lines.team = teams.id
-            where teams.season = :season
+            where teams.season = :season {user_filter_clause}
         ),
         -- Only calculate constructor standings if results exist
         results as (
@@ -1222,6 +1233,7 @@ def get_formula_one_season_leaderboard(season: str):
         up.user as user_id,
         up.fullname,
         up.position,
+        up.team as team_id,
         up.team_name as team,
         up.team_color as team_primary_color,
         up.team_secondary_color,
@@ -1236,15 +1248,15 @@ def get_formula_one_season_leaderboard(season: str):
                 ) as integer)
             else 0
         end as difference,
-        c.team_name as actual_team_name,
-        c.team_color as actual_team_primary_color,
-        c.team_secondary_color as actual_team_secondary_color,
-        c.total as actual_total
+        coalesce(c.team_name, '') as actual_team_name,
+        coalesce(c.team_color, '') as actual_team_primary_color,
+        coalesce(c.team_secondary_color, '') as actual_team_secondary_color,
+        coalesce(c.total, 0) as actual_total
     from user_predictions up
     left join constructors c on up.position = c.position
     order by up.user, up.position
     ;"""
-        rows = db.execute(query, {"season": season}).fetchall()
+        rows = db.execute(query, {"season": season, "user_id": user_id}).fetchall()
         return [dict(row) for row in rows]
 
 

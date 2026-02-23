@@ -2,6 +2,7 @@ module Helpers.Decode exposing
     ( emptyString
     , intAsBool
     , nullableInt
+    , nullableString
     , stringAsInt
     )
 
@@ -19,6 +20,11 @@ nullableAs defaultValue decoder =
 nullableInt : Decoder Int
 nullableInt =
     nullableAs 0 Decode.int
+
+
+nullableString : Decoder String
+nullableString =
+    nullableAs "" Decode.string
 
 
 emptyString : a -> Decoder a
