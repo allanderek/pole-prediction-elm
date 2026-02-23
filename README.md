@@ -1,12 +1,12 @@
 # Development
 
-To create the virtual environment run:
-$ python3 -m venv venv
-$ source venv/bin/activate.fish 
-$ pip install -r requirements.txt
+## Deployment
+1. pip install authlib requests (or pip install -r requirements.txt)
+2. Run sql/add-email-oauth-accounts.sql against predictions.db
+    sqlite3 predictions.db < sql/add-email-oauth-accounts.sql
+3. Add your Google credentials to .env
+4. Restart the server
 
-If already created you only need the middle line:
-$ source venv/bin/activate.fish 
 
 
 ## TODOS:
@@ -24,7 +24,7 @@ $ source venv/bin/activate.fish
 - [ ] Consider a bit of a refactor of the database, we could have that the entrants all have ids 1-20, but the primary key of the entrant is a composite primary key consisting of session id with the entrant id. This would have some advantages. Such as creating all the entrants in the database at the start of the season. Changing one should really be changing either a driver for a replacement (e.g. Bearman for Sainz due to appendecitis), or swapping teams, e.g. Tsunoda for Lawson and vice versa. 
 
 
-- [ ] You have authentication but no way to register at the moment.
+- [x] You have authentication but no way to register at the moment.
 - [ ] I may do 'event' leaderboard which is just get the leaderboard for the season but restrict it to sessions within a given event, and show it on the event page?
 - [ ] Can I do something cool with testing, i.e. run elm test by actually using the database from python?
 - [ ] Don't forget that before next year you will have to do season prediction input.
@@ -78,37 +78,6 @@ $ source venv/bin/activate.fish
 - [ ] Ideally as well we would record the time that we last got the data and it would decide whether it needed to 're-get' it. This will come up in particular for the results. Which would be nice if we could automatically re-get the results on a session page. Though of course we could have a button to do that, and also we want to worry about viewing a session from a long time ago.
 
 
-## Database migration
-You now allow partial formula e results entry, in particular safety-car can be ""
-But you will need to update the production database:
-```
--- Create new table with updated constraint
-create table results_new (
-    race integer primary key not null,
-    pole integer not null,
-    fam  integer not null,
-    fl   integer not null,
-    hgc  integer not null,
-    first integer not null,
-    second integer not null,
-    third integer not null,
-    fdnf integer not null,
-    safety_car text check (safety_car in ("yes", "no", "")) not null,
-    foreign key (race) references races(id),
-    foreign key (pole) references entrants(id),
-    foreign key (fam) references entrants(id),
-    foreign key (fl) references entrants(id),
-    foreign key (hgc) references entrants(id),
-    foreign key (first) references entrants(id),
-    foreign key (second) references entrants(id),
-    foreign key (third) references entrants(id),
-    foreign key (fdnf) references entrants(id)
-);
+## Season predictions
 
--- Copy existing data
-insert into results_new select * from results;
-
--- Drop old table and rename new one
-drop table results;
-alter table results_new rename to results;
-```
+These are not currently implemented correctly in that they fail to show when the user refreshes, i.e. the order of the current prediction is not shown to the user even though it is held in the database.
