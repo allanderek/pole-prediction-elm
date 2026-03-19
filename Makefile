@@ -24,6 +24,11 @@ static/styles.min.css: static/styles.css
 	lightningcss --minify $< -o $@
 
 
+.PHONY: update-ranks
+update-ranks:
+	sqlite3 predictions.db < update-ranks.sql
+	@echo "Ranks updated based on current WDC standings."
+
 .PHONY: new_secret
 new_secret:
 	python -c "import secrets; print(secrets.token_urlsafe(32))"
