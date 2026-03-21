@@ -90,6 +90,15 @@ application model =
                                               , content = Components.Time.longFormat model.zone event.startTime
                                               }
                                             ]
+                                                ++ (if event.cancelled then
+                                                        [ { class = "event-cancelled"
+                                                          , content = Html.text "This event has been cancelled."
+                                                          }
+                                                        ]
+
+                                                    else
+                                                        []
+                                                   )
                                         , eventId = eventId
                                         , mEvent = mEvent
                                         , mSessionId = Nothing
@@ -176,6 +185,7 @@ application model =
                                             , toName = .name
                                             , toStartTime = .startTime
                                             , toEndDate = .startTime
+                                            , toCancelled = .cancelled
                                             }
                                     , failedMessage = "Error obtaining the events"
                                     }

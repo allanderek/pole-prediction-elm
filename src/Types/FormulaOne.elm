@@ -50,6 +50,7 @@ currentSeason : Season
 currentSeason =
     "2026"
 
+
 type alias EventId =
     Int
 
@@ -61,6 +62,7 @@ type alias Event =
     , isSprint : Bool
     , startTime : Time.Posix
     , finalSessionTime : Time.Posix
+    , cancelled : Bool
     }
 
 
@@ -83,6 +85,7 @@ eventDecoder =
         |> Pipeline.required "isSprint" Helpers.Decode.intAsBool
         |> Pipeline.required "start_time" Helpers.Rfc3339.decoder
         |> Pipeline.required "last_session_start_time" Helpers.Rfc3339.decoder
+        |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
 
 
 type alias SessionId =

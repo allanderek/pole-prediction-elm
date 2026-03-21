@@ -34,10 +34,16 @@ view model eventId mCurrentSessionId =
                             , mCurrentSessionId
                                 == Just session.id
                                 |> Helpers.Classes.boolean "current-session" "not-current-session"
+                            , Helpers.Classes.boolean "cancelled" "not-cancelled" session.cancelled
                             ]
                             [ Html.text session.name
                             , Html.text " - "
                             , Components.Time.shortFormat model.zone session.startTime
+                            , if session.cancelled then
+                                Html.text " (Cancelled)"
+
+                              else
+                                Html.text ""
                             ]
                         ]
             in

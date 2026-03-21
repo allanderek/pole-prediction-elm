@@ -300,7 +300,15 @@ view model session =
                         }
                         leaderboardStatus
     in
-    [ infoSection
-    , entrySection
-    , leaderboardSection
-    ]
+    if session.cancelled then
+        [ infoSection
+        , Html.p
+            [ Attributes.class "session-cancelled-notice" ]
+            [ Html.text "This session has been cancelled." ]
+        ]
+
+    else
+        [ infoSection
+        , entrySection
+        , leaderboardSection
+        ]

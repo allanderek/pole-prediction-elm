@@ -54,6 +54,7 @@ view model season =
                                 , toName = Types.FormulaOne.eventName
                                 , toStartTime = .startTime
                                 , toEndDate = .finalSessionTime
+                                , toCancelled = .cancelled
                                 }
                         , failedMessage = "Error obtaining the events"
                         }

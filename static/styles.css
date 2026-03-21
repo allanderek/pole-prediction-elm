@@ -613,6 +613,20 @@ section.section {
         &.started.not-finished {
             font-weight: 700;
         }
+
+        &.cancelled {
+            background: linear-gradient(135deg, #fde8e8 0%, #f5c6c6 100%);
+            border-left-color: #dc3545;
+            color: #721c24;
+
+            &::after {
+                content: '✕';
+                position: absolute;
+                right: 1rem;
+                color: #dc3545;
+                font-weight: bold;
+            }
+        }
     }
 }
 

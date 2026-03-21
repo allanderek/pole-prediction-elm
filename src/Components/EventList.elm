@@ -14,6 +14,7 @@ type alias Config a =
     , toName : a -> String
     , toStartTime : a -> Time.Posix
     , toEndDate : a -> Time.Posix
+    , toCancelled : a -> Bool
     }
 
 
@@ -39,6 +40,10 @@ view model config events =
                             config.toEndDate event
                     in
                     Helpers.Time.datePassed model endTime
+
+                isCancelled : Bool
+                isCancelled =
+                    config.toCancelled event
             in
             Html.li
                 []
@@ -48,11 +53,17 @@ view model config events =
                         |> Route.href
                     , Helpers.Classes.boolean "started" "not-started" hasStarted
                     , Helpers.Classes.boolean "finished" "not-finished" hasFinished
+                    , Helpers.Classes.boolean "cancelled" "not-cancelled" isCancelled
                     ]
                     [ config.toName event
                         |> Html.text
                     , Html.text " - "
                     , Components.Time.shortFormat model.zone startTime
+                    , if isCancelled then
+                        Html.text " (Cancelled)"
+
+                      else
+                        Html.text ""
                     ]
                 ]
     in
