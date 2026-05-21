@@ -49,6 +49,7 @@ type Msg
     | SubmitEditedProfileResponse (HttpResult User)
     | ReorderFormulaOneSessionPredictionEntry Types.FormulaOne.SessionId Int Int
     | ReorderFormulaOneSessionResultEntry Types.FormulaOne.SessionId Int Int
+    | SetFormulaOneSessionPrediction Types.FormulaOne.SessionId (List Types.FormulaOne.Entrant)
     | SubmitFormulaOneSessionEntry Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSessionEntryResponse Types.FormulaOne.SessionId (HttpResult ())
     | SubmitFormulaOneSessionResult Types.FormulaOne.SessionId (List Types.FormulaOne.EntrantId)

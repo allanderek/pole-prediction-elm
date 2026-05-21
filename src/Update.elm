@@ -176,13 +176,16 @@ initRoute model =
 
         Route.FormulaOneSession season eventId sessionId ->
             let
-                haveSessionInfo : Bool
-                haveSessionInfo =
+                sessions : List Types.FormulaOne.Session
+                sessions =
                     Dict.get eventId model.formulaOneSessions
                         |> Maybe.withDefault Helpers.Http.Ready
                         |> Helpers.Http.toMaybe
                         |> Maybe.withDefault []
-                        |> List.any (\session -> session.id == sessionId)
+
+                haveSessionInfo : Bool
+                haveSessionInfo =
+                    List.any (\s -> s.id == sessionId) sessions
 
                 haveEventInfo : Bool
                 haveEventInfo =
@@ -191,18 +194,37 @@ initRoute model =
                         |> Helpers.Http.toMaybe
                         |> Maybe.withDefault []
                         |> List.any (\event -> event.id == eventId)
+
+                mPrevSessionId : Maybe Types.FormulaOne.SessionId
+                mPrevSessionId =
+                    (Helpers.List.findPrevNext (\s -> s.id == sessionId) sessions).prev
+                        |> Maybe.map .id
+
+                prevLeaderboardFetch : List ( Bool, Data )
+                prevLeaderboardFetch =
+                    case mPrevSessionId of
+                        Nothing ->
+                            []
+
+                        Just prevSessionId ->
+                            [ ( not (Dict.member prevSessionId model.formulaOneSessionLeaderboards)
+                              , Types.Data.FormulaOneSessionLeaderboard { sessionId = prevSessionId }
+                              )
+                            ]
             in
             model
                 |> getMultipleDataIf
-                    [ ( True, Types.Data.FormulaOneEntrants { sessionId = sessionId } )
-                    , ( True, Types.Data.FormulaOneSessionLeaderboard { sessionId = sessionId } )
-                    , ( not haveSessionInfo
-                      , Types.Data.FormulaOneEventSessions { eventId = eventId }
-                      )
-                    , ( not haveEventInfo
-                      , Types.Data.FormulaOneEvents { season = season }
-                      )
-                    ]
+                    ([ ( True, Types.Data.FormulaOneEntrants { sessionId = sessionId } )
+                     , ( True, Types.Data.FormulaOneSessionLeaderboard { sessionId = sessionId } )
+                     , ( not haveSessionInfo
+                       , Types.Data.FormulaOneEventSessions { eventId = eventId }
+                       )
+                     , ( not haveEventInfo
+                       , Types.Data.FormulaOneEvents { season = season }
+                       )
+                     ]
+                        ++ prevLeaderboardFetch
+                    )
 
         Route.FormulaE mSeason ->
             let
@@ -558,6 +580,13 @@ update msg model =
                     Effect.None
             )
 
+        Msg.SetFormulaOneSessionPrediction sessionId entrants ->
+            Return.noEffect
+                { model
+                    | formulaOneSessionPredictionEntries =
+                        Dict.insert sessionId entrants model.formulaOneSessionPredictionEntries
+                }
+
         Msg.ReorderFormulaOneSessionPredictionEntry sessionId oldIndex newIndex ->
             let
                 mCurrentOrder : Maybe (List Types.FormulaOne.Entrant)
@@ -807,11 +836,42 @@ update msg model =
             )
 
         Msg.FormulaOneEventSessionsResponse spec result ->
-            Return.noEffect
-                { model
-                    | formulaOneSessions =
-                        Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaOneSessions
-                }
+            let
+                newModel : Model key
+                newModel =
+                    { model
+                        | formulaOneSessions =
+                            Dict.insert spec.eventId (Helpers.Http.fromResult result) model.formulaOneSessions
+                    }
+
+                mPrevSessionId : Maybe Types.FormulaOne.SessionId
+                mPrevSessionId =
+                    case model.route of
+                        Route.FormulaOneSession _ eventId sessionId ->
+                            if eventId /= spec.eventId then
+                                Nothing
+
+                            else
+                                result
+                                    |> Result.toMaybe
+                                    |> Maybe.withDefault []
+                                    |> Helpers.List.findPrevNext (\s -> s.id == sessionId)
+                                    |> .prev
+                                    |> Maybe.map .id
+
+                        _ ->
+                            Nothing
+            in
+            case mPrevSessionId of
+                Nothing ->
+                    Return.noEffect newModel
+
+                Just prevSessionId ->
+                    if Dict.member prevSessionId newModel.formulaOneSessionLeaderboards then
+                        Return.noEffect newModel
+
+                    else
+                        getData (Types.Data.FormulaOneSessionLeaderboard { sessionId = prevSessionId }) newModel
 
         Msg.FormulaOneEntrantsResponse spec result ->
             Return.noEffect

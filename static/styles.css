@@ -1497,9 +1497,41 @@ main.formula-one-season-page>* {
     }
 }
 
+/* Copy-from-previous buttons */
+.copy-from-previous-buttons {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.5rem 0 0.75rem 0;
+}
+
+.copy-from-previous-button {
+    flex: 1;
+    padding: 0.4rem 0.75rem;
+    background: white;
+    color: #1a1a1a;
+    border: 1px solid #1a1a1a;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.copy-from-previous-button:hover:not(:disabled) {
+    background: #e10600;
+    border-color: #e10600;
+    color: white;
+}
+
+.copy-from-previous-button:disabled {
+    border-color: #ddd;
+    color: #bbb;
+    cursor: default;
+}
+
 /* Submit button styling */
-.formula-one-session-results-entry button,
-.formula-one-session-prediction-entry button {
+.formula-one-session-results-entry button:not(.copy-from-previous-button),
+.formula-one-session-prediction-entry button:not(.copy-from-previous-button) {
     width: 100%;
     padding: 12px;
     background: var(--primary-color, #2196f3);
@@ -1514,7 +1546,7 @@ main.formula-one-season-page>* {
 }
 
 
-.formula-one-session-prediction-entry button {
+.formula-one-session-prediction-entry button:not(.copy-from-previous-button) {
     background: var(--prediction-color, #28a745);
 
     &:hover {
@@ -1522,7 +1554,7 @@ main.formula-one-season-page>* {
     }
 }
 
-.formula-one-session-results-entry button {
+.formula-one-session-results-entry button:not(.copy-from-previous-button) {
     background: var(--result-color, #f57c00);
 
     &:hover {

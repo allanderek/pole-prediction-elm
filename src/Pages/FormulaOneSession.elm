@@ -14,6 +14,7 @@ import Helpers.Table
 import Helpers.Time
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Events as Events
 import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
@@ -142,12 +143,111 @@ view model session =
                         currentPrediction =
                             Model.getFormulaOneCurrentSessionPrediction model session.id
                                 |> Maybe.withDefault entrants
+
+                        mPrevSession : Maybe Types.FormulaOne.Session
+                        mPrevSession =
+                            Dict.get session.eventId model.formulaOneSessions
+                                |> Maybe.withDefault Helpers.Http.Ready
+                                |> Helpers.Http.toMaybe
+                                |> Maybe.withDefault []
+                                |> List.sortBy (.startTime >> Time.posixToMillis)
+                                |> Helpers.List.findPrevNext (\s -> s.id == session.id)
+                                |> .prev
+
+                        copyButtons : Html Msg
+                        copyButtons =
+                            case mPrevSession of
+                                Nothing ->
+                                    Html.Extra.nothing
+
+                                Just prevSession ->
+                                    let
+                                        mPrevLeaderboard : Maybe Types.FormulaOne.SessionLeaderboard
+                                        mPrevLeaderboard =
+                                            Model.getFromStatusDict prevSession.id model.formulaOneSessionLeaderboards
+
+                                        reorderFromPrev : List Types.FormulaOne.Entrant -> List Types.FormulaOne.Entrant
+                                        reorderFromPrev prevOrder =
+                                            let
+                                                prevNumbers : List Int
+                                                prevNumbers =
+                                                    List.map .number prevOrder
+
+                                                inPrevOrder : List Types.FormulaOne.Entrant
+                                                inPrevOrder =
+                                                    List.filterMap (\num -> Helpers.List.findWith num .number entrants) prevNumbers
+
+                                                remaining : List Types.FormulaOne.Entrant
+                                                remaining =
+                                                    List.filter (\e -> not (List.member e.number prevNumbers)) entrants
+                                            in
+                                            inPrevOrder ++ remaining
+
+                                        viewCopyButton : String -> Maybe (List Types.FormulaOne.Entrant) -> Html Msg
+                                        viewCopyButton label mPrevEntrants =
+                                            case mPrevEntrants of
+                                                Nothing ->
+                                                    Html.button
+                                                        [ Attributes.type_ "button"
+                                                        , Attributes.disabled True
+                                                        , Attributes.class "copy-from-previous-button"
+                                                        ]
+                                                        [ Html.text label ]
+
+                                                Just prevEntrants ->
+                                                    Html.button
+                                                        [ Attributes.type_ "button"
+                                                        , Attributes.class "copy-from-previous-button"
+                                                        , Events.onClick
+                                                            (Msg.SetFormulaOneSessionPrediction session.id
+                                                                (reorderFromPrev prevEntrants)
+                                                            )
+                                                        ]
+                                                        [ Html.text label ]
+
+                                        mPrevPrediction : Maybe (List Types.FormulaOne.Entrant)
+                                        mPrevPrediction =
+                                            case Dict.get prevSession.id model.formulaOneSessionPredictionEntries of
+                                                Just entries ->
+                                                    Just entries
+
+                                                Nothing ->
+                                                    mPrevLeaderboard
+                                                        |> Maybe.andThen
+                                                            (\lb ->
+                                                                Helpers.List.findWith user.id .userId lb.predictions
+                                                                    |> Maybe.map
+                                                                        (.rows
+                                                                            >> List.sortBy .predictedPosition
+                                                                            >> List.map .entrant
+                                                                        )
+                                                            )
+
+                                        mPrevResults : Maybe (List Types.FormulaOne.Entrant)
+                                        mPrevResults =
+                                            mPrevLeaderboard
+                                                |> Maybe.andThen
+                                                    (\lb ->
+                                                        case lb.results of
+                                                            [] ->
+                                                                Nothing
+
+                                                            results ->
+                                                                Just results
+                                                    )
+                                    in
+                                    Html.div
+                                        [ Attributes.class "copy-from-previous-buttons" ]
+                                        [ viewCopyButton "My previous prediction" mPrevPrediction
+                                        , viewCopyButton "Previous results" mPrevResults
+                                        ]
                     in
                     Components.Section.view
                         { title = "Prediction entry"
                         , class = "formula-one-session-prediction-entry"
                         }
-                        [ Components.FormulaOneSessionEntry.view
+                        [ copyButtons
+                        , Components.FormulaOneSessionEntry.view
                             { kind = Components.FormulaOneSessionEntry.Prediction
                             , user = user
                             , entrants = currentPrediction
