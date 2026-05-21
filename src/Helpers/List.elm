@@ -1,6 +1,7 @@
 module Helpers.List exposing
     ( emptyAsNothing
     , filterByFirst
+    , findPrevNext
     , findWith
     , firstJust
     , moveByIndex
@@ -37,6 +38,25 @@ emptyAsNothing items =
 
         False ->
             Just items
+
+
+findPrevNext : (a -> Bool) -> List a -> { prev : Maybe a, next : Maybe a }
+findPrevNext predicate items =
+    let
+        helper : Maybe a -> List a -> { prev : Maybe a, next : Maybe a }
+        helper mPrev remaining =
+            case remaining of
+                [] ->
+                    { prev = Nothing, next = Nothing }
+
+                first :: rest ->
+                    if predicate first then
+                        { prev = mPrev, next = List.head rest }
+
+                    else
+                        helper (Just first) rest
+    in
+    helper Nothing items
 
 
 findWith : a -> (b -> a) -> List b -> Maybe b

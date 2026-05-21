@@ -18,12 +18,82 @@ import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Route
+import Time
 import Types.FormulaOne
 
 
 view : Model key -> Types.FormulaOne.Session -> List (Html Msg)
 view model session =
     let
+        navigationSection : Html msg
+        navigationSection =
+            let
+                sortedEvents : List Types.FormulaOne.Event
+                sortedEvents =
+                    Model.getFromStatusDict session.season model.formulaOneEvents
+                        |> Maybe.withDefault []
+                        |> List.sortBy .round
+
+                eventNav : { prev : Maybe Types.FormulaOne.Event, next : Maybe Types.FormulaOne.Event }
+                eventNav =
+                    Helpers.List.findPrevNext (\e -> e.id == session.eventId) sortedEvents
+
+                sortedSessions : List Types.FormulaOne.Session
+                sortedSessions =
+                    Dict.get session.eventId model.formulaOneSessions
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.toMaybe
+                        |> Maybe.withDefault []
+                        |> List.sortBy (.startTime >> Time.posixToMillis)
+
+                sessionNav : { prev : Maybe Types.FormulaOne.Session, next : Maybe Types.FormulaOne.Session }
+                sessionNav =
+                    Helpers.List.findPrevNext (\s -> s.id == session.id) sortedSessions
+
+                viewPrevButton : Maybe a -> (a -> Route.Route) -> (a -> String) -> Html msg
+                viewPrevButton mItem toRoute toLabel =
+                    case mItem of
+                        Nothing ->
+                            Html.span
+                                [ Attributes.class "page-nav-button page-nav-disabled" ]
+                                [ Html.text "←" ]
+
+                        Just item ->
+                            Html.a
+                                [ Attributes.class "page-nav-button"
+                                , Route.href (toRoute item)
+                                ]
+                                [ Html.text ("← " ++ toLabel item) ]
+
+                viewNextButton : Maybe a -> (a -> Route.Route) -> (a -> String) -> Html msg
+                viewNextButton mItem toRoute toLabel =
+                    case mItem of
+                        Nothing ->
+                            Html.span
+                                [ Attributes.class "page-nav-button page-nav-disabled" ]
+                                [ Html.text "→" ]
+
+                        Just item ->
+                            Html.a
+                                [ Attributes.class "page-nav-button"
+                                , Route.href (toRoute item)
+                                ]
+                                [ Html.text (toLabel item ++ " →") ]
+            in
+            Html.nav
+                [ Attributes.class "page-navigation" ]
+                [ Html.div
+                    [ Attributes.class "page-nav-row" ]
+                    [ viewPrevButton eventNav.prev (\e -> Route.FormulaOneEvent session.season e.id) Types.FormulaOne.eventName
+                    , viewNextButton eventNav.next (\e -> Route.FormulaOneEvent session.season e.id) Types.FormulaOne.eventName
+                    ]
+                , Html.div
+                    [ Attributes.class "page-nav-row" ]
+                    [ viewPrevButton sessionNav.prev (\s -> Route.FormulaOneSession session.season session.eventId s.id) .name
+                    , viewNextButton sessionNav.next (\s -> Route.FormulaOneSession session.season session.eventId s.id) .name
+                    ]
+                ]
+
         infoSection : Html msg
         infoSection =
             let
@@ -301,14 +371,16 @@ view model session =
                         leaderboardStatus
     in
     if session.cancelled then
-        [ infoSection
+        [ navigationSection
+        , infoSection
         , Html.p
             [ Attributes.class "session-cancelled-notice" ]
             [ Html.text "This session has been cancelled." ]
         ]
 
     else
-        [ infoSection
+        [ navigationSection
+        , infoSection
         , entrySection
         , leaderboardSection
         ]

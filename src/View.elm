@@ -71,10 +71,60 @@ application model =
 
                 Route.FormulaOneEvent season eventId ->
                     let
+                        sortedEvents : List Types.FormulaOne.Event
+                        sortedEvents =
+                            Model.getFromStatusDict season model.formulaOneEvents
+                                |> Maybe.withDefault []
+                                |> List.sortBy .round
+
                         mEvent : Maybe Types.FormulaOne.Event
                         mEvent =
-                            Model.getFromStatusDict season model.formulaOneEvents
-                                |> Maybe.andThen (Helpers.List.findWith eventId .id)
+                            Helpers.List.findWith eventId .id sortedEvents
+
+                        eventNav : { prev : Maybe Types.FormulaOne.Event, next : Maybe Types.FormulaOne.Event }
+                        eventNav =
+                            Helpers.List.findPrevNext (\e -> e.id == eventId) sortedEvents
+
+                        viewPrevButton : Maybe Types.FormulaOne.Event -> Html msg
+                        viewPrevButton mItem =
+                            case mItem of
+                                Nothing ->
+                                    Html.span
+                                        [ Attributes.class "page-nav-button page-nav-disabled" ]
+                                        [ Html.text "←" ]
+
+                                Just event ->
+                                    Html.a
+                                        [ Attributes.class "page-nav-button"
+                                        , Route.FormulaOneEvent season event.id |> Route.href
+                                        ]
+                                        [ Html.text ("← " ++ Types.FormulaOne.eventName event) ]
+
+                        viewNextButton : Maybe Types.FormulaOne.Event -> Html msg
+                        viewNextButton mItem =
+                            case mItem of
+                                Nothing ->
+                                    Html.span
+                                        [ Attributes.class "page-nav-button page-nav-disabled" ]
+                                        [ Html.text "→" ]
+
+                                Just event ->
+                                    Html.a
+                                        [ Attributes.class "page-nav-button"
+                                        , Route.FormulaOneEvent season event.id |> Route.href
+                                        ]
+                                        [ Html.text (Types.FormulaOne.eventName event ++ " →") ]
+
+                        eventNavigation : Html msg
+                        eventNavigation =
+                            Html.nav
+                                [ Attributes.class "page-navigation" ]
+                                [ Html.div
+                                    [ Attributes.class "page-nav-row" ]
+                                    [ viewPrevButton eventNav.prev
+                                    , viewNextButton eventNav.next
+                                    ]
+                                ]
 
                         info : Html msg
                         info =
@@ -108,7 +158,7 @@ application model =
                                     Html.text "Event not found"
                     in
                     { class = "formula-one-event-page"
-                    , contents = [ info ]
+                    , contents = [ eventNavigation, info ]
                     }
 
                 Route.FormulaOneSession _ eventId sessionId ->

@@ -1155,6 +1155,61 @@ main.formula-one-season-page>* {
     }
 }
 
+/* Page navigation (prev/next event and session buttons) */
+.page-navigation {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.6rem 0;
+    margin-bottom: 0.75rem;
+    border-bottom: 2px solid #e10600;
+}
+
+.page-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+
+.page-nav-button {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.7rem;
+    background: white;
+    border: 1px solid #1a1a1a;
+    border-radius: 3px;
+    text-decoration: none;
+    color: #1a1a1a;
+    font-size: 0.8rem;
+    font-weight: 500;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 42%;
+}
+
+.page-nav-button:hover {
+    background: #e10600;
+    border-color: #e10600;
+    color: white;
+}
+
+.page-nav-disabled {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.3rem 0.7rem;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    border-radius: 3px;
+    color: #ccc;
+    font-size: 0.8rem;
+    min-width: 1.5rem;
+}
+
 .formula-one-session-page {
     display: grid;
     grid-template-columns: 1fr;
@@ -1170,10 +1225,15 @@ main.formula-one-season-page>* {
     .formula-one-session-page {
         grid-template-columns: 1fr 1fr;
         grid-template-areas:
+            "nav nav"
             "info info"
             "entry leaderboard"
         ;
         gap: 1em;
+
+        .page-navigation {
+            grid-area: nav;
+        }
 
         .formula-one-session-info {
             grid-area: info;
