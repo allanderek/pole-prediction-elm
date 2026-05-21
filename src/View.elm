@@ -257,12 +257,62 @@ application model =
 
                 Route.FormulaEEvent season eventId ->
                     let
-                        mEvent : Maybe Types.FormulaE.Event
-                        mEvent =
+                        sortedFormulaEEvents : List Types.FormulaE.Event
+                        sortedFormulaEEvents =
                             Dict.get season model.formulaEEvents
                                 |> Maybe.withDefault Helpers.Http.Ready
                                 |> Helpers.Http.toMaybe
-                                |> Maybe.andThen (Helpers.List.findWith eventId .id)
+                                |> Maybe.withDefault []
+                                |> List.sortBy .round
+
+                        mEvent : Maybe Types.FormulaE.Event
+                        mEvent =
+                            Helpers.List.findWith eventId .id sortedFormulaEEvents
+
+                        formulaEEventNav : { prev : Maybe Types.FormulaE.Event, next : Maybe Types.FormulaE.Event }
+                        formulaEEventNav =
+                            Helpers.List.findPrevNext (\e -> e.id == eventId) sortedFormulaEEvents
+
+                        viewFormulaEPrevButton : Maybe Types.FormulaE.Event -> Html msg
+                        viewFormulaEPrevButton mItem =
+                            case mItem of
+                                Nothing ->
+                                    Html.span
+                                        [ Attributes.class "page-nav-button page-nav-disabled" ]
+                                        [ Html.text "←" ]
+
+                                Just event ->
+                                    Html.a
+                                        [ Attributes.class "page-nav-button"
+                                        , Route.FormulaEEvent season event.id |> Route.href
+                                        ]
+                                        [ Html.text ("← " ++ event.name) ]
+
+                        viewFormulaENextButton : Maybe Types.FormulaE.Event -> Html msg
+                        viewFormulaENextButton mItem =
+                            case mItem of
+                                Nothing ->
+                                    Html.span
+                                        [ Attributes.class "page-nav-button page-nav-disabled" ]
+                                        [ Html.text "→" ]
+
+                                Just event ->
+                                    Html.a
+                                        [ Attributes.class "page-nav-button"
+                                        , Route.FormulaEEvent season event.id |> Route.href
+                                        ]
+                                        [ Html.text (event.name ++ " →") ]
+
+                        formulaEEventNavigation : Html msg
+                        formulaEEventNavigation =
+                            Html.nav
+                                [ Attributes.class "page-navigation" ]
+                                [ Html.div
+                                    [ Attributes.class "page-nav-row" ]
+                                    [ viewFormulaEPrevButton formulaEEventNav.prev
+                                    , viewFormulaENextButton formulaEEventNav.next
+                                    ]
+                                ]
                     in
                     { class = "formula-e-event-page"
                     , contents =
@@ -271,7 +321,7 @@ application model =
                                 [ Html.text "Event not found" ]
 
                             Just event ->
-                                Pages.FormulaEEvent.view model season event
+                                formulaEEventNavigation :: Pages.FormulaEEvent.view model season event
                     }
 
                 Route.Profile ->
