@@ -604,6 +604,15 @@ def update_profile(
         return get_current_user(db, user_id)
 
 
+# Concordant pair scoring: +1 if A (in predicted top-10) genuinely ended up ahead of B in results.
+# sr_a/sr_b are the actual result rows for the predicted-ahead and predicted-behind entrant.
+CONCORDANT_PAIR_SCORE = """case
+            when sr_a.position is not null and sr_a.position <= 10
+                 and (sr_b.position is null or sr_b.position > sr_a.position) then 1
+            else 0
+        end"""
+
+
 # Formula One API routes
 @app.get("/api/formula-one/season-events/{season}")
 def get_formula_one_events(season: str):
@@ -714,11 +723,7 @@ def get_formula_one_session_scored_predictions(db, user_id, session_id):
         -- score +1 if A ended up genuinely ahead of B in results (top-10 aware).
         select
             a.user,
-            sum(case
-                when sr_a.position is not null and sr_a.position <= 10
-                     and (sr_b.position is null or sr_b.position > sr_a.position) then 1
-                else 0
-            end) as concordant_score
+            sum({CONCORDANT_PAIR_SCORE}) as concordant_score
         from all_predictions a
         join all_predictions b
             on a.user = b.user
@@ -976,7 +981,7 @@ def get_formula_one_leaderboard(season: str):
 @app.get("/api/formula-one/concordant-leaderboard/{season}")
 def get_formula_one_concordant_leaderboard(season: str):
     with db_transaction() as db:
-        query = """with
+        query = f"""with
         all_predictions as (
             select
                 pl.user,
@@ -1004,11 +1009,7 @@ def get_formula_one_concordant_leaderboard(season: str):
         concordant_pairs as (
             select
                 a.user,
-                sum(case
-                    when sr_a.position is not null and sr_a.position <= 10
-                         and (sr_b.position is null or sr_b.position > sr_a.position) then 1
-                    else 0
-                end) as concordant_score
+                sum({CONCORDANT_PAIR_SCORE}) as concordant_score
             from all_predictions a
             join all_predictions b
                 on a.user = b.user
