@@ -689,9 +689,9 @@ def get_formula_one_session_scored_predictions(db, user_id, session_id):
         else ""
     )
 
-    query = f"""with 
+    query = f"""with
     all_predictions as (
-        select 
+        select
             user,
             session,
             entrant,
@@ -701,15 +701,37 @@ def get_formula_one_session_scored_predictions(db, user_id, session_id):
         where formula_one_prediction_lines.session = :session_id {where_clause_suffix}
     ),
     session_results as (
-        select 
+        select
             entrant,
             position,
             fastest_lap
         from formula_one_prediction_lines
         where (user is null or user = "")
         and session = :session_id
+    ),
+    concordant_pairs as (
+        -- For each ordered pair (A predicted ahead of B) from a user's top-10,
+        -- score +1 if A ended up genuinely ahead of B in results (top-10 aware).
+        select
+            a.user,
+            sum(case
+                when sr_a.position is not null and sr_a.position <= 10
+                     and (sr_b.position is null or sr_b.position > sr_a.position) then 1
+                else 0
+            end) as concordant_score
+        from all_predictions a
+        join all_predictions b
+            on a.user = b.user
+            and a.entrant != b.entrant
+            and a.position < b.position
+            and a.position <= 10
+            and b.position <= 10
+        left join session_results sr_a on a.entrant = sr_a.entrant
+        left join session_results sr_b on b.entrant = sr_b.entrant
+        where a.user is not null and a.user != ""
+        group by a.user
     )
-select 
+select
     coalesce(ap.user, '') as user_id,
     coalesce(u.fullname, 'Official Result') as user_name,
     ap.position as predicted_position,
@@ -721,24 +743,25 @@ select
     t.shortname as team_short_name,
     coalesce(t.color, '#000000') as team_primary_color,
     coalesce(t.secondary_color, '#000000') as team_secondary_color,
-    case 
+    case
         when sr.position is null or ap.user is null or ap.user = "" then 0
         when ap.position <= 10 and sr.position <= 10 then
-            case 
+            case
                 when ap.position = sr.position then 4
                 when abs(ap.position - sr.position) = 1 then 2
                 else 1
             end
         else 0
-    end + 
-    case 
+    end +
+    case
         when sr.position is null or ap.user is null or ap.user = "" then 0
-        when s.fastest_lap = 1 
+        when s.fastest_lap = 1
         and ap.fastest_lap = 1
         and sr.fastest_lap = 1
         and sr.position <= 10 then 1
         else 0
-    end as score
+    end as score,
+    coalesce(cp.concordant_score, 0) as concordant_score
 from all_predictions ap
 left join users u on ap.user = u.id
 left join session_results sr on ap.entrant = sr.entrant
@@ -746,7 +769,8 @@ join formula_one_entrants fe on ap.entrant = fe.id
 join drivers d on fe.driver = d.id
 join formula_one_teams t on fe.team = t.id
 join formula_one_sessions s on ap.session = s.id
-order by 
+left join concordant_pairs cp on ap.user = cp.user
+order by
     case when ap.user is null or ap.user = "" then 0 else 1 end,
     user_name,
     ap.position

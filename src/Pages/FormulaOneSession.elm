@@ -469,6 +469,56 @@ view model session =
                         , failedMessage = "Error obtaining the session leaderboard"
                         }
                         leaderboardStatus
+
+        concordantLeaderboardSection : Html Msg
+        concordantLeaderboardSection =
+            case Helpers.Time.isEarlier model.now session.startTime of
+                True ->
+                    Html.Extra.nothing
+
+                False ->
+                    let
+                        leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
+                        leaderboardStatus =
+                            Dict.get session.id model.formulaOneSessionLeaderboards
+                                |> Maybe.withDefault Helpers.Http.Ready
+
+                        withLeaderboard : Types.FormulaOne.SessionLeaderboard -> Html Msg
+                        withLeaderboard leaderboard =
+                            let
+                                viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
+                                viewRow leaderboardRow =
+                                    Html.li
+                                        []
+                                        [ Html.span
+                                            [ Attributes.class "user-name" ]
+                                            [ Components.UserName.formulaOne
+                                                leaderboardRow.userId
+                                                leaderboardRow.userName
+                                            ]
+                                        , Html.span
+                                            [ Attributes.class "total-score" ]
+                                            [ Html.text
+                                                (String.fromInt leaderboardRow.concordantScore ++ "/45")
+                                            ]
+                                        ]
+
+                                sortedRows : List Types.FormulaOne.SessionLeaderboardRow
+                                sortedRows =
+                                    List.sortBy .concordantScore leaderboard.predictions
+                                        |> List.reverse
+                            in
+                            Components.Section.view
+                                { title = "Concordant leaderboard (experimental)"
+                                , class = "formula-one-session-concordant-leaderboard"
+                                }
+                                [ Html.ul [] (List.map viewRow sortedRows) ]
+                    in
+                    Components.HttpStatus.view
+                        { viewFn = withLeaderboard
+                        , failedMessage = "Error obtaining the session leaderboard"
+                        }
+                        leaderboardStatus
     in
     if session.cancelled then
         [ navigationSection
@@ -483,4 +533,5 @@ view model session =
         , infoSection
         , entrySection
         , leaderboardSection
+        , concordantLeaderboardSection
         ]

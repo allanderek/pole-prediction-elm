@@ -1228,6 +1228,7 @@ main.formula-one-season-page>* {
             "nav nav"
             "info info"
             "entry leaderboard"
+            "entry concordant-leaderboard"
         ;
         gap: 1em;
 
@@ -1246,6 +1247,10 @@ main.formula-one-season-page>* {
 
         .formula-one-session-leaderboard {
             grid-area: leaderboard;
+        }
+
+        .formula-one-session-concordant-leaderboard {
+            grid-area: concordant-leaderboard;
         }
     }
 }
@@ -1662,6 +1667,7 @@ table.formula-one-session-results-table {
 
 /* Formula One Session Leaderboard Styles */
 section.section.formula-one-session-leaderboard,
+section.section.formula-one-session-concordant-leaderboard,
 section.section.formula-one-season-leaderboard {
     max-width: 800px;
     box-shadow: none;
@@ -1728,6 +1734,16 @@ section.section.formula-one-season-leaderboard {
             }
         }
 
+    }
+
+    /* Concordant leaderboard rows have no details/summary, so flex goes on li directly */
+    &.formula-one-session-concordant-leaderboard li {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #f8f9fa;
+        font-weight: 500;
     }
 
     /* User name styling */

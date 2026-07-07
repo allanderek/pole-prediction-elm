@@ -179,6 +179,7 @@ type alias ScoredPredictionRow =
     , actualPosition : Maybe Int
     , entrant : Entrant
     , score : Int
+    , concordantScore : Int
     }
 
 
@@ -199,6 +200,7 @@ scoredPredictionRowDecoder =
         |> Pipeline.required "actual_position" (Decode.nullable Decode.int)
         |> Pipeline.custom entrantDecoder
         |> Pipeline.required "score" Decode.int
+        |> Pipeline.required "concordant_score" Decode.int
 
 
 type alias SessionLeaderboard =
@@ -211,6 +213,7 @@ type alias SessionLeaderboardRow =
     { userId : Types.User.Id
     , userName : String
     , total : Int
+    , concordantScore : Int
     , rows : List ScoredPredictionRow
     }
 
@@ -241,6 +244,7 @@ scoredPredictionRowsToSessionLeaderboard rows =
                                         { userId = userId
                                         , userName = row.userName
                                         , total = row.score
+                                        , concordantScore = row.concordantScore
                                         , rows = [ row ]
                                         }
                     in
