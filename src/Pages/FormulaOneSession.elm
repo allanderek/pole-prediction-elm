@@ -80,18 +80,26 @@ view model session =
                                 , Route.href (toRoute item)
                                 ]
                                 [ Html.text (toLabel item ++ " →") ]
+
+                toEventRoute : Types.FormulaOne.Event -> Route.Route
+                toEventRoute targetEvent =
+                    Route.FormulaOneEvent session.season targetEvent.id
+
+                toSessionRoute : Types.FormulaOne.Session -> Route.Route
+                toSessionRoute targetSession =
+                    Route.FormulaOneSession session.season session.eventId targetSession.id
             in
             Html.nav
                 [ Attributes.class "page-navigation" ]
                 [ Html.div
                     [ Attributes.class "page-nav-row" ]
-                    [ viewPrevButton eventNav.prev (\e -> Route.FormulaOneEvent session.season e.id) Types.FormulaOne.eventName
-                    , viewNextButton eventNav.next (\e -> Route.FormulaOneEvent session.season e.id) Types.FormulaOne.eventName
+                    [ viewPrevButton eventNav.prev toEventRoute Types.FormulaOne.eventName
+                    , viewNextButton eventNav.next toEventRoute Types.FormulaOne.eventName
                     ]
                 , Html.div
                     [ Attributes.class "page-nav-row" ]
-                    [ viewPrevButton sessionNav.prev (\s -> Route.FormulaOneSession session.season session.eventId s.id) .name
-                    , viewNextButton sessionNav.next (\s -> Route.FormulaOneSession session.season session.eventId s.id) .name
+                    [ viewPrevButton sessionNav.prev toSessionRoute .name
+                    , viewNextButton sessionNav.next toSessionRoute .name
                     ]
                 ]
 
