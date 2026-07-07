@@ -134,6 +134,15 @@ perform model effect =
                                 Types.Leaderboard.decoder
                         }
 
+                Types.Data.FormulaOneConcordantLeaderboard spec ->
+                    Http.get
+                        { url = apiUrl [ "formula-one", "concordant-leaderboard", spec.season ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.FormulaOneConcordantLeaderboardResponse spec)
+                                Types.Leaderboard.decoder
+                        }
+
                 Types.Data.FormulaOneEvents spec ->
                     Http.get
                         { url = apiUrl [ "formula-one", "season-events", spec.season ]

@@ -973,6 +973,69 @@ def get_formula_one_leaderboard(season: str):
         }
 
 
+@app.get("/api/formula-one/concordant-leaderboard/{season}")
+def get_formula_one_concordant_leaderboard(season: str):
+    with db_transaction() as db:
+        query = """with
+        all_predictions as (
+            select
+                pl.user,
+                pl.session,
+                pl.entrant,
+                pl.position
+            from formula_one_prediction_lines pl
+            join formula_one_sessions s on pl.session = s.id
+            join formula_one_events e on s.event = e.id
+            where e.season = :season
+              and pl.user is not null and pl.user != ''
+              and pl.position <= 10
+        ),
+        session_results as (
+            select
+                pl.session,
+                pl.entrant,
+                pl.position
+            from formula_one_prediction_lines pl
+            join formula_one_sessions s on pl.session = s.id
+            join formula_one_events e on s.event = e.id
+            where e.season = :season
+              and (pl.user is null or pl.user = '')
+        ),
+        concordant_pairs as (
+            select
+                a.user,
+                sum(case
+                    when sr_a.position is not null and sr_a.position <= 10
+                         and (sr_b.position is null or sr_b.position > sr_a.position) then 1
+                    else 0
+                end) as concordant_score
+            from all_predictions a
+            join all_predictions b
+                on a.user = b.user
+                and a.session = b.session
+                and a.entrant != b.entrant
+                and a.position < b.position
+            left join session_results sr_a
+                on a.entrant = sr_a.entrant and a.session = sr_a.session
+            left join session_results sr_b
+                on b.entrant = sr_b.entrant and b.session = sr_b.session
+            group by a.user
+        )
+        select
+            cp.user as user_id,
+            u.fullname as user_fullname,
+            cast(cp.concordant_score as integer) as concordant
+        from concordant_pairs cp
+        join users u on cp.user = u.id
+        order by cp.concordant_score desc
+        ;"""
+        rows = db.execute(query, {"season": season}).fetchall()
+        return {
+            "columns": ["concordant"],
+            "rows": create_leaderboard_rows(rows),
+        }
+
+
 @app.get("/api/formula-one/constructor-standings/{season}")
 def get_formula_one_constructor_standings(season: str):
     with db_transaction() as db:

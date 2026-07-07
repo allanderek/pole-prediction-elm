@@ -82,6 +82,25 @@ view model season =
             in
             Components.Section.view { title = "Leaderboard", class = "formula-one-leaderboard" } content
 
+        concordantLeaderboardSection : Html Msg
+        concordantLeaderboardSection =
+            let
+                concordantLeaderboardStatus : Helpers.Http.Status Leaderboard
+                concordantLeaderboardStatus =
+                    Dict.get season model.formulaOneConcordantLeaderboards
+                        |> Maybe.withDefault Helpers.Http.Ready
+
+                content : List (Html Msg)
+                content =
+                    [ Components.HttpStatus.view
+                        { viewFn = Components.Leaderboard.view { firstColumn = "User" }
+                        , failedMessage = "Error obtaining the concordant leaderboard"
+                        }
+                        concordantLeaderboardStatus
+                    ]
+            in
+            Components.Section.view { title = "Concordant leaderboard (experimental)", class = "formula-one-concordant-leaderboard" } content
+
         driverStandingsSection : Html Msg
         driverStandingsSection =
             let
@@ -334,6 +353,7 @@ view model season =
 
             False ->
                 seasonLeaderboardSection
+        , concordantLeaderboardSection
         ]
     , driverStandingsSection
     , constructorStandingsSection

@@ -11,6 +11,7 @@ type Data
     | FormulaOneEntrants { sessionId : Types.FormulaOne.SessionId }
     | FormulaOneSessionLeaderboard { sessionId : Types.FormulaOne.SessionId }
     | FormulaOneSeasonLeaderboard { season : Types.FormulaOne.Season }
+    | FormulaOneConcordantLeaderboard { season : Types.FormulaOne.Season }
     | FormulaOneConstructorStandings { season : Types.FormulaOne.Season }
     | FormulaOneDriverStandings { season : Types.FormulaOne.Season }
     | FormulaOneSeasonTeams { season : Types.FormulaOne.Season }

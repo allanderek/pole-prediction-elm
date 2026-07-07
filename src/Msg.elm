@@ -60,6 +60,7 @@ type Msg
     | FormulaOneEntrantsResponse { sessionId : Types.FormulaOne.SessionId } (HttpResult (List Types.FormulaOne.Entrant))
     | FormulaOneSessionLeaderboardResponse { sessionId : Types.FormulaOne.SessionId } (HttpResult Types.FormulaOne.SessionLeaderboard)
     | FormulaOneSeasonLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Types.FormulaOne.SeasonLeaderboard)
+    | FormulaOneConcordantLeaderboardResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneConstructorStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneDriverStandingsResponse { season : Types.FormulaOne.Season } (HttpResult Leaderboard)
     | FormulaOneSeasonTeamsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.FormulaOneTeam))

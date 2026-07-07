@@ -65,6 +65,12 @@ getData data model =
                             Dict.insert spec.season Helpers.Http.Inflight model.formulaOneSeasonLeaderboards
                     }
 
+                Types.Data.FormulaOneConcordantLeaderboard spec ->
+                    { model
+                        | formulaOneConcordantLeaderboards =
+                            Dict.insert spec.season Helpers.Http.Inflight model.formulaOneConcordantLeaderboards
+                    }
+
                 Types.Data.FormulaOneConstructorStandings spec ->
                     { model
                         | formulaOneConstructorStandings =
@@ -151,6 +157,7 @@ initRoute model =
             model
                 |> getMultipleData
                     [ Types.Data.FormulaOneLeaderboard spec
+                    , Types.Data.FormulaOneConcordantLeaderboard spec
                     , Types.Data.FormulaOneSeasonLeaderboard spec
                     , Types.Data.FormulaOneEvents spec
                     , Types.Data.FormulaOneConstructorStandings spec
@@ -885,6 +892,13 @@ update msg model =
                 { model
                     | formulaOneSessionLeaderboards =
                         Dict.insert spec.sessionId (Helpers.Http.fromResult result) model.formulaOneSessionLeaderboards
+                }
+
+        Msg.FormulaOneConcordantLeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | formulaOneConcordantLeaderboards =
+                        Dict.insert spec.season (Helpers.Http.fromResult result) model.formulaOneConcordantLeaderboards
                 }
 
         Msg.FormulaOneConstructorStandingsResponse spec result ->
