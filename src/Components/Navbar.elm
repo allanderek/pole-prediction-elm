@@ -38,6 +38,7 @@ view model =
                 []
                 [ viewLink "Formula One" (Route.FormulaOne Nothing)
                 , viewLink "Formula E" (Route.FormulaE Nothing)
+                , viewLink "Over/Under" Route.OverUnder
                 , profileOrLoginLink
                 ]
             ]

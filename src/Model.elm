@@ -5,6 +5,7 @@ module Model exposing
     , getFormulaOneCurrentSessionPrediction
     , getFormulaOneCurrentSessionResults
     , getFromStatusDict
+    , getOverUnderAnswer
     , initial
     )
 
@@ -18,6 +19,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 import Types.Login
+import Types.OverUnder
 import Types.Profile
 import Types.Register
 import Types.User exposing (User)
@@ -56,6 +58,11 @@ type alias Model key =
     , formulaEPredictionInputs : Dict Types.FormulaE.EventId Types.FormulaE.Prediction
     , formulaEResultInputs : Dict Types.FormulaE.EventId Types.FormulaE.Result
     , formulaEEventLeaderboards : Dict Types.FormulaE.EventId (Helpers.Http.Status Types.FormulaE.EventLeaderboard)
+
+    -- Not a Dict like the fields above, because the endpoint returns every competition
+    -- in a single call, so there is no season or event to key on.
+    , overUnderCompetitions : Helpers.Http.Status (List Types.OverUnder.Competition)
+    , overUnderAnswerInputs : Dict Types.OverUnder.CompetitionId (Dict Types.OverUnder.QuestionId Int)
     }
 
 
@@ -92,6 +99,8 @@ initial key url now userStatus =
     , formulaEPredictionInputs = Dict.empty
     , formulaEResultInputs = Dict.empty
     , formulaEEventLeaderboards = Dict.empty
+    , overUnderCompetitions = Helpers.Http.Ready
+    , overUnderAnswerInputs = Dict.empty
     }
 
 
@@ -106,6 +115,17 @@ andThenWithUser : (User -> Maybe a) -> Model key -> Maybe a
 andThenWithUser f model =
     Helpers.Http.toMaybe model.userStatus
         |> Maybe.andThen f
+
+
+{-| The answer to show for a question: whatever the user has typed in this session if
+there is anything, otherwise the answer they previously submitted and we fetched back.
+That fallback is what makes the form still hold your answers after a refresh.
+-}
+getOverUnderAnswer : Model key -> Types.OverUnder.CompetitionId -> Types.OverUnder.Question -> Maybe Int
+getOverUnderAnswer model competitionId question =
+    Dict.get competitionId model.overUnderAnswerInputs
+        |> Maybe.andThen (Dict.get question.id)
+        |> Maybe.Extra.orElse question.answer
 
 
 getFormulaOneCurrentSessionPrediction : Model key -> Types.FormulaOne.SessionId -> Maybe (List Types.FormulaOne.Entrant)

@@ -20,6 +20,7 @@ import Msg exposing (Msg)
 import Pages.FormulaEEvent
 import Pages.FormulaOneSeason
 import Pages.FormulaOneSession
+import Pages.OverUnder
 import Pages.Profile
 import Pages.Register
 import Route
@@ -322,6 +323,16 @@ application model =
 
                             Just event ->
                                 formulaEEventNavigation :: Pages.FormulaEEvent.view model season event
+                    }
+
+                Route.OverUnder ->
+                    { class = "over-under-page"
+                    , contents = Pages.OverUnder.viewCompetitionList model
+                    }
+
+                Route.OverUnderCompetition competitionId ->
+                    { class = "over-under-competition-page"
+                    , contents = Pages.OverUnder.viewCompetition model competitionId
                     }
 
                 Route.Profile ->

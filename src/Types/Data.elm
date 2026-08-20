@@ -19,3 +19,6 @@ type Data
     | FormulaEEvents { season : Types.FormulaE.Season }
     | FormulaEEventEntrants { eventId : Types.FormulaE.EventId }
     | FormulaEEventLeaderboard { eventId : Types.FormulaE.EventId }
+      -- Unlike the others this takes no spec, the endpoint returns every competition
+      -- and its questions in one go.
+    | OverUnderCompetitions

@@ -112,6 +112,9 @@ getData data model =
                         | formulaOneSeasonTeams =
                             Dict.insert spec.season Helpers.Http.Inflight model.formulaOneSeasonTeams
                     }
+
+                Types.Data.OverUnderCompetitions ->
+                    { model | overUnderCompetitions = Helpers.Http.Inflight }
     in
     ( newModel, Effect.GetData data )
 
@@ -274,6 +277,29 @@ initRoute model =
                       )
                     , ( True
                       , Types.Data.FormulaEEventLeaderboard spec
+                      )
+                    ]
+
+        Route.OverUnder ->
+            getData Types.Data.OverUnderCompetitions model
+
+        Route.OverUnderCompetition _ ->
+            let
+                haveCompetitions : Bool
+                haveCompetitions =
+                    case model.overUnderCompetitions of
+                        Helpers.Http.Succeeded _ ->
+                            True
+
+                        _ ->
+                            False
+            in
+            -- One endpoint serves both pages, so coming here from the list of
+            -- competitions does not need to fetch anything again.
+            model
+                |> getMultipleDataIf
+                    [ ( not haveCompetitions
+                      , Types.Data.OverUnderCompetitions
                       )
                     ]
 
@@ -841,6 +867,10 @@ update msg model =
               }
             , Effect.NativeAlert alertMessage
             )
+
+        Msg.OverUnderCompetitionsResponse result ->
+            Return.noEffect
+                { model | overUnderCompetitions = Helpers.Http.fromResult result }
 
         Msg.FormulaOneEventSessionsResponse spec result ->
             let

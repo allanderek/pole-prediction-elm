@@ -12,6 +12,7 @@ import Html
 import Html.Attributes
 import Types.FormulaE
 import Types.FormulaOne
+import Types.OverUnder
 import Url
 import Url.Builder
 import Url.Parser as Parser exposing ((</>))
@@ -26,6 +27,8 @@ type Route
     | FormulaOneSession Types.FormulaOne.Season Types.FormulaOne.EventId Types.FormulaOne.SessionId
     | FormulaE (Maybe Types.FormulaE.Season)
     | FormulaEEvent Types.FormulaE.Season Types.FormulaE.EventId
+    | OverUnder
+    | OverUnderCompetition Types.OverUnder.CompetitionId
     | Profile
     | NotFound
 
@@ -76,6 +79,11 @@ parse url =
                                 </> Parser.string
                                 </> Parser.int
                                 |> Parser.map FormulaEEvent
+                            , Parser.s "over-under" |> Parser.map OverUnder
+                            , Parser.s "over-under"
+                                </> Parser.s "competition"
+                                </> Parser.int
+                                |> Parser.map OverUnderCompetition
                             , Parser.s "login" |> Parser.map Login
                             , Parser.s "register" |> Parser.map Register
                             , Parser.s "profile" |> Parser.map Profile
@@ -162,6 +170,12 @@ unparse route =
 
                 FormulaEEvent season eventId ->
                     [ "formula-e", "event", season, String.fromInt eventId ]
+
+                OverUnder ->
+                    [ "over-under" ]
+
+                OverUnderCompetition competitionId ->
+                    [ "over-under", "competition", String.fromInt competitionId ]
 
                 Profile ->
                     [ "profile" ]

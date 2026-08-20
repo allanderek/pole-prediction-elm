@@ -16,6 +16,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard
 import Types.Login
+import Types.OverUnder
 import Types.Profile
 import Types.Register
 import Types.User exposing (User)
@@ -254,6 +255,15 @@ perform model effect =
                             Http.expectJson
                                 (Msg.FormulaOneSeasonTeamsResponse spec)
                                 (Decode.list Types.FormulaOne.teamDecoder)
+                        }
+
+                Types.Data.OverUnderCompetitions ->
+                    Http.get
+                        { url = apiUrl [ "over-under", "competitions" ]
+                        , expect =
+                            Http.expectJson
+                                Msg.OverUnderCompetitionsResponse
+                                (Decode.list Types.OverUnder.competitionDecoder)
                         }
 
         Effect.SubmitFormulaEPrediction spec prediction ->

@@ -13,6 +13,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.Leaderboard exposing (Leaderboard)
 import Types.LocalStorageNotification exposing (LocalStorageNotification)
+import Types.OverUnder
 import Types.Profile
 import Types.Register
 import Types.User exposing (User)
@@ -77,6 +78,7 @@ type Msg
     | SubmitFormulaEResult { eventId : Types.FormulaE.EventId } Types.FormulaE.Result
     | SubmitFormulaEPredictionResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
     | SubmitFormulaEResultResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
+    | OverUnderCompetitionsResponse (HttpResult (List Types.OverUnder.Competition))
 
 
 
