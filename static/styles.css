@@ -1846,3 +1846,362 @@ section.section.formula-one-season-leaderboard {
             font-size: 0.85rem;
         }
     }
+
+
+/* ---------------------------------------------------------------------------
+   Over/Under
+
+   Its own accent, teal, so it reads as a third section alongside Formula One's
+   red and Formula E's blue. Over and Under are told apart by a glyph as well as
+   by colour, since colour alone is a poor way to carry the only difference
+   between two answers.
+   --------------------------------------------------------------------------- */
+
+.over-under-page section.section h2,
+.over-under-competition-page section.section h2 {
+    background: linear-gradient(135deg, #00695c 0%, #00bfa5 100%);
+}
+
+/* Over and Under, wherever they appear */
+.over-under-is-over,
+.over-under-is-under,
+.over-under-is-probability {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.over-under-is-over {
+    color: #1565c0;
+
+    &::before {
+        content: '▲\00a0';
+    }
+}
+
+.over-under-is-under {
+    color: #ad1457;
+
+    &::before {
+        content: '▼\00a0';
+    }
+}
+
+/* Only reachable if a confidence answer is ever stored. */
+.over-under-is-probability {
+    color: #00695c;
+}
+
+
+/* The list of competitions */
+.over-under-competition-list {
+    list-style: none;
+    margin: 0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+
+    li {
+        padding: 1rem 1.25rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-left: 4px solid #00bfa5;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: all 0.2s ease;
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+        }
+    }
+
+    a {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #00695c;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    p {
+        margin: 0.25rem 0 0 0;
+    }
+}
+
+.over-under-competition-description {
+    color: #555;
+    font-size: 0.95rem;
+}
+
+.over-under-deadline,
+.over-under-answered-count {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.over-under-competition-page {
+    .over-under-competition-description {
+        margin: 0 0 0.25rem 0;
+    }
+
+    .over-under-deadline {
+        margin: 0 0 1rem 0;
+    }
+}
+
+
+/* The questions, whether being answered or being read back */
+.over-under-question-list {
+    list-style: none;
+    margin: 0;
+    padding: 1rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.over-under-question {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border-left: 3px solid #dee2e6;
+
+    /* Pushes everything after the question text over to the right. */
+    .over-under-question-text {
+        flex: 1;
+        min-width: 12rem;
+        color: #333;
+    }
+}
+
+.over-under-question-number {
+    flex: none;
+    min-width: 2.25rem;
+    padding: 0.15rem 0.4rem;
+    background: #00695c;
+    color: white;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 0.03em;
+}
+
+.over-under-no-answer {
+    color: #adb5bd;
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Our own current view of an unresolved question. Muted, because it is not a result. */
+.over-under-current-probability {
+    padding: 0.15rem 0.5rem;
+    border: 1px dashed #adb5bd;
+    border-radius: 999px;
+    color: #6c757d;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+/* How it actually turned out. Solid, because it is settled. */
+.over-under-outcome {
+    padding: 0.15rem 0.6rem;
+    background: #e9ecef;
+    border-radius: 999px;
+    font-size: 0.85rem;
+}
+
+.over-under-voided {
+    padding: 0.15rem 0.6rem;
+    background: #f1f3f5;
+    border-radius: 999px;
+    color: #868e96;
+    font-size: 0.8rem;
+    text-decoration: line-through;
+}
+
+
+/* Answering */
+.over-under-choices {
+    display: inline-flex;
+    flex: none;
+    gap: 0.25rem;
+}
+
+.over-under-choice {
+    padding: 0.4rem 1rem;
+    border: 2px solid #ced4da;
+    border-radius: 999px;
+    background: white;
+    color: #6c757d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        border-color: #00bfa5;
+        color: #00695c;
+    }
+
+    /* The whole point of the two states: the chosen one must be unmistakable. */
+    &.active {
+        background: #00695c;
+        border-color: #00695c;
+        color: white;
+
+        &:hover {
+            background: #00554a;
+            border-color: #00554a;
+            color: white;
+        }
+    }
+}
+
+.over-under-submit {
+    display: block;
+    margin: 0 1.5rem 1.5rem 1.5rem;
+    width: calc(100% - 3rem);
+    padding: 12px;
+    background: #00695c;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+
+    &:hover:not(:disabled) {
+        background: #00554a;
+    }
+
+    &:disabled {
+        background: #ced4da;
+        color: #868e96;
+        cursor: not-allowed;
+    }
+}
+
+.over-under-login-prompt {
+    margin: 0 1.5rem 1.5rem 1.5rem;
+    padding: 0.75rem 1rem;
+    background: #fff3cd;
+    border-left: 4px solid #ffc107;
+    color: #856404;
+    font-size: 0.9rem;
+
+    a {
+        color: #856404;
+        font-weight: 600;
+    }
+}
+
+/* Shown only in the moment where our clock has passed the deadline and the
+   server's has not yet, so we are asking again. */
+.over-under-awaiting-close {
+    margin: 0;
+    padding: 1.5rem;
+    color: #6c757d;
+    font-style: italic;
+    text-align: center;
+}
+
+
+/* The leaderboard */
+.over-under-leaderboard-scroll {
+    overflow-x: auto;
+}
+
+.over-under-leaderboard {
+    th:first-child,
+    td:first-child {
+        /* Stays put while the questions scroll past it, so a row never loses its name. */
+        position: sticky;
+        left: 0;
+        background: white;
+        width: auto;
+    }
+
+    thead th:first-child {
+        background: #f8f9fa;
+    }
+
+    tbody tr:hover td:first-child {
+        background: #f8f9fa;
+    }
+
+    th:last-child,
+    td:last-child {
+        text-align: right;
+    }
+
+    .over-under-cell-answer {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .over-under-cell-score {
+        margin-left: 0.4rem;
+        color: #333;
+    }
+
+    .over-under-cell-unanswered {
+        color: #ced4da;
+        text-align: center;
+    }
+
+    .over-under-leaderboard-total {
+        font-weight: 700;
+        color: #00695c;
+        font-size: 1rem;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .over-under-competition-list,
+    .over-under-question-list {
+        padding: 0.75rem;
+    }
+
+    .over-under-submit,
+    .over-under-login-prompt {
+        margin: 0 0.75rem 0.75rem 0.75rem;
+        width: calc(100% - 1.5rem);
+    }
+
+    .over-under-question {
+        padding: 0.6rem 0.75rem;
+
+        .over-under-question-text {
+            /* Take the whole first line, so the controls sit together below it. */
+            flex-basis: 100%;
+            min-width: 0;
+        }
+    }
+
+    .over-under-choice {
+        padding: 0.5rem 0.9rem;
+    }
+
+    /* Stack the answer over its score so the columns stay narrow enough to
+       scroll through comfortably. */
+    .over-under-leaderboard {
+        .over-under-cell-answer,
+        .over-under-cell-score {
+            display: block;
+        }
+
+        .over-under-cell-score {
+            margin-left: 0;
+        }
+    }
+}

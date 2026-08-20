@@ -63,7 +63,9 @@ view leaderboard =
                     Html.td
                         [ Attributes.class "over-under-leaderboard-cell" ]
                         [ Html.span
-                            [ Attributes.class "over-under-cell-answer" ]
+                            [ Attributes.class "over-under-cell-answer"
+                            , Types.OverUnder.answerClass probability |> Attributes.class
+                            ]
                             [ Types.OverUnder.answerLabel probability |> Html.text ]
                         , Html.span
                             [ Attributes.class "over-under-cell-score" ]
@@ -88,17 +90,22 @@ view leaderboard =
                        ]
                 )
     in
-    Html.table
-        [ Attributes.class "leaderboard"
-        , Attributes.class "over-under-leaderboard"
-        ]
-        [ Html.thead
-            []
-            [ Html.tr
-                []
-                (List.map viewHeaderCell ("Player" :: leaderboard.columns ++ [ "Total" ]))
+    -- A competition can have many questions, so the table is wider than a phone. The
+    -- wrapper lets it scroll sideways on its own rather than the whole page.
+    Html.div
+        [ Attributes.class "over-under-leaderboard-scroll" ]
+        [ Html.table
+            [ Attributes.class "leaderboard"
+            , Attributes.class "over-under-leaderboard"
             ]
-        , Html.tbody
-            []
-            (List.map viewRow leaderboard.rows)
+                [ Html.thead
+                []
+                [ Html.tr
+                    []
+                    (List.map viewHeaderCell ("Player" :: leaderboard.columns ++ [ "Total" ]))
+                ]
+            , Html.tbody
+                []
+                (List.map viewRow leaderboard.rows)
+            ]
         ]

@@ -7,6 +7,7 @@ module Types.OverUnder exposing
     , LeaderboardRow
     , Question
     , QuestionId
+    , answerClass
     , answerLabel
     , choiceOfProbability
     , competitionDecoder
@@ -14,6 +15,7 @@ module Types.OverUnder exposing
     , deadlinePassed
     , encodeAnswers
     , leaderboardDecoder
+    , outcomeClass
     , outcomeLabel
     , numberQuestions
     , overProbability
@@ -210,6 +212,23 @@ answerLabel probability =
                 |> (\p -> String.append p "%")
 
 
+{-| Kept beside answerLabel so that the wording and the styling of an answer can never
+get out of step. Styles cannot be chosen on the text itself, and colour alone would be a
+poor way to tell over from under, so the class also earns each one a glyph.
+-}
+answerClass : Int -> String
+answerClass probability =
+    case choiceOfProbability probability of
+        Just Over ->
+            "over-under-is-over"
+
+        Just Under ->
+            "over-under-is-under"
+
+        Nothing ->
+            "over-under-is-probability"
+
+
 {-| How a question turned out. This is a fact about the question, not about anybody's
 answer, so it is stated the same way whoever is looking and whether or not they answered.
 Defined in terms of answerLabel so the two vocabularies cannot drift apart.
@@ -222,6 +241,16 @@ outcomeLabel outcome =
 
         False ->
             answerLabel underProbability
+
+
+outcomeClass : Bool -> String
+outcomeClass outcome =
+    case outcome of
+        True ->
+            answerClass overProbability
+
+        False ->
+            answerClass underProbability
 
 
 {-| Our current view of an unresolved question. The stored number is the probability of

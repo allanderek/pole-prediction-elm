@@ -286,7 +286,9 @@ viewQuestion model competition open ( mNumber, question ) =
 
                         Just resolved ->
                             Html.span
-                                [ Attributes.class "over-under-outcome" ]
+                                [ Attributes.class "over-under-outcome"
+                                , Types.OverUnder.outcomeClass resolved |> Attributes.class
+                                ]
                                 [ Types.OverUnder.outcomeLabel resolved |> Html.text ]
     in
     Html.li
@@ -353,7 +355,9 @@ viewAnswerReadOnly mAnswer =
 
         Just probability ->
             Html.span
-                [ Attributes.class "over-under-answer" ]
+                [ Attributes.class "over-under-answer"
+                , Types.OverUnder.answerClass probability |> Attributes.class
+                ]
                 [ Types.OverUnder.answerLabel probability |> Html.text ]
 
 
