@@ -249,6 +249,25 @@ class FormulaOneSeasonPredictionRequest(BaseModel):
     teams: list[int]
 
 
+class OverUnderAnswer(BaseModel):
+    question: int
+    probability: int
+
+    @field_validator("probability")
+    @classmethod
+    def validate_probability(cls, v):
+        # The database has the same check constraint, but db_transaction turns an
+        # IntegrityError into a 500, so validate here to get a 422 instead.
+        if v < 0 or v > 100:
+            raise ValueError("probability must be between 0 and 100")
+        return v
+
+
+class OverUnderAnswersRequest(BaseModel):
+    # A partial set is fine, the user can fill the questions in over several visits.
+    answers: list[OverUnderAnswer]
+
+
 class FormulaEPredictionRequest(BaseModel):
     pole: Optional[int] = None
     fam: Optional[int] = None
@@ -1737,6 +1756,140 @@ def save_formula_e_race_result(
 
         # Return the predictions for this race
         return get_scored_formula_e_race_predictions(db, admin_user_id, race_id)
+
+
+@app.get("/api/over-under/competitions")
+def get_over_under_competitions(
+    user_id: Optional[int] = Depends(get_optional_user_id),
+):
+    with db_transaction() as db:
+        competition_rows = db.execute(
+            """
+            select id, name, description, prediction_deadline
+            from over_under_competitions
+            order by id
+            """
+        ).fetchall()
+
+        # Only ever the current user's own answers, so there is nothing to hide from
+        # other users here, unlike the season leaderboards.
+        question_rows = db.execute(
+            """
+            select
+                q.id,
+                q.competition,
+                q.text,
+                q.current_probability,
+                q.outcome,
+                q.resolved_at,
+                q.voided,
+                a.probability as answer
+            from over_under_questions q
+            left join over_under_answers a
+                on a.question = q.id and a.user = :user_id
+            order by q.id
+            """,
+            {"user_id": user_id},
+        ).fetchall()
+
+        questions_by_competition = {}
+        for row in question_rows:
+            questions_by_competition.setdefault(row["competition"], []).append(row)
+
+        competitions = []
+        for competition in competition_rows:
+            prediction_deadline = competition["prediction_deadline"]
+            deadline_passed = prediction_deadline is not None and (
+                is_db_time_earlier_than_now(prediction_deadline)
+            )
+            questions = []
+            for question in questions_by_competition.get(competition["id"], []):
+                questions.append(
+                    {
+                        "id": question["id"],
+                        "text": question["text"],
+                        # current_probability is our own view of the answer, so
+                        # withhold it while the user can still enter answers.
+                        "current_probability": (
+                            question["current_probability"] if deadline_passed else None
+                        ),
+                        "outcome": question["outcome"],
+                        "resolved_at": question["resolved_at"],
+                        "voided": bool(question["voided"]),
+                        "answer": question["answer"],
+                    }
+                )
+            competitions.append(
+                {
+                    "id": competition["id"],
+                    "name": competition["name"],
+                    "description": competition["description"],
+                    "prediction_deadline": prediction_deadline,
+                    "deadline_passed": deadline_passed,
+                    "questions": questions,
+                }
+            )
+        return competitions
+
+
+@app.post("/api/over-under/answers/{competition_id}")
+def save_over_under_answers(
+    competition_id: int,
+    answers_data: OverUnderAnswersRequest,
+    user_id: int = Depends(get_current_user_id),
+):
+    with db_transaction() as db:
+        competition = db.execute(
+            "select name, prediction_deadline from over_under_competitions where id = ?",
+            (competition_id,),
+        ).fetchone()
+
+        if not competition:
+            raise HTTPException(status_code=404, detail="Competition not found")
+
+        prediction_deadline = competition["prediction_deadline"]
+        if prediction_deadline is not None and is_db_time_earlier_than_now(
+            prediction_deadline
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Answers for {competition['name']} are no longer accepted - the deadline has passed",
+            )
+
+        # Every question must belong to this competition, otherwise answers could be
+        # written to another competition's questions and dodge that competition's deadline.
+        question_rows = db.execute(
+            "select id from over_under_questions where competition = ?",
+            (competition_id,),
+        ).fetchall()
+        competition_question_ids = {row["id"] for row in question_rows}
+        submitted_question_ids = {answer.question for answer in answers_data.answers}
+        unknown_question_ids = submitted_question_ids - competition_question_ids
+        if unknown_question_ids:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Questions do not belong to this competition: {sorted(unknown_question_ids)}",
+            )
+
+        # Upsert rather than delete-then-insert, because a partial submission must not
+        # wipe out answers the user gave earlier and did not include this time.
+        rows_to_upsert = [
+            {
+                "user": user_id,
+                "question": answer.question,
+                "probability": answer.probability,
+            }
+            for answer in answers_data.answers
+        ]
+        query = """
+        insert into over_under_answers
+            (user, question, probability)
+        values
+            (:user, :question, :probability)
+        on conflict (user, question) do update set probability = excluded.probability
+        """
+        db.executemany(query, rows_to_upsert)
+        return {"status": "success"}
 
 
 def configure_app(config_dict):
