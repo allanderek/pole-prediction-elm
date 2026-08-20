@@ -32,7 +32,9 @@ select
     (select id from over_under_competitions where name = 'Premier League 2026-27'),
     text
 from (
-    select 1 as ordinal, 'Promoted teams relegated — over/under 0.5' as text
+    -- Counted as teams staying up, not teams going down. Most promoted sides go
+    -- straight back down, so 0.5 is only a real question the way round it is here.
+    select 1 as ordinal, 'Promoted teams staying up — over/under 0.5' as text
     union all select 2, 'Greedy six in the top six — over/under 4.5'
     union all select 3, 'Highest relegated points total — over/under 33.5'
     union all select 4, 'Champions'' final points total — over/under 84.5'
