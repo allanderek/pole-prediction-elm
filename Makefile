@@ -19,7 +19,15 @@ watch-frontend:
 watch-backend:
 	@watchexec -r -e py "echo 'Python file changed, rebuilding backend...' && python app.py config.dev.json"
 
+.PHONY: check-css
+check-css:
+	@python check-css.py static/styles.css
+
+# The brace check runs before minifying. A minifier closes any unclosed block at
+# the end of the file rather than complaining, so it will happily produce output
+# in which everything after the unclosed rule has become nested inside it.
 static/styles.min.css: static/styles.css
+	@python check-css.py $<
 	@echo "Minifying styles..."
 	lightningcss --minify $< -o $@
 
