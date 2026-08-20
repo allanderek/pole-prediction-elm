@@ -267,8 +267,10 @@ viewQuestion model competition open ( mNumber, question ) =
                 Just probability ->
                     Html.span
                         [ Attributes.class "over-under-current-probability" ]
-                        [ percent probability |> Html.text ]
+                        [ Types.OverUnder.currentProbabilityLabel probability |> Html.text ]
 
+        -- How the question turned out, which has nothing to do with who is looking or
+        -- whether they answered, so it reads the same way for everyone.
         outcome : Html Msg
         outcome =
             case question.voided of
@@ -282,15 +284,10 @@ viewQuestion model competition open ( mNumber, question ) =
                         Nothing ->
                             Html.Extra.nothing
 
-                        Just True ->
+                        Just resolved ->
                             Html.span
                                 [ Attributes.class "over-under-outcome" ]
-                                [ Html.text "Yes" ]
-
-                        Just False ->
-                            Html.span
-                                [ Attributes.class "over-under-outcome" ]
-                                [ Html.text "No" ]
+                                [ Types.OverUnder.outcomeLabel resolved |> Html.text ]
     in
     Html.li
         [ Attributes.class "over-under-question" ]

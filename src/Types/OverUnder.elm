@@ -10,9 +10,11 @@ module Types.OverUnder exposing
     , answerLabel
     , choiceOfProbability
     , competitionDecoder
+    , currentProbabilityLabel
     , deadlinePassed
     , encodeAnswers
     , leaderboardDecoder
+    , outcomeLabel
     , numberQuestions
     , overProbability
     , underProbability
@@ -206,6 +208,33 @@ answerLabel probability =
         Nothing ->
             String.fromInt probability
                 |> (\p -> String.append p "%")
+
+
+{-| How a question turned out. This is a fact about the question, not about anybody's
+answer, so it is stated the same way whoever is looking and whether or not they answered.
+Defined in terms of answerLabel so the two vocabularies cannot drift apart.
+-}
+outcomeLabel : Bool -> String
+outcomeLabel outcome =
+    case outcome of
+        True ->
+            answerLabel overProbability
+
+        False ->
+            answerLabel underProbability
+
+
+{-| Our current view of an unresolved question. The stored number is the probability of
+the *over* case, so showing it bare would leave the reader guessing which way it points.
+-}
+currentProbabilityLabel : Int -> String
+currentProbabilityLabel probability =
+    String.concat
+        [ answerLabel overProbability
+        , " "
+        , String.fromInt probability
+        , "%"
+        ]
 
 
 {-| Numbers the questions to match the leaderboard's Q1..Qn columns. Voided questions
