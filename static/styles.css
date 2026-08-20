@@ -1846,6 +1846,11 @@ section.section.formula-one-season-leaderboard {
             font-size: 0.85rem;
         }
     }
+}
+/* ^ closes section.section.formula-one-season-leaderboard, opened far above.
+   It was missing. That did no harm while this was the end of the file, because
+   a stylesheet's open blocks are closed implicitly at the end of it, but it
+   silently nested everything added below inside that rule. */
 
 
 /* ---------------------------------------------------------------------------
