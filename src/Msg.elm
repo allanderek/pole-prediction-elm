@@ -82,6 +82,7 @@ type Msg
     | SetOverUnderAnswer Types.OverUnder.CompetitionId Types.OverUnder.QuestionId Int
     | SubmitOverUnderAnswers Types.OverUnder.CompetitionId (List ( Types.OverUnder.QuestionId, Int ))
     | SubmitOverUnderAnswersResponse { competitionId : Types.OverUnder.CompetitionId } (HttpResult ())
+    | OverUnderLeaderboardResponse { competitionId : Types.OverUnder.CompetitionId } (HttpResult Types.OverUnder.Leaderboard)
 
 
 

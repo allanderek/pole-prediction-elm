@@ -4,6 +4,7 @@ module Pages.OverUnder exposing
     )
 
 import Components.HttpStatus
+import Components.Leaderboard
 import Components.Section
 import Components.Time
 import Dict
@@ -109,9 +110,7 @@ viewCompetitionDetail model competition =
                         , class = "over-under-results"
                         }
                         [ viewQuestionList model competition open
-                        , Html.p
-                            [ Attributes.class "over-under-placeholder" ]
-                            [ Html.text "Everyone's answers and their scores will appear here." ]
+                        , viewLeaderboard model competition
                         ]
     in
     [ Html.h1
@@ -121,6 +120,37 @@ viewCompetitionDetail model competition =
     , viewDeadline model competition
     , questionsSection
     ]
+
+
+viewLeaderboard : Model key -> Types.OverUnder.Competition -> Html Msg
+viewLeaderboard model competition =
+    let
+        status : Helpers.Http.Status Types.OverUnder.Leaderboard
+        status =
+            Dict.get competition.id model.overUnderLeaderboards
+                |> Maybe.withDefault Helpers.Http.Ready
+
+        viewFn : Types.OverUnder.Leaderboard -> Html Msg
+        viewFn leaderboard =
+            case leaderboard.serverDeadlinePassed of
+                False ->
+                    -- Our clock says entry has closed but the server's does not yet, so
+                    -- it has quite rightly not given us anyone's answers. We ask again
+                    -- on each tick until it agrees.
+                    Html.p
+                        [ Attributes.class "over-under-awaiting-close" ]
+                        [ Html.text "Entry has just closed, collecting everyone's answers..." ]
+
+                True ->
+                    Components.Leaderboard.view
+                        { firstColumn = "Player" }
+                        leaderboard.table
+    in
+    Components.HttpStatus.view
+        { viewFn = viewFn
+        , failedMessage = "Error obtaining the leaderboard"
+        }
+        status
 
 
 {-| Below the questions: either a prompt to log in, or the submit button. Answering is
@@ -190,12 +220,29 @@ viewQuestionList model competition open =
         _ ->
             Html.ul
                 [ Attributes.class "over-under-question-list" ]
-                (List.map (viewQuestion model competition open) competition.questions)
+                (Types.OverUnder.numberQuestions competition.questions
+                    |> List.map (viewQuestion model competition open)
+                )
 
 
-viewQuestion : Model key -> Types.OverUnder.Competition -> Bool -> Types.OverUnder.Question -> Html Msg
-viewQuestion model competition open question =
+viewQuestion : Model key -> Types.OverUnder.Competition -> Bool -> ( Maybe Int, Types.OverUnder.Question ) -> Html Msg
+viewQuestion model competition open ( mNumber, question ) =
     let
+        -- The label ties the question to its column in the leaderboard table.
+        label : Html Msg
+        label =
+            case mNumber of
+                Nothing ->
+                    Html.Extra.nothing
+
+                Just number ->
+                    Html.span
+                        [ Attributes.class "over-under-question-number" ]
+                        [ String.fromInt number
+                            |> String.append "Q"
+                            |> Html.text
+                        ]
+
         mAnswer : Maybe Int
         mAnswer =
             Model.getOverUnderAnswer model competition.id question
@@ -249,7 +296,8 @@ viewQuestion model competition open question =
     in
     Html.li
         [ Attributes.class "over-under-question" ]
-        [ Html.span
+        [ label
+        , Html.span
             [ Attributes.class "over-under-question-text" ]
             [ Html.text question.text ]
         , answer

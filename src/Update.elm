@@ -18,6 +18,7 @@ import Types.FormulaOne
 import Types.LocalStorageNotification
 import Types.Login
 import Types.OverUnder
+import Types.OverUnder
 import Types.Profile
 import Types.Register
 import Types.User exposing (User)
@@ -116,8 +117,62 @@ getData data model =
 
                 Types.Data.OverUnderCompetitions ->
                     { model | overUnderCompetitions = Helpers.Http.Inflight }
+
+                Types.Data.OverUnderLeaderboard spec ->
+                    { model
+                        | overUnderLeaderboards =
+                            Dict.insert spec.competitionId Helpers.Http.Inflight model.overUnderLeaderboards
+                    }
     in
     ( newModel, Effect.GetData data )
+
+
+{-| The page decides what to draw from our own clock, so it changes over the moment the
+deadline passes rather than waiting for a round trip. But the leaderboard we are holding
+was built by the server against *its* clock, so when our clock says entry has closed and
+the leaderboard still says it was open, what we have is the empty pre-deadline one and we
+ask again.
+
+The two clocks never have to agree, they only have to converge. If ours runs ahead we
+re-ask each tick until the server catches up. If ours runs behind, the entry buttons
+linger for a moment and a submit in that window is refused by the server, which we
+already report.
+
+Only while actually looking at that competition, so this never polls in the background.
+An in flight fetch is not Succeeded, so a slow response cannot pile up requests.
+
+-}
+overUnderLeaderboardToRefetch : Model key -> Maybe Types.OverUnder.CompetitionId
+overUnderLeaderboardToRefetch model =
+    case model.route of
+        Route.OverUnderCompetition competitionId ->
+            let
+                weSayClosed : Bool
+                weSayClosed =
+                    Helpers.Http.toMaybe model.overUnderCompetitions
+                        |> Maybe.withDefault []
+                        |> Helpers.List.findWith competitionId .id
+                        |> Maybe.map (Types.OverUnder.deadlinePassed model.now)
+                        |> Maybe.withDefault False
+
+                serverSaidOpen : Bool
+                serverSaidOpen =
+                    case Dict.get competitionId model.overUnderLeaderboards of
+                        Just (Helpers.Http.Succeeded leaderboard) ->
+                            leaderboard.serverDeadlinePassed |> not
+
+                        _ ->
+                            False
+            in
+            case weSayClosed && serverSaidOpen of
+                True ->
+                    Just competitionId
+
+                False ->
+                    Nothing
+
+        _ ->
+            Nothing
 
 
 getDataWith : Data -> ( Model key, Effect ) -> ( Model key, Effect )
@@ -284,7 +339,7 @@ initRoute model =
         Route.OverUnder ->
             getData Types.Data.OverUnderCompetitions model
 
-        Route.OverUnderCompetition _ ->
+        Route.OverUnderCompetition competitionId ->
             let
                 haveCompetitions : Bool
                 haveCompetitions =
@@ -296,11 +351,14 @@ initRoute model =
                             False
             in
             -- One endpoint serves both pages, so coming here from the list of
-            -- competitions does not need to fetch anything again.
+            -- competitions does not need to fetch the competitions again.
             model
                 |> getMultipleDataIf
                     [ ( not haveCompetitions
                       , Types.Data.OverUnderCompetitions
+                      )
+                    , ( True
+                      , Types.Data.OverUnderLeaderboard { competitionId = competitionId }
                       )
                     ]
 
@@ -376,7 +434,19 @@ update msg model =
                 { model | route = Route.parse url }
 
         Msg.Tick now ->
-            Return.noEffect { model | now = now }
+            let
+                tickedModel : Model key
+                tickedModel =
+                    { model | now = now }
+            in
+            case overUnderLeaderboardToRefetch tickedModel of
+                Nothing ->
+                    Return.noEffect tickedModel
+
+                Just competitionId ->
+                    getData
+                        (Types.Data.OverUnderLeaderboard { competitionId = competitionId })
+                        tickedModel
 
         Msg.GetTimeZone result ->
             case result of
@@ -916,6 +986,13 @@ update msg model =
               }
             , Effect.NativeAlert alertMessage
             )
+
+        Msg.OverUnderLeaderboardResponse spec result ->
+            Return.noEffect
+                { model
+                    | overUnderLeaderboards =
+                        Dict.insert spec.competitionId (Helpers.Http.fromResult result) model.overUnderLeaderboards
+                }
 
         Msg.FormulaOneEventSessionsResponse spec result ->
             let

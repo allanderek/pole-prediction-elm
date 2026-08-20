@@ -64,6 +64,7 @@ type alias Model key =
     , overUnderCompetitions : Helpers.Http.Status (List Types.OverUnder.Competition)
     , overUnderAnswerInputs : Dict Types.OverUnder.CompetitionId (Dict Types.OverUnder.QuestionId Int)
     , overUnderAnswerSubmitStatus : Dict Types.OverUnder.CompetitionId (Helpers.Http.Status ())
+    , overUnderLeaderboards : Dict Types.OverUnder.CompetitionId (Helpers.Http.Status Types.OverUnder.Leaderboard)
     }
 
 
@@ -103,6 +104,7 @@ initial key url now userStatus =
     , overUnderCompetitions = Helpers.Http.Ready
     , overUnderAnswerInputs = Dict.empty
     , overUnderAnswerSubmitStatus = Dict.empty
+    , overUnderLeaderboards = Dict.empty
     }
 
 

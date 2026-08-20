@@ -2,12 +2,15 @@ module Types.OverUnder exposing
     ( Choice(..)
     , Competition
     , CompetitionId
+    , Leaderboard
     , Question
     , QuestionId
     , choiceOfProbability
     , competitionDecoder
     , deadlinePassed
     , encodeAnswers
+    , leaderboardDecoder
+    , numberQuestions
     , overProbability
     , underProbability
     )
@@ -18,6 +21,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
 import Time
+import Types.Leaderboard
 
 
 type alias CompetitionId =
@@ -128,6 +132,48 @@ choiceOfProbability probability =
 
                 False ->
                     Nothing
+
+
+{-| Scores are whole numbers out of 100 per question, so the ordinary leaderboard table
+serves this competition without any generalising.
+
+`serverDeadlinePassed` is what the *server* believed when it built this, which is not
+always what our own clock says. The page uses our clock to decide what to draw, and this
+to decide whether the answers it is holding are the real, post-deadline ones.
+
+-}
+type alias Leaderboard =
+    { serverDeadlinePassed : Bool
+    , table : Types.Leaderboard.Leaderboard
+    }
+
+
+leaderboardDecoder : Decoder Leaderboard
+leaderboardDecoder =
+    Decode.map2 Leaderboard
+        (Decode.field "deadline_passed" Decode.bool)
+        Types.Leaderboard.decoder
+
+
+{-| Numbers the questions to match the leaderboard's Q1..Qn columns. Voided questions
+are left out of the scoring and so out of the columns, and therefore must not consume a
+number here either, or the labels would not line up with the table.
+-}
+numberQuestions : List Question -> List ( Maybe Int, Question )
+numberQuestions questions =
+    let
+        step : Question -> ( Int, List ( Maybe Int, Question ) ) -> ( Int, List ( Maybe Int, Question ) )
+        step question ( next, sofar ) =
+            case question.voided of
+                True ->
+                    ( next, ( Nothing, question ) :: sofar )
+
+                False ->
+                    ( next + 1, ( Just next, question ) :: sofar )
+    in
+    List.foldl step ( 1, [] ) questions
+        |> Tuple.second
+        |> List.reverse
 
 
 encodeAnswers : List ( QuestionId, Int ) -> Json.Encode.Value

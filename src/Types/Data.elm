@@ -2,6 +2,7 @@ module Types.Data exposing (Data(..))
 
 import Types.FormulaE
 import Types.FormulaOne
+import Types.OverUnder
 
 
 type Data
@@ -22,3 +23,4 @@ type Data
       -- Unlike the others this takes no spec, the endpoint returns every competition
       -- and its questions in one go.
     | OverUnderCompetitions
+    | OverUnderLeaderboard { competitionId : Types.OverUnder.CompetitionId }

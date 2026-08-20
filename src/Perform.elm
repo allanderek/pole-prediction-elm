@@ -266,6 +266,15 @@ perform model effect =
                                 (Decode.list Types.OverUnder.competitionDecoder)
                         }
 
+                Types.Data.OverUnderLeaderboard spec ->
+                    Http.get
+                        { url = apiUrl [ "over-under", "leaderboard", String.fromInt spec.competitionId ]
+                        , expect =
+                            Http.expectJson
+                                (Msg.OverUnderLeaderboardResponse spec)
+                                Types.OverUnder.leaderboardDecoder
+                        }
+
         Effect.SubmitFormulaEPrediction spec prediction ->
             Http.post
                 { url = apiUrl [ "formula-e", "race-prediction", String.fromInt spec.eventId ]
