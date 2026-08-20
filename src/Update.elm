@@ -17,6 +17,7 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.LocalStorageNotification
 import Types.Login
+import Types.OverUnder
 import Types.Profile
 import Types.Register
 import Types.User exposing (User)
@@ -871,6 +872,50 @@ update msg model =
         Msg.OverUnderCompetitionsResponse result ->
             Return.noEffect
                 { model | overUnderCompetitions = Helpers.Http.fromResult result }
+
+        Msg.SetOverUnderAnswer competitionId questionId probability ->
+            let
+                updateCompetitionAnswers : Maybe (Dict.Dict Types.OverUnder.QuestionId Int) -> Maybe (Dict.Dict Types.OverUnder.QuestionId Int)
+                updateCompetitionAnswers mAnswers =
+                    mAnswers
+                        |> Maybe.withDefault Dict.empty
+                        |> Dict.insert questionId probability
+                        |> Just
+            in
+            Return.noEffect
+                { model
+                    | overUnderAnswerInputs =
+                        Dict.update competitionId updateCompetitionAnswers model.overUnderAnswerInputs
+                }
+
+        Msg.SubmitOverUnderAnswers competitionId answers ->
+            ( { model
+                | overUnderAnswerSubmitStatus =
+                    Dict.insert competitionId Helpers.Http.Inflight model.overUnderAnswerSubmitStatus
+              }
+            , Effect.SubmitOverUnderAnswers { competitionId = competitionId } answers
+            )
+
+        Msg.SubmitOverUnderAnswersResponse spec result ->
+            let
+                alertMessage : String
+                alertMessage =
+                    case result of
+                        Ok _ ->
+                            "Answers submitted successfully!"
+
+                        Err _ ->
+                            "Failed to submit answers."
+            in
+            -- The answers we fetched are now out of date, but the answers the user
+            -- entered are kept, and getOverUnderAnswer prefers those, so the page
+            -- carries on showing the right thing until the next fetch.
+            ( { model
+                | overUnderAnswerSubmitStatus =
+                    Dict.insert spec.competitionId (Helpers.Http.fromResult result) model.overUnderAnswerSubmitStatus
+              }
+            , Effect.NativeAlert alertMessage
+            )
 
         Msg.FormulaOneEventSessionsResponse spec result ->
             let

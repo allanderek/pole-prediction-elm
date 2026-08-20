@@ -9,6 +9,7 @@ import Types.Data exposing (Data)
 import Types.FormulaE
 import Types.FormulaOne
 import Types.Login
+import Types.OverUnder
 import Types.Profile
 import Types.Register
 
@@ -34,6 +35,7 @@ type Effect
     | SubmitFormulaOneSessionPrediction { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSessionResult { sessionId : Types.FormulaOne.SessionId } (List Types.FormulaOne.EntrantId)
     | SubmitFormulaOneSeasonPrediction { season : Types.FormulaOne.Season } (List Types.FormulaOne.TeamId)
+    | SubmitOverUnderAnswers { competitionId : Types.OverUnder.CompetitionId } (List ( Types.OverUnder.QuestionId, Int ))
 
 
 goto : Route -> Effect

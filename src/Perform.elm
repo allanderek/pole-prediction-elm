@@ -315,6 +315,24 @@ perform model effect =
                         decoder
                 }
 
+        Effect.SubmitOverUnderAnswers spec answers ->
+            let
+                successDecoder : Decoder ()
+                successDecoder =
+                    Decode.field "status" Decode.string
+                        |> Decode.map (\_ -> ())
+            in
+            Http.post
+                { url = apiUrl [ "over-under", "answers", String.fromInt spec.competitionId ]
+                , body =
+                    Types.OverUnder.encodeAnswers answers
+                        |> Http.jsonBody
+                , expect =
+                    Http.expectJson
+                        (Msg.SubmitOverUnderAnswersResponse spec)
+                        successDecoder
+                }
+
         Effect.SubmitFormulaOneSeasonPrediction spec teamIds ->
             let
                 successDecoder : Decoder ()

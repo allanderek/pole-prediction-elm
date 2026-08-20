@@ -63,6 +63,7 @@ type alias Model key =
     -- in a single call, so there is no season or event to key on.
     , overUnderCompetitions : Helpers.Http.Status (List Types.OverUnder.Competition)
     , overUnderAnswerInputs : Dict Types.OverUnder.CompetitionId (Dict Types.OverUnder.QuestionId Int)
+    , overUnderAnswerSubmitStatus : Dict Types.OverUnder.CompetitionId (Helpers.Http.Status ())
     }
 
 
@@ -101,6 +102,7 @@ initial key url now userStatus =
     , formulaEEventLeaderboards = Dict.empty
     , overUnderCompetitions = Helpers.Http.Ready
     , overUnderAnswerInputs = Dict.empty
+    , overUnderAnswerSubmitStatus = Dict.empty
     }
 
 

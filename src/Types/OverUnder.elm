@@ -1,16 +1,22 @@
 module Types.OverUnder exposing
-    ( Competition
+    ( Choice(..)
+    , Competition
     , CompetitionId
     , Question
     , QuestionId
+    , choiceOfProbability
     , competitionDecoder
     , deadlinePassed
+    , encodeAnswers
+    , overProbability
+    , underProbability
     )
 
 import Helpers.Decode
 import Helpers.Rfc3339
 import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
+import Json.Encode
 import Time
 
 
@@ -84,3 +90,55 @@ deadlinePassed now competition =
 
         Just deadline ->
             Time.posixToMillis deadline <= Time.posixToMillis now
+
+
+{-| For this first competition we ask only for over or under, with no confidence, so
+that answering is as light as possible. Those are stored as the two extremes of the
+probability the database and the endpoint already accept, which leaves the way open to
+ask for a confidence later without changing anything underneath.
+-}
+type Choice
+    = Over
+    | Under
+
+
+overProbability : Int
+overProbability =
+    100
+
+
+underProbability : Int
+underProbability =
+    0
+
+
+{-| A stored probability that is neither extreme is not something this UI can produce,
+so it is reported as `Nothing` rather than being rounded to the nearer button.
+-}
+choiceOfProbability : Int -> Maybe Choice
+choiceOfProbability probability =
+    case probability == overProbability of
+        True ->
+            Just Over
+
+        False ->
+            case probability == underProbability of
+                True ->
+                    Just Under
+
+                False ->
+                    Nothing
+
+
+encodeAnswers : List ( QuestionId, Int ) -> Json.Encode.Value
+encodeAnswers answers =
+    let
+        encodeAnswer : ( QuestionId, Int ) -> Json.Encode.Value
+        encodeAnswer ( questionId, probability ) =
+            Json.Encode.object
+                [ ( "question", Json.Encode.int questionId )
+                , ( "probability", Json.Encode.int probability )
+                ]
+    in
+    Json.Encode.object
+        [ ( "answers", Json.Encode.list encodeAnswer answers ) ]

@@ -6,10 +6,14 @@ module Pages.OverUnder exposing
 import Components.HttpStatus
 import Components.Section
 import Components.Time
+import Dict
+import Helpers.Classes
+import Helpers.Events
 import Helpers.Http
 import Helpers.List
 import Html exposing (Html)
 import Html.Attributes as Attributes
+import Html.Events as Events
 import Html.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
@@ -82,22 +86,29 @@ viewCompetition model competitionId =
 viewCompetitionDetail : Model key -> Types.OverUnder.Competition -> List (Html Msg)
 viewCompetitionDetail model competition =
     let
+        open : Bool
+        open =
+            Types.OverUnder.deadlinePassed model.now competition
+                |> not
+
         questionsSection : Html Msg
         questionsSection =
-            case Types.OverUnder.deadlinePassed model.now competition of
-                False ->
+            case open of
+                True ->
                     Components.Section.view
                         { title = "Questions"
                         , class = "over-under-questions"
                         }
-                        [ viewQuestionList model competition ]
+                        (viewQuestionList model competition open
+                            :: viewEntryControls model competition
+                        )
 
-                True ->
+                False ->
                     Components.Section.view
                         { title = "Results"
                         , class = "over-under-results"
                         }
-                        [ viewQuestionList model competition
+                        [ viewQuestionList model competition open
                         , Html.p
                             [ Attributes.class "over-under-placeholder" ]
                             [ Html.text "Everyone's answers and their scores will appear here." ]
@@ -112,8 +123,66 @@ viewCompetitionDetail model competition =
     ]
 
 
-viewQuestionList : Model key -> Types.OverUnder.Competition -> Html Msg
-viewQuestionList model competition =
+{-| Below the questions: either a prompt to log in, or the submit button. Answering is
+explicit rather than saving on each click, so that you can change your mind freely
+before committing.
+-}
+viewEntryControls : Model key -> Types.OverUnder.Competition -> List (Html Msg)
+viewEntryControls model competition =
+    case Helpers.Http.toMaybe model.userStatus of
+        Nothing ->
+            [ Html.p
+                [ Attributes.class "over-under-login-prompt" ]
+                [ Html.text "You need to "
+                , Html.a
+                    [ Route.href Route.Login ]
+                    [ Html.text "log in" ]
+                , Html.text " to answer these questions."
+                ]
+            ]
+
+        Just _ ->
+            let
+                answers : List ( Types.OverUnder.QuestionId, Int )
+                answers =
+                    currentAnswers model competition
+
+                inflight : Bool
+                inflight =
+                    Dict.get competition.id model.overUnderAnswerSubmitStatus
+                        |> Maybe.withDefault Helpers.Http.Ready
+                        |> Helpers.Http.isInflight
+
+                disabled : Bool
+                disabled =
+                    inflight || List.isEmpty answers
+            in
+            [ Html.button
+                [ Attributes.class "over-under-submit"
+                , Msg.SubmitOverUnderAnswers competition.id answers
+                    |> Helpers.Events.onClickOrDisabled disabled
+                ]
+                [ Html.text "Submit answers" ]
+            ]
+
+
+{-| Every answer we hold for the competition, not only the ones just clicked. The
+endpoint upserts, so sending them all is idempotent and a half finished competition
+submits perfectly well.
+-}
+currentAnswers : Model key -> Types.OverUnder.Competition -> List ( Types.OverUnder.QuestionId, Int )
+currentAnswers model competition =
+    let
+        answerOf : Types.OverUnder.Question -> Maybe ( Types.OverUnder.QuestionId, Int )
+        answerOf question =
+            Model.getOverUnderAnswer model competition.id question
+                |> Maybe.map (Tuple.pair question.id)
+    in
+    List.filterMap answerOf competition.questions
+
+
+viewQuestionList : Model key -> Types.OverUnder.Competition -> Bool -> Html Msg
+viewQuestionList model competition open =
     case competition.questions of
         [] ->
             Html.text "This competition has no questions yet."
@@ -121,25 +190,28 @@ viewQuestionList model competition =
         _ ->
             Html.ul
                 [ Attributes.class "over-under-question-list" ]
-                (List.map (viewQuestion model competition) competition.questions)
+                (List.map (viewQuestion model competition open) competition.questions)
 
 
-viewQuestion : Model key -> Types.OverUnder.Competition -> Types.OverUnder.Question -> Html Msg
-viewQuestion model competition question =
+viewQuestion : Model key -> Types.OverUnder.Competition -> Bool -> Types.OverUnder.Question -> Html Msg
+viewQuestion model competition open question =
     let
-        -- Answer entry comes in the next chunk, for now the answer is only shown.
+        mAnswer : Maybe Int
+        mAnswer =
+            Model.getOverUnderAnswer model competition.id question
+
+        loggedIn : Bool
+        loggedIn =
+            Helpers.Http.toMaybe model.userStatus /= Nothing
+
         answer : Html Msg
         answer =
-            case Model.getOverUnderAnswer model competition.id question of
-                Nothing ->
-                    Html.span
-                        [ Attributes.class "over-under-no-answer" ]
-                        [ Html.text "Not answered" ]
+            case open && loggedIn of
+                True ->
+                    viewChoiceButtons competition question mAnswer
 
-                Just probability ->
-                    Html.span
-                        [ Attributes.class "over-under-answer" ]
-                        [ percent probability |> Html.text ]
+                False ->
+                    viewAnswerReadOnly mAnswer
 
         currentProbability : Html Msg
         currentProbability =
@@ -184,6 +256,75 @@ viewQuestion model competition question =
         , currentProbability
         , outcome
         ]
+
+
+{-| Two buttons, over and under, with no confidence asked for. They submit the two
+extremes of the probability that the endpoint stores, so asking for a confidence later
+is a change to this view rather than to anything underneath it.
+-}
+viewChoiceButtons : Types.OverUnder.Competition -> Types.OverUnder.Question -> Maybe Int -> Html Msg
+viewChoiceButtons competition question mAnswer =
+    let
+        mChoice : Maybe Types.OverUnder.Choice
+        mChoice =
+            Maybe.andThen Types.OverUnder.choiceOfProbability mAnswer
+
+        viewButton : Types.OverUnder.Choice -> String -> Int -> Html Msg
+        viewButton choice label probability =
+            Html.button
+                [ Attributes.class "over-under-choice"
+                , Helpers.Classes.active (mChoice == Just choice)
+                , Msg.SetOverUnderAnswer competition.id question.id probability
+                    |> Events.onClick
+                ]
+                [ Html.text label ]
+
+        -- A stored probability that is neither extreme cannot come from these buttons,
+        -- so rather than light up the nearer one we show the number alongside them.
+        unexpectedProbability : Html Msg
+        unexpectedProbability =
+            case ( mAnswer, mChoice ) of
+                ( Just probability, Nothing ) ->
+                    Html.span
+                        [ Attributes.class "over-under-answer" ]
+                        [ percent probability |> Html.text ]
+
+                _ ->
+                    Html.Extra.nothing
+    in
+    Html.span
+        [ Attributes.class "over-under-choices" ]
+        [ viewButton Types.OverUnder.Under "Under" Types.OverUnder.underProbability
+        , viewButton Types.OverUnder.Over "Over" Types.OverUnder.overProbability
+        , unexpectedProbability
+        ]
+
+
+viewAnswerReadOnly : Maybe Int -> Html Msg
+viewAnswerReadOnly mAnswer =
+    case mAnswer of
+        Nothing ->
+            Html.span
+                [ Attributes.class "over-under-no-answer" ]
+                [ Html.text "Not answered" ]
+
+        Just probability ->
+            let
+                label : String
+                label =
+                    case Types.OverUnder.choiceOfProbability probability of
+                        Just Types.OverUnder.Over ->
+                            "Over"
+
+                        Just Types.OverUnder.Under ->
+                            "Under"
+
+                        Nothing ->
+                            percent probability
+            in
+            Html.span
+                [ Attributes.class "over-under-answer" ]
+                [ Html.text label ]
 
 
 viewDescription : Types.OverUnder.Competition -> Html msg

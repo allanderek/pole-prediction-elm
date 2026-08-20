@@ -79,6 +79,9 @@ type Msg
     | SubmitFormulaEPredictionResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
     | SubmitFormulaEResultResponse { eventId : Types.FormulaE.EventId } (HttpResult Types.FormulaE.EventLeaderboard)
     | OverUnderCompetitionsResponse (HttpResult (List Types.OverUnder.Competition))
+    | SetOverUnderAnswer Types.OverUnder.CompetitionId Types.OverUnder.QuestionId Int
+    | SubmitOverUnderAnswers Types.OverUnder.CompetitionId (List ( Types.OverUnder.QuestionId, Int ))
+    | SubmitOverUnderAnswersResponse { competitionId : Types.OverUnder.CompetitionId } (HttpResult ())
 
 
 
