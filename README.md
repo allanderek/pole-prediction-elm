@@ -6,6 +6,7 @@
     sqlite3 predictions.db < sql/add-email-oauth-accounts.sql
     sqlite3 predictions.db < sql/fix-prediction-position-constraint.sql
     sqlite3 predictions.db < sql/add-season-prediction-deadline.sql
+    sqlite3 predictions.db < sql/add-over-under-questions.sql
 3. Add your Google credentials to .env
 4. Restart the server
 
