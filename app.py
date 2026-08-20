@@ -1984,26 +1984,43 @@ def get_over_under_leaderboard(competition_id: int):
 
         rows = []
         for user_id, player in players.items():
-            scores = []
+            cells = []
             for question, target in zip(scored_questions, targets):
                 probability = player["answers"].get(question["id"])
-                # Not answering scores nothing, so answering always beats not answering.
-                scores.append(
-                    0 if probability is None else over_under_credit(probability, target)
+                # Each cell carries the answer as well as the score. Without it a
+                # reader cannot tell what somebody actually said, and where the target
+                # defaulted to 50 both answers score 50, so the score alone is useless.
+                # The raw probability is sent rather than an 'over'/'under' label so
+                # that the front end does all the labelling in one place.
+                cells.append(
+                    {
+                        "probability": probability,
+                        # Not answering scores nothing, so answering always beats
+                        # not answering.
+                        "score": (
+                            0
+                            if probability is None
+                            else over_under_credit(probability, target)
+                        ),
+                    }
                 )
             # The total is the sum of the cells we display, so the table adds up even
             # if a cell ever had to be rounded.
             rows.append(
-                {"id": user_id, "name": player["name"], "scores": scores + [sum(scores)]}
+                {
+                    "id": user_id,
+                    "name": player["name"],
+                    "cells": cells,
+                    "total": sum(cell["score"] for cell in cells),
+                }
             )
 
-        rows.sort(key=lambda row: row["scores"][-1], reverse=True)
+        rows.sort(key=lambda row: row["total"], reverse=True)
 
-        columns = [f"Q{n}" for n in range(1, len(scored_questions) + 1)] + ["Total"]
         return {
             "prediction_deadline": prediction_deadline,
             "deadline_passed": True,
-            "columns": columns,
+            "columns": [f"Q{n}" for n in range(1, len(scored_questions) + 1)],
             "rows": rows,
         }
 

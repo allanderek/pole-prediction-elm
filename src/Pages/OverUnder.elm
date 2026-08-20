@@ -4,7 +4,7 @@ module Pages.OverUnder exposing
     )
 
 import Components.HttpStatus
-import Components.Leaderboard
+import Components.OverUnderLeaderboard
 import Components.Section
 import Components.Time
 import Dict
@@ -142,9 +142,7 @@ viewLeaderboard model competition =
                         [ Html.text "Entry has just closed, collecting everyone's answers..." ]
 
                 True ->
-                    Components.Leaderboard.view
-                        { firstColumn = "Player" }
-                        leaderboard.table
+                    Components.OverUnderLeaderboard.view leaderboard
     in
     Components.HttpStatus.view
         { viewFn = viewFn
@@ -357,22 +355,9 @@ viewAnswerReadOnly mAnswer =
                 [ Html.text "Not answered" ]
 
         Just probability ->
-            let
-                label : String
-                label =
-                    case Types.OverUnder.choiceOfProbability probability of
-                        Just Types.OverUnder.Over ->
-                            "Over"
-
-                        Just Types.OverUnder.Under ->
-                            "Under"
-
-                        Nothing ->
-                            percent probability
-            in
             Html.span
                 [ Attributes.class "over-under-answer" ]
-                [ Html.text label ]
+                [ Types.OverUnder.answerLabel probability |> Html.text ]
 
 
 viewDescription : Types.OverUnder.Competition -> Html msg

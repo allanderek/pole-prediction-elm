@@ -3,8 +3,11 @@ module Types.OverUnder exposing
     , Competition
     , CompetitionId
     , Leaderboard
+    , LeaderboardCell
+    , LeaderboardRow
     , Question
     , QuestionId
+    , answerLabel
     , choiceOfProbability
     , competitionDecoder
     , deadlinePassed
@@ -21,7 +24,6 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Decode.Pipeline as Pipeline
 import Json.Encode
 import Time
-import Types.Leaderboard
 
 
 type alias CompetitionId =
@@ -134,8 +136,10 @@ choiceOfProbability probability =
                     Nothing
 
 
-{-| Scores are whole numbers out of 100 per question, so the ordinary leaderboard table
-serves this competition without any generalising.
+{-| This does not use Types.Leaderboard, whose cells are a bare score. A score on its own
+does not say what the player actually answered, and where a question has no recorded view
+the target defaults to 50, so both answers score exactly 50 and the score cannot say
+anything at all. Each cell therefore carries the answer as well.
 
 `serverDeadlinePassed` is what the *server* believed when it built this, which is not
 always what our own clock says. The page uses our clock to decide what to draw, and this
@@ -144,15 +148,64 @@ to decide whether the answers it is holding are the real, post-deadline ones.
 -}
 type alias Leaderboard =
     { serverDeadlinePassed : Bool
-    , table : Types.Leaderboard.Leaderboard
+    , columns : List String
+    , rows : List LeaderboardRow
+    }
+
+
+type alias LeaderboardRow =
+    { id : Int
+    , name : String
+    , cells : List LeaderboardCell
+    , total : Int
+    }
+
+
+type alias LeaderboardCell =
+    { probability : Maybe Int
+    , score : Int
     }
 
 
 leaderboardDecoder : Decoder Leaderboard
 leaderboardDecoder =
-    Decode.map2 Leaderboard
-        (Decode.field "deadline_passed" Decode.bool)
-        Types.Leaderboard.decoder
+    let
+        cellDecoder : Decoder LeaderboardCell
+        cellDecoder =
+            Decode.succeed LeaderboardCell
+                |> Pipeline.required "probability" (Decode.nullable Decode.int)
+                |> Pipeline.required "score" Decode.int
+
+        rowDecoder : Decoder LeaderboardRow
+        rowDecoder =
+            Decode.succeed LeaderboardRow
+                |> Pipeline.required "id" Decode.int
+                |> Pipeline.required "name" Decode.string
+                |> Pipeline.required "cells" (Decode.list cellDecoder)
+                |> Pipeline.required "total" Decode.int
+    in
+    Decode.succeed Leaderboard
+        |> Pipeline.required "deadline_passed" Decode.bool
+        |> Pipeline.required "columns" (Decode.list Decode.string)
+        |> Pipeline.required "rows" (Decode.list rowDecoder)
+
+
+{-| How an answer is written, wherever it is shown. Kept here rather than in the pages so
+that the question list and the leaderboard can never disagree about what a stored
+probability means.
+-}
+answerLabel : Int -> String
+answerLabel probability =
+    case choiceOfProbability probability of
+        Just Over ->
+            "Over"
+
+        Just Under ->
+            "Under"
+
+        Nothing ->
+            String.fromInt probability
+                |> (\p -> String.append p "%")
 
 
 {-| Numbers the questions to match the leaderboard's Q1..Qn columns. Voided questions
