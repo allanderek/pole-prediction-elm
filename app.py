@@ -1892,6 +1892,122 @@ def save_over_under_answers(
         return {"status": "success"}
 
 
+def over_under_question_target(question):
+    """The probability, 0-100, that the question's outcome is true.
+
+    For a resolved question that is simply the outcome. For one that has not resolved
+    we use our own current view of it, so that there is a running score before the
+    question resolves. With no view recorded we use 50, which scores the same for
+    everybody and so cannot shift the ranking.
+    """
+    if question["outcome"] is not None:
+        return 100 if question["outcome"] else 0
+    if question["current_probability"] is not None:
+        return question["current_probability"]
+    return 50
+
+
+def over_under_credit(probability, target):
+    """The score out of 100 for one answer.
+
+    This is the amount the user assigned to the answer that turned out (or is expected)
+    to be correct. For a resolved question it is exactly their probability if the
+    outcome was true, and 100 minus it if false.
+
+    Kept in integer arithmetic throughout. The division is exact whenever the answer is
+    0 or 100, which is all the current UI can produce, so today no rounding happens at
+    all. Once confidence answers are allowed, a running score against a non-extreme
+    target can land between two integers, and we round half up.
+    """
+    raw = probability * target + (100 - probability) * (100 - target)
+    return (raw + 50) // 100
+
+
+@app.get("/api/over-under/leaderboard/{competition_id}")
+def get_over_under_leaderboard(competition_id: int):
+    with db_transaction() as db:
+        competition = db.execute(
+            "select name, prediction_deadline from over_under_competitions where id = ?",
+            (competition_id,),
+        ).fetchone()
+
+        if not competition:
+            raise HTTPException(status_code=404, detail="Competition not found")
+
+        prediction_deadline = competition["prediction_deadline"]
+        deadline_passed = prediction_deadline is not None and (
+            is_db_time_earlier_than_now(prediction_deadline)
+        )
+
+        # Before the deadline nobody else's answers are revealed, the same rule the
+        # season leaderboards follow.
+        if not deadline_passed:
+            return {
+                "prediction_deadline": prediction_deadline,
+                "deadline_passed": False,
+                "columns": [],
+                "rows": [],
+            }
+
+        questions = db.execute(
+            """
+            select id, current_probability, outcome, voided
+            from over_under_questions
+            where competition = ?
+            order by id
+            """,
+            (competition_id,),
+        ).fetchall()
+        # A voided question is excluded from scoring, so it gets no column either.
+        scored_questions = [question for question in questions if not question["voided"]]
+
+        answer_rows = db.execute(
+            """
+            select a.user, a.question, a.probability, u.fullname
+            from over_under_answers a
+            join users u on u.id = a.user
+            join over_under_questions q on q.id = a.question
+            where q.competition = ?
+            """,
+            (competition_id,),
+        ).fetchall()
+
+        # Only users who answered something appear at all.
+        players = {}
+        for row in answer_rows:
+            player = players.setdefault(
+                row["user"], {"name": row["fullname"], "answers": {}}
+            )
+            player["answers"][row["question"]] = row["probability"]
+
+        targets = [over_under_question_target(q) for q in scored_questions]
+
+        rows = []
+        for user_id, player in players.items():
+            scores = []
+            for question, target in zip(scored_questions, targets):
+                probability = player["answers"].get(question["id"])
+                # Not answering scores nothing, so answering always beats not answering.
+                scores.append(
+                    0 if probability is None else over_under_credit(probability, target)
+                )
+            # The total is the sum of the cells we display, so the table adds up even
+            # if a cell ever had to be rounded.
+            rows.append(
+                {"id": user_id, "name": player["name"], "scores": scores + [sum(scores)]}
+            )
+
+        rows.sort(key=lambda row: row["scores"][-1], reverse=True)
+
+        columns = [f"Q{n}" for n in range(1, len(scored_questions) + 1)] + ["Total"]
+        return {
+            "prediction_deadline": prediction_deadline,
+            "deadline_passed": True,
+            "columns": columns,
+            "rows": rows,
+        }
+
+
 def configure_app(config_dict):
     """Configure JWT and logging after config is loaded."""
     global config
