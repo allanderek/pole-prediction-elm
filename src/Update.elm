@@ -4,7 +4,7 @@ module Update exposing
     )
 
 import Browser
-import Dict
+import Dict exposing (Dict)
 import Effect exposing (Effect)
 import Helpers.Http
 import Helpers.List
@@ -17,7 +17,6 @@ import Types.FormulaE
 import Types.FormulaOne
 import Types.LocalStorageNotification
 import Types.Login
-import Types.OverUnder
 import Types.OverUnder
 import Types.Profile
 import Types.Register
@@ -129,7 +128,7 @@ getData data model =
 
 {-| The page decides what to draw from our own clock, so it changes over the moment the
 deadline passes rather than waiting for a round trip. But the leaderboard we are holding
-was built by the server against *its* clock, so when our clock says entry has closed and
+was built by the server against _its_ clock, so when our clock says entry has closed and
 the leaderboard still says it was open, what we have is the empty pre-deadline one and we
 ask again.
 
@@ -1062,6 +1061,7 @@ update msg model =
 
         Msg.FormulaOneSeasonLeaderboardResponse spec result ->
             let
+                restoredEntry : Dict Types.FormulaOne.Season (List Types.FormulaOne.TeamId)
                 restoredEntry =
                     case result of
                         Err _ ->
@@ -1096,6 +1096,7 @@ update msg model =
 
         Msg.FormulaOneSeasonTeamsResponse spec result ->
             let
+                initialEntry : List Types.FormulaOne.FormulaOneTeam -> Dict Types.FormulaOne.Season (List Types.FormulaOne.TeamId)
                 initialEntry teams =
                     case Dict.member spec.season model.formulaOneSeasonPredictionEntry of
                         True ->
@@ -1103,9 +1104,11 @@ update msg model =
 
                         False ->
                             let
+                                defaultOrder : List Types.FormulaOne.TeamId
                                 defaultOrder =
                                     List.map Types.FormulaOne.teamId teams
 
+                                teamIds : List Types.FormulaOne.TeamId
                                 teamIds =
                                     case Helpers.Http.toMaybe model.userStatus of
                                         Nothing ->
@@ -1177,16 +1180,13 @@ userPredictionFromSeasonLeaderboard userId leaderboard =
 
         row :: _ ->
             let
+                teamIds : List Types.FormulaOne.TeamId
                 teamIds =
                     row.rows
                         |> List.sortBy .predictedPosition
                         |> List.map .teamId
             in
-            if List.isEmpty teamIds then
-                Nothing
-
-            else
-                Just teamIds
+            Helpers.List.emptyAsNothing teamIds
 
 
 updateFormulaEPrediction : Msg.UpdateFormulaEPredictionMsg -> Types.FormulaE.Prediction -> Types.FormulaE.Prediction
