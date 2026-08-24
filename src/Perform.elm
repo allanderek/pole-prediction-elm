@@ -2,8 +2,8 @@ module Perform exposing (perform)
 
 import Browser.Navigation
 import Effect exposing (Effect)
-import Http
 import Helpers.Rfc3339
+import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Msg exposing (Msg)
@@ -354,8 +354,5 @@ perform model effect =
                 , body =
                     Encode.object [ ( "teams", Encode.list Encode.int teamIds ) ]
                         |> Http.jsonBody
-                , expect =
-                    Http.expectJson
-                        (Msg.FormulaOneSeasonPredictionResponse spec)
-                        successDecoder
+                , expect = Http.expectJson Msg.FormulaOneSeasonPredictionResponse successDecoder
                 }

@@ -624,15 +624,6 @@ update msg model =
 
                 Just user ->
                     let
-                        form : Types.Profile.Form
-                        form =
-                            case model.profileForm of
-                                Nothing ->
-                                    Types.Profile.initForm user
-
-                                Just existingForm ->
-                                    existingForm
-
                         newForm : Maybe Types.Profile.Form
                         newForm =
                             case input == user.fullname of
@@ -640,6 +631,16 @@ update msg model =
                                     Nothing
 
                                 False ->
+                                    let
+                                        form : Types.Profile.Form
+                                        form =
+                                            case model.profileForm of
+                                                Nothing ->
+                                                    Types.Profile.initForm user
+
+                                                Just existingForm ->
+                                                    existingForm
+                                    in
                                     Just { form | fullname = input }
                     in
                     Return.noEffect
@@ -1158,7 +1159,7 @@ update msg model =
             , Effect.SubmitFormulaOneSeasonPrediction { season = season } teamIds
             )
 
-        Msg.FormulaOneSeasonPredictionResponse _ result ->
+        Msg.FormulaOneSeasonPredictionResponse result ->
             let
                 alertMessage : String
                 alertMessage =

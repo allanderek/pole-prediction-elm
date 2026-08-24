@@ -15,7 +15,6 @@ import Types.Leaderboard exposing (Leaderboard)
 import Types.LocalStorageNotification exposing (LocalStorageNotification)
 import Types.OverUnder
 import Types.Profile
-import Types.Register
 import Types.User exposing (User)
 import Url
 
@@ -67,7 +66,7 @@ type Msg
     | FormulaOneSeasonTeamsResponse { season : Types.FormulaOne.Season } (HttpResult (List Types.FormulaOne.FormulaOneTeam))
     | ReorderFormulaOneSeasonPrediction Types.FormulaOne.Season Int Int
     | SubmitFormulaOneSeasonPrediction Types.FormulaOne.Season (List Types.FormulaOne.TeamId)
-    | FormulaOneSeasonPredictionResponse { season : Types.FormulaOne.Season } (HttpResult ())
+    | FormulaOneSeasonPredictionResponse (HttpResult ())
     | FormulaELeaderboardResponse { season : Types.FormulaE.Season } (HttpResult Leaderboard)
     | FormulaEEventsResponse { season : Types.FormulaE.Season } (HttpResult (List Types.FormulaE.Event))
     | FormulaEEventEntrantsResponse { eventId : Types.FormulaE.EventId } (HttpResult (List Types.FormulaE.Entrant))

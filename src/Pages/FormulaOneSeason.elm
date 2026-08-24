@@ -159,183 +159,184 @@ view model season =
         showPredictionSection =
             isPredictionOpen && season == Types.FormulaOne.currentSeason
 
-        seasonPredictionSection : Html Msg
-        seasonPredictionSection =
-            let
-                decodeReorderEvent : Decode.Decoder Msg
-                decodeReorderEvent =
-                    Decode.succeed (Msg.ReorderFormulaOneSeasonPrediction season)
-                        |> Pipeline.required "oldIndex" Decode.int
-                        |> Pipeline.required "newIndex" Decode.int
-                        |> Decode.field "detail"
+        seasonPredictionsSection : Html Msg
+        seasonPredictionsSection =
+            case showPredictionSection of
+                True ->
+                    let
+                        deadlineView : Html Msg
+                        deadlineView =
+                            case mPredictionDeadline of
+                                Nothing ->
+                                    Html.text ""
 
-                deadlineView : Html Msg
-                deadlineView =
-                    case mPredictionDeadline of
-                        Nothing ->
-                            Html.text ""
-
-                        Just deadline ->
-                            Html.p
-                                [ Attributes.class "prediction-deadline" ]
-                                [ Html.text "Submit before "
-                                , Components.Time.longFormat model.zone deadline
-                                ]
-
-                userContent : List (Html Msg)
-                userContent =
-                    case Helpers.Http.toMaybe model.userStatus of
-                        Nothing ->
-                            [ Html.p [] [ Html.text "Please log in to submit your season prediction." ] ]
-
-                        Just _ ->
-                            let
-                                teamsStatus : Helpers.Http.Status (List Types.FormulaOne.FormulaOneTeam)
-                                teamsStatus =
-                                    Dict.get season model.formulaOneSeasonTeams
-                                        |> Maybe.withDefault Helpers.Http.Ready
-
-                                teamIds : List Types.FormulaOne.TeamId
-                                teamIds =
-                                    Dict.get season model.formulaOneSeasonPredictionEntry
-                                        |> Maybe.withDefault []
-
-                                viewTeam : Types.FormulaOne.FormulaOneTeam -> Html Msg
-                                viewTeam team =
-                                    Html.div
-                                        [ Attributes.attribute "data-id" (String.fromInt team.id)
-                                        , Attributes.class "entrant"
-                                        ]
-                                        [ Html.span [ Attributes.class "entrant-position" ] []
-                                        , Components.TeamName.view
-                                            { name = team.shortname
-                                            , class = "entrant-team"
-                                            , primary = team.color
-                                            , secondary = team.secondaryColor
-                                            }
-                                        , Html.span
-                                            [ Attributes.class "sortable-handle" ]
-                                            [ Html.text "↕" ]
+                                Just deadline ->
+                                    Html.p
+                                        [ Attributes.class "prediction-deadline" ]
+                                        [ Html.text "Submit before "
+                                        , Components.Time.longFormat model.zone deadline
                                         ]
 
-                                viewTeams : List Types.FormulaOne.FormulaOneTeam -> Html Msg
-                                viewTeams teams =
+                        userContent : List (Html Msg)
+                        userContent =
+                            case Helpers.Http.toMaybe model.userStatus of
+                                Nothing ->
+                                    [ Html.p [] [ Html.text "Please log in to submit your season prediction." ] ]
+
+                                Just _ ->
                                     let
-                                        orderedTeams : List Types.FormulaOne.FormulaOneTeam
-                                        orderedTeams =
-                                            List.filterMap
-                                                (\id -> Helpers.List.findWith id .id teams)
-                                                teamIds
+                                        teamsStatus : Helpers.Http.Status (List Types.FormulaOne.FormulaOneTeam)
+                                        teamsStatus =
+                                            Dict.get season model.formulaOneSeasonTeams
+                                                |> Maybe.withDefault Helpers.Http.Ready
+
+                                        teamIds : List Types.FormulaOne.TeamId
+                                        teamIds =
+                                            Dict.get season model.formulaOneSeasonPredictionEntry
+                                                |> Maybe.withDefault []
+
+                                        viewTeam : Types.FormulaOne.FormulaOneTeam -> Html Msg
+                                        viewTeam team =
+                                            Html.div
+                                                [ Attributes.attribute "data-id" (String.fromInt team.id)
+                                                , Attributes.class "entrant"
+                                                ]
+                                                [ Html.span [ Attributes.class "entrant-position" ] []
+                                                , Components.TeamName.view
+                                                    { name = team.shortname
+                                                    , class = "entrant-team"
+                                                    , primary = team.color
+                                                    , secondary = team.secondaryColor
+                                                    }
+                                                , Html.span
+                                                    [ Attributes.class "sortable-handle" ]
+                                                    [ Html.text "↕" ]
+                                                ]
+
+                                        viewTeams : List Types.FormulaOne.FormulaOneTeam -> Html Msg
+                                        viewTeams teams =
+                                            let
+                                                orderedTeams : List Types.FormulaOne.FormulaOneTeam
+                                                orderedTeams =
+                                                    List.filterMap
+                                                        (\id -> Helpers.List.findWith id .id teams)
+                                                        teamIds
+
+                                                decodeReorderEvent : Decode.Decoder Msg
+                                                decodeReorderEvent =
+                                                    Decode.succeed (Msg.ReorderFormulaOneSeasonPrediction season)
+                                                        |> Pipeline.required "oldIndex" Decode.int
+                                                        |> Pipeline.required "newIndex" Decode.int
+                                                        |> Decode.field "detail"
+                                            in
+                                            Html.div
+                                                [ Attributes.class "formula-one-season-prediction-entry" ]
+                                                [ Html.node
+                                                    "sortable-list"
+                                                    [ Events.on "item-reordered" decodeReorderEvent ]
+                                                    (List.map viewTeam orderedTeams)
+                                                , Html.button
+                                                    [ Events.onClick (Msg.SubmitFormulaOneSeasonPrediction season teamIds) ]
+                                                    [ Html.text "Submit Season Prediction" ]
+                                                ]
                                     in
-                                    Html.div
-                                        [ Attributes.class "formula-one-season-prediction-entry" ]
-                                        [ Html.node
-                                            "sortable-list"
-                                            [ Events.on "item-reordered" decodeReorderEvent ]
-                                            (List.map viewTeam orderedTeams)
-                                        , Html.button
-                                            [ Events.onClick (Msg.SubmitFormulaOneSeasonPrediction season teamIds) ]
-                                            [ Html.text "Submit Season Prediction" ]
-                                        ]
+                                    [ Components.HttpStatus.view
+                                        { viewFn = viewTeams
+                                        , failedMessage = "Error obtaining season teams"
+                                        }
+                                        teamsStatus
+                                    ]
+
+                        content : List (Html Msg)
+                        content =
+                            deadlineView :: userContent
+                    in
+                    Components.Section.view { title = "Season Prediction", class = "formula-one-season-prediction" } content
+
+                False ->
+                    let
+                        content : List (Html Msg)
+                        content =
+                            let
+                                viewLeaderboard : Types.FormulaOne.SeasonLeaderboard -> Html Msg
+                                viewLeaderboard seasonLeaderboard =
+                                    let
+                                        viewRow : Types.FormulaOne.SeasonLeaderboardRow -> Html Msg
+                                        viewRow leaderboardRow =
+                                            let
+                                                viewScoredRow : Types.FormulaOne.SeasonPredictionRow -> Html Msg
+                                                viewScoredRow scoredRow =
+                                                    Html.tr
+                                                        []
+                                                        [ Html.td
+                                                            [ Attributes.class "scored-row-position" ]
+                                                            [ Html.text (String.fromInt scoredRow.predictedPosition) ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-team" ]
+                                                            [ Components.TeamName.view
+                                                                { name = scoredRow.teamName
+                                                                , class = "team-name"
+                                                                , primary = scoredRow.teamPrimaryColor
+                                                                , secondary = scoredRow.teamSecondaryColor
+                                                                }
+                                                            ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-score" ]
+                                                            [ Html.text (String.fromInt scoredRow.difference) ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-actual-team" ]
+                                                            [ Components.TeamName.view
+                                                                { name = scoredRow.actualTeamName
+                                                                , class = "team-name"
+                                                                , primary = scoredRow.actualTeamPrimaryColor
+                                                                , secondary = scoredRow.actualTeamSecondaryColor
+                                                                }
+                                                            ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-actual-points" ]
+                                                            [ Html.text (String.fromInt scoredRow.actualPoints) ]
+                                                        ]
+                                            in
+                                            Html.li
+                                                []
+                                                [ Html.details
+                                                    []
+                                                    [ Html.summary
+                                                        []
+                                                        [ Html.span
+                                                            [ Attributes.class "user-name" ]
+                                                            [ Components.UserName.formulaOne
+                                                                leaderboardRow.userId
+                                                                leaderboardRow.userName
+                                                            ]
+                                                        , Html.span
+                                                            [ Attributes.class "total-score" ]
+                                                            [ Html.text (String.fromInt leaderboardRow.total) ]
+                                                        ]
+                                                    , Html.table
+                                                        []
+                                                        [ Html.tbody
+                                                            []
+                                                            (List.map viewScoredRow leaderboardRow.rows)
+                                                        ]
+                                                    ]
+                                                ]
+                                    in
+                                    Html.ul [] (List.map viewRow seasonLeaderboard.rows)
+
+                                seasonLeaderboardStatus : Helpers.Http.Status Types.FormulaOne.SeasonLeaderboard
+                                seasonLeaderboardStatus =
+                                    Dict.get season model.formulaOneSeasonLeaderboards
+                                        |> Maybe.withDefault Helpers.Http.Ready
                             in
                             [ Components.HttpStatus.view
-                                { viewFn = viewTeams
-                                , failedMessage = "Error obtaining season teams"
+                                { viewFn = viewLeaderboard
+                                , failedMessage = "Error obtaining the season leaderboard"
                                 }
-                                teamsStatus
+                                seasonLeaderboardStatus
                             ]
-
-                content : List (Html Msg)
-                content =
-                    deadlineView :: userContent
-            in
-            Components.Section.view { title = "Season Prediction", class = "formula-one-season-prediction" } content
-
-        seasonLeaderboardSection : Html Msg
-        seasonLeaderboardSection =
-            let
-                seasonLeaderboardStatus : Helpers.Http.Status Types.FormulaOne.SeasonLeaderboard
-                seasonLeaderboardStatus =
-                    Dict.get season model.formulaOneSeasonLeaderboards
-                        |> Maybe.withDefault Helpers.Http.Ready
-
-                content : List (Html Msg)
-                content =
-                    let
-                        viewLeaderboard : Types.FormulaOne.SeasonLeaderboard -> Html Msg
-                        viewLeaderboard seasonLeaderboard =
-                            let
-                                viewRow : Types.FormulaOne.SeasonLeaderboardRow -> Html Msg
-                                viewRow leaderboardRow =
-                                    let
-                                        viewScoredRow : Types.FormulaOne.SeasonPredictionRow -> Html Msg
-                                        viewScoredRow scoredRow =
-                                            Html.tr
-                                                []
-                                                [ Html.td
-                                                    [ Attributes.class "scored-row-position" ]
-                                                    [ Html.text (String.fromInt scoredRow.predictedPosition) ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-team" ]
-                                                    [ Components.TeamName.view
-                                                        { name = scoredRow.teamName
-                                                        , class = "team-name"
-                                                        , primary = scoredRow.teamPrimaryColor
-                                                        , secondary = scoredRow.teamSecondaryColor
-                                                        }
-                                                    ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-score" ]
-                                                    [ Html.text (String.fromInt scoredRow.difference) ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-actual-team" ]
-                                                    [ Components.TeamName.view
-                                                        { name = scoredRow.actualTeamName
-                                                        , class = "team-name"
-                                                        , primary = scoredRow.actualTeamPrimaryColor
-                                                        , secondary = scoredRow.actualTeamSecondaryColor
-                                                        }
-                                                    ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-actual-points" ]
-                                                    [ Html.text (String.fromInt scoredRow.actualPoints) ]
-                                                ]
-                                    in
-                                    Html.li
-                                        []
-                                        [ Html.details
-                                            []
-                                            [ Html.summary
-                                                []
-                                                [ Html.span
-                                                    [ Attributes.class "user-name" ]
-                                                    [ Components.UserName.formulaOne
-                                                        leaderboardRow.userId
-                                                        leaderboardRow.userName
-                                                    ]
-                                                , Html.span
-                                                    [ Attributes.class "total-score" ]
-                                                    [ Html.text (String.fromInt leaderboardRow.total) ]
-                                                ]
-                                            , Html.table
-                                                []
-                                                [ Html.tbody
-                                                    []
-                                                    (List.map viewScoredRow leaderboardRow.rows)
-                                                ]
-                                            ]
-                                        ]
-                            in
-                            Html.ul [] (List.map viewRow seasonLeaderboard.rows)
                     in
-                    [ Components.HttpStatus.view
-                        { viewFn = viewLeaderboard
-                        , failedMessage = "Error obtaining the season leaderboard"
-                        }
-                        seasonLeaderboardStatus
-                    ]
-            in
-            Components.Section.view { title = "Season Leaderboard", class = "formula-one-season-leaderboard" } content
+                    Components.Section.view { title = "Season Leaderboard", class = "formula-one-season-leaderboard" } content
     in
     [ Html.h1
         []
@@ -347,12 +348,7 @@ view model season =
     , Html.div
         [ Attributes.class "formula-one-leaderboards-container" ]
         [ leaderboardSection
-        , case showPredictionSection of
-            True ->
-                seasonPredictionSection
-
-            False ->
-                seasonLeaderboardSection
+        , seasonPredictionsSection
         , concordantLeaderboardSection
         ]
     , driverStandingsSection

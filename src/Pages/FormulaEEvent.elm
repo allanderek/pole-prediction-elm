@@ -8,7 +8,6 @@ import Components.Selector
 import Components.Time
 import Dict exposing (Dict)
 import Helpers.Attributes
-import Helpers.Classes
 import Helpers.Events
 import Helpers.Http
 import Helpers.List
@@ -29,10 +28,6 @@ import Types.User exposing (User)
 view : Model key -> Types.FormulaE.Season -> Types.FormulaE.Event -> List (Html Msg)
 view model season event =
     let
-        scoringVersion : Types.FormulaE.ScoringVersion
-        scoringVersion =
-            Types.FormulaE.scoringVersion season
-
         info : Html msg
         info =
             Components.Info.view
@@ -92,6 +87,10 @@ view model season event =
                         mUser =
                             Helpers.Http.toMaybe model.userStatus
 
+                        scoringVersion : Types.FormulaE.ScoringVersion
+                        scoringVersion =
+                            Types.FormulaE.scoringVersion season
+
                         viewMain : List Types.FormulaE.Entrant -> List (Html Msg)
                         viewMain entrants =
                             case Helpers.Time.isEarlier model.now event.startTime of
@@ -105,11 +104,6 @@ view model season event =
 
                                 False ->
                                     let
-                                        leaderboardStatus : Helpers.Http.Status Types.FormulaE.EventLeaderboard
-                                        leaderboardStatus =
-                                            Dict.get event.id model.formulaEEventLeaderboards
-                                                |> Maybe.withDefault Helpers.Http.Ready
-
                                         viewLeaderboard : Html Msg
                                         viewLeaderboard =
                                             let
@@ -288,6 +282,11 @@ view model season event =
                                                                 (List.map viewRow leaderboard.predictions)
                                                             ]
                                                         ]
+
+                                                leaderboardStatus : Helpers.Http.Status Types.FormulaE.EventLeaderboard
+                                                leaderboardStatus =
+                                                    Dict.get event.id model.formulaEEventLeaderboards
+                                                        |> Maybe.withDefault Helpers.Http.Ready
                                             in
                                             Components.Section.view
                                                 { title = "Session scores"
@@ -432,16 +431,6 @@ viewInput model eventId user scoringSystem kind entrants =
 
                 Types.FormulaE.V2 ->
                     let
-                        teams : List ( Types.FormulaE.TeamId, String )
-                        teams =
-                            let
-                                addTeam : Types.FormulaE.Entrant -> Dict Types.FormulaE.TeamId String -> Dict Types.FormulaE.TeamId String
-                                addTeam entrant dict =
-                                    Dict.insert entrant.teamId entrant.teamFullName dict
-                            in
-                            List.foldl addTeam Dict.empty entrants
-                                |> Dict.toList
-
                         options : List Components.Selector.Option
                         options =
                             let
@@ -450,6 +439,16 @@ viewInput model eventId user scoringSystem kind entrants =
                                     { name = teamName
                                     , value = String.fromInt teamId
                                     }
+
+                                teams : List ( Types.FormulaE.TeamId, String )
+                                teams =
+                                    let
+                                        addTeam : Types.FormulaE.Entrant -> Dict Types.FormulaE.TeamId String -> Dict Types.FormulaE.TeamId String
+                                        addTeam entrant dict =
+                                            Dict.insert entrant.teamId entrant.teamFullName dict
+                                    in
+                                    List.foldl addTeam Dict.empty entrants
+                                        |> Dict.toList
                             in
                             List.map makeOption teams
 

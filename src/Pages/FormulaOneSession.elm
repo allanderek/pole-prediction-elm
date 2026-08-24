@@ -140,317 +140,379 @@ view model session =
                 , mEvent = mEvent
                 , mSessionId = Just session.id
                 }
+    in
+    case session.cancelled of
+        True ->
+            let
+                explanation : Html Msg
+                explanation =
+                    Html.p
+                        [ Attributes.class "session-cancelled-notice" ]
+                        [ Html.text "This session has been cancelled." ]
+            in
+            [ navigationSection
+            , infoSection
+            , explanation
+            ]
 
-        viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
-        viewPredictionEntry entrants =
-            case Helpers.Http.toMaybe model.userStatus of
-                Just user ->
-                    -- TODO: Technically here we have to merge the entrants available with the current entry
-                    let
-                        currentPrediction : List Types.FormulaOne.Entrant
-                        currentPrediction =
-                            Model.getFormulaOneCurrentSessionPrediction model session.id
-                                |> Maybe.withDefault entrants
+        False ->
+            let
+                viewPredictionEntry : List Types.FormulaOne.Entrant -> Html Msg
+                viewPredictionEntry entrants =
+                    case Helpers.Http.toMaybe model.userStatus of
+                        Just user ->
+                            -- TODO: Technically here we have to merge the entrants available with the current entry
+                            let
+                                currentPrediction : List Types.FormulaOne.Entrant
+                                currentPrediction =
+                                    Model.getFormulaOneCurrentSessionPrediction model session.id
+                                        |> Maybe.withDefault entrants
 
-                        mPrevSession : Maybe Types.FormulaOne.Session
-                        mPrevSession =
-                            Dict.get session.eventId model.formulaOneSessions
-                                |> Maybe.withDefault Helpers.Http.Ready
-                                |> Helpers.Http.toMaybe
-                                |> Maybe.withDefault []
-                                |> List.sortBy (.startTime >> Time.posixToMillis)
-                                |> Helpers.List.findPrevNext (\s -> s.id == session.id)
-                                |> .prev
+                                mPrevSession : Maybe Types.FormulaOne.Session
+                                mPrevSession =
+                                    Dict.get session.eventId model.formulaOneSessions
+                                        |> Maybe.withDefault Helpers.Http.Ready
+                                        |> Helpers.Http.toMaybe
+                                        |> Maybe.withDefault []
+                                        |> List.sortBy (.startTime >> Time.posixToMillis)
+                                        |> Helpers.List.findPrevNext (\s -> s.id == session.id)
+                                        |> .prev
 
-                        copyButtons : Html Msg
-                        copyButtons =
-                            case mPrevSession of
-                                Nothing ->
-                                    Html.Extra.nothing
+                                copyButtons : Html Msg
+                                copyButtons =
+                                    case mPrevSession of
+                                        Nothing ->
+                                            Html.Extra.nothing
 
-                                Just prevSession ->
-                                    let
-                                        mPrevLeaderboard : Maybe Types.FormulaOne.SessionLeaderboard
-                                        mPrevLeaderboard =
-                                            Model.getFromStatusDict prevSession.id model.formulaOneSessionLeaderboards
-
-                                        reorderFromPrev : List Types.FormulaOne.Entrant -> List Types.FormulaOne.Entrant
-                                        reorderFromPrev prevOrder =
+                                        Just prevSession ->
                                             let
-                                                prevNumbers : List Int
-                                                prevNumbers =
-                                                    List.map .number prevOrder
+                                                mPrevLeaderboard : Maybe Types.FormulaOne.SessionLeaderboard
+                                                mPrevLeaderboard =
+                                                    Model.getFromStatusDict prevSession.id model.formulaOneSessionLeaderboards
 
-                                                inPrevOrder : List Types.FormulaOne.Entrant
-                                                inPrevOrder =
-                                                    List.filterMap (\num -> Helpers.List.findWith num .number entrants) prevNumbers
+                                                reorderFromPrev : List Types.FormulaOne.Entrant -> List Types.FormulaOne.Entrant
+                                                reorderFromPrev prevOrder =
+                                                    let
+                                                        prevNumbers : List Int
+                                                        prevNumbers =
+                                                            List.map .number prevOrder
 
-                                                remaining : List Types.FormulaOne.Entrant
-                                                remaining =
-                                                    List.filter (\e -> not (List.member e.number prevNumbers)) entrants
-                                            in
-                                            inPrevOrder ++ remaining
+                                                        inPrevOrder : List Types.FormulaOne.Entrant
+                                                        inPrevOrder =
+                                                            List.filterMap (\num -> Helpers.List.findWith num .number entrants) prevNumbers
 
-                                        viewCopyButton : String -> Maybe (List Types.FormulaOne.Entrant) -> Html Msg
-                                        viewCopyButton label mPrevEntrants =
-                                            case mPrevEntrants of
-                                                Nothing ->
-                                                    Html.button
-                                                        [ Attributes.type_ "button"
-                                                        , Attributes.disabled True
-                                                        , Attributes.class "copy-from-previous-button"
-                                                        ]
-                                                        [ Html.text label ]
+                                                        remaining : List Types.FormulaOne.Entrant
+                                                        remaining =
+                                                            List.filter (\e -> not (List.member e.number prevNumbers)) entrants
+                                                    in
+                                                    inPrevOrder ++ remaining
 
-                                                Just prevEntrants ->
-                                                    Html.button
-                                                        [ Attributes.type_ "button"
-                                                        , Attributes.class "copy-from-previous-button"
-                                                        , Events.onClick
-                                                            (Msg.SetFormulaOneSessionPrediction session.id
-                                                                (reorderFromPrev prevEntrants)
-                                                            )
-                                                        ]
-                                                        [ Html.text label ]
+                                                viewCopyButton : String -> Maybe (List Types.FormulaOne.Entrant) -> Html Msg
+                                                viewCopyButton label mPrevEntrants =
+                                                    case mPrevEntrants of
+                                                        Nothing ->
+                                                            Html.button
+                                                                [ Attributes.type_ "button"
+                                                                , Attributes.disabled True
+                                                                , Attributes.class "copy-from-previous-button"
+                                                                ]
+                                                                [ Html.text label ]
 
-                                        mPrevPrediction : Maybe (List Types.FormulaOne.Entrant)
-                                        mPrevPrediction =
-                                            case Dict.get prevSession.id model.formulaOneSessionPredictionEntries of
-                                                Just entries ->
-                                                    Just entries
+                                                        Just prevEntrants ->
+                                                            Html.button
+                                                                [ Attributes.type_ "button"
+                                                                , Attributes.class "copy-from-previous-button"
+                                                                , Events.onClick
+                                                                    (Msg.SetFormulaOneSessionPrediction session.id
+                                                                        (reorderFromPrev prevEntrants)
+                                                                    )
+                                                                ]
+                                                                [ Html.text label ]
 
-                                                Nothing ->
+                                                mPrevPrediction : Maybe (List Types.FormulaOne.Entrant)
+                                                mPrevPrediction =
+                                                    case Dict.get prevSession.id model.formulaOneSessionPredictionEntries of
+                                                        Just entries ->
+                                                            Just entries
+
+                                                        Nothing ->
+                                                            mPrevLeaderboard
+                                                                |> Maybe.andThen
+                                                                    (\lb ->
+                                                                        Helpers.List.findWith user.id .userId lb.predictions
+                                                                            |> Maybe.map
+                                                                                (.rows
+                                                                                    >> List.sortBy .predictedPosition
+                                                                                    >> List.map .entrant
+                                                                                )
+                                                                    )
+
+                                                mPrevResults : Maybe (List Types.FormulaOne.Entrant)
+                                                mPrevResults =
                                                     mPrevLeaderboard
                                                         |> Maybe.andThen
                                                             (\lb ->
-                                                                Helpers.List.findWith user.id .userId lb.predictions
-                                                                    |> Maybe.map
-                                                                        (.rows
-                                                                            >> List.sortBy .predictedPosition
-                                                                            >> List.map .entrant
-                                                                        )
+                                                                case lb.results of
+                                                                    [] ->
+                                                                        Nothing
+
+                                                                    results ->
+                                                                        Just results
                                                             )
-
-                                        mPrevResults : Maybe (List Types.FormulaOne.Entrant)
-                                        mPrevResults =
-                                            mPrevLeaderboard
-                                                |> Maybe.andThen
-                                                    (\lb ->
-                                                        case lb.results of
-                                                            [] ->
-                                                                Nothing
-
-                                                            results ->
-                                                                Just results
-                                                    )
-                                    in
-                                    Html.div
-                                        [ Attributes.class "copy-from-previous-buttons" ]
-                                        [ viewCopyButton "My previous prediction" mPrevPrediction
-                                        , viewCopyButton "Previous results" mPrevResults
-                                        ]
-                    in
-                    Components.Section.view
-                        { title = "Prediction entry"
-                        , class = "formula-one-session-prediction-entry"
-                        }
-                        [ copyButtons
-                        , Components.FormulaOneSessionEntry.view
-                            { kind = Components.FormulaOneSessionEntry.Prediction
-                            , user = user
-                            , entrants = currentPrediction
-                            , reorderMessage = Msg.ReorderFormulaOneSessionPredictionEntry session.id
-                            , submitMessage =
-                                Msg.SubmitFormulaOneSessionEntry session.id
-                                    (List.map .id currentPrediction)
-                            }
-                        ]
-
-                Nothing ->
-                    Components.Login.youMustBeLoggedInTo "make a prediction"
-
-        viewIneditableResult : Maybe (List Types.FormulaOne.Entrant) -> Html Msg
-        viewIneditableResult mCurrentResults =
-            Components.Section.view
-                { title = "Results"
-                , class = "formula-one-session-results"
-                }
-                [ case mCurrentResults of
-                    Nothing ->
-                        Html.text "Waiting on results"
-
-                    Just currentResults ->
-                        let
-                            viewRow : Int -> Types.FormulaOne.Entrant -> Html Msg
-                            viewRow index entrant =
-                                let
-                                    position : Int
-                                    position =
-                                        index + 1
-
-                                    driver : Html msg
-                                    driver =
-                                        Components.FormulaOneSessionEntry.viewEntrant
-                                            { showPosition = False, withHandle = False }
-                                            entrant
-                                in
-                                Html.tr
-                                    []
-                                    [ String.fromInt position
-                                        |> Html.text
-                                        |> Helpers.Table.cell
-                                    , Helpers.Table.cell driver
-                                    ]
-                        in
-                        Html.table
-                            [ Attributes.class "formula-one-session-results-table" ]
-                            [ Html.thead
-                                []
-                                [ Html.tr
-                                    []
-                                    [ Html.th [] [ Html.text "Position" ]
-                                    , Html.th [] [ Html.text "Driver" ]
-                                    ]
-                                ]
-                            , Html.tbody
-                                []
-                                (List.indexedMap viewRow currentResults)
-                            ]
-                ]
-
-        viewResultEntry : List Types.FormulaOne.Entrant -> Html Msg
-        viewResultEntry entrants =
-            let
-                mCurrentResults : Maybe (List Types.FormulaOne.Entrant)
-                mCurrentResults =
-                    Model.getFormulaOneCurrentSessionResults model session.id
-            in
-            case Helpers.Http.toMaybe model.userStatus of
-                Nothing ->
-                    viewIneditableResult mCurrentResults
-
-                Just user ->
-                    case user.isAdmin of
-                        False ->
-                            viewIneditableResult mCurrentResults
-
-                        True ->
-                            let
-                                currentResults : List Types.FormulaOne.Entrant
-                                currentResults =
-                                    mCurrentResults
-                                        |> Maybe.withDefault entrants
+                                            in
+                                            Html.div
+                                                [ Attributes.class "copy-from-previous-buttons" ]
+                                                [ viewCopyButton "My previous prediction" mPrevPrediction
+                                                , viewCopyButton "Previous results" mPrevResults
+                                                ]
                             in
                             Components.Section.view
-                                { title = "Results entry"
-                                , class = "formula-one-session-results-entry"
+                                { title = "Prediction entry"
+                                , class = "formula-one-session-prediction-entry"
                                 }
-                                [ Components.FormulaOneSessionEntry.view
-                                    { kind = Components.FormulaOneSessionEntry.Result
+                                [ copyButtons
+                                , Components.FormulaOneSessionEntry.view
+                                    { kind = Components.FormulaOneSessionEntry.Prediction
                                     , user = user
-                                    , entrants = currentResults
-                                    , reorderMessage = Msg.ReorderFormulaOneSessionResultEntry session.id
+                                    , entrants = currentPrediction
+                                    , reorderMessage = Msg.ReorderFormulaOneSessionPredictionEntry session.id
                                     , submitMessage =
-                                        Msg.SubmitFormulaOneSessionResult session.id
-                                            (List.map .id currentResults)
+                                        Msg.SubmitFormulaOneSessionEntry session.id
+                                            (List.map .id currentPrediction)
                                     }
                                 ]
 
-        entrySection : Html Msg
-        entrySection =
-            let
-                entrantsStatus : Helpers.Http.Status (List Types.FormulaOne.Entrant)
-                entrantsStatus =
-                    Dict.get session.id model.formulaOneEntrants
-                        |> Maybe.withDefault Helpers.Http.Ready
+                        Nothing ->
+                            Components.Login.youMustBeLoggedInTo "make a prediction"
 
-                withEntrants : List Types.FormulaOne.Entrant -> Html Msg
-                withEntrants entrants =
-                    case Helpers.Time.isEarlier model.now session.startTime of
-                        True ->
-                            viewPredictionEntry entrants
+                viewIneditableResult : Maybe (List Types.FormulaOne.Entrant) -> Html Msg
+                viewIneditableResult mCurrentResults =
+                    Components.Section.view
+                        { title = "Results"
+                        , class = "formula-one-session-results"
+                        }
+                        [ case mCurrentResults of
+                            Nothing ->
+                                Html.text "Waiting on results"
 
-                        False ->
-                            viewResultEntry entrants
-            in
-            Components.HttpStatus.view
-                { viewFn = withEntrants
-                , failedMessage = "Error obtaining the details of the session entrants"
-                }
-                entrantsStatus
+                            Just currentResults ->
+                                let
+                                    viewRow : Int -> Types.FormulaOne.Entrant -> Html Msg
+                                    viewRow index entrant =
+                                        let
+                                            position : Int
+                                            position =
+                                                index + 1
 
-        leaderboardSection : Html Msg
-        leaderboardSection =
-            case Helpers.Time.isEarlier model.now session.startTime of
-                True ->
-                    Html.Extra.nothing
+                                            driver : Html msg
+                                            driver =
+                                                Components.FormulaOneSessionEntry.viewEntrant
+                                                    { showPosition = False, withHandle = False }
+                                                    entrant
+                                        in
+                                        Html.tr
+                                            []
+                                            [ String.fromInt position
+                                                |> Html.text
+                                                |> Helpers.Table.cell
+                                            , Helpers.Table.cell driver
+                                            ]
+                                in
+                                Html.table
+                                    [ Attributes.class "formula-one-session-results-table" ]
+                                    [ Html.thead
+                                        []
+                                        [ Html.tr
+                                            []
+                                            [ Html.th [] [ Html.text "Position" ]
+                                            , Html.th [] [ Html.text "Driver" ]
+                                            ]
+                                        ]
+                                    , Html.tbody
+                                        []
+                                        (List.indexedMap viewRow currentResults)
+                                    ]
+                        ]
 
-                False ->
+                viewResultEntry : List Types.FormulaOne.Entrant -> Html Msg
+                viewResultEntry entrants =
                     let
-                        leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
-                        leaderboardStatus =
-                            Dict.get session.id model.formulaOneSessionLeaderboards
+                        mCurrentResults : Maybe (List Types.FormulaOne.Entrant)
+                        mCurrentResults =
+                            Model.getFormulaOneCurrentSessionResults model session.id
+                    in
+                    case Helpers.Http.toMaybe model.userStatus of
+                        Nothing ->
+                            viewIneditableResult mCurrentResults
+
+                        Just user ->
+                            case user.isAdmin of
+                                False ->
+                                    viewIneditableResult mCurrentResults
+
+                                True ->
+                                    let
+                                        currentResults : List Types.FormulaOne.Entrant
+                                        currentResults =
+                                            mCurrentResults
+                                                |> Maybe.withDefault entrants
+                                    in
+                                    Components.Section.view
+                                        { title = "Results entry"
+                                        , class = "formula-one-session-results-entry"
+                                        }
+                                        [ Components.FormulaOneSessionEntry.view
+                                            { kind = Components.FormulaOneSessionEntry.Result
+                                            , user = user
+                                            , entrants = currentResults
+                                            , reorderMessage = Msg.ReorderFormulaOneSessionResultEntry session.id
+                                            , submitMessage =
+                                                Msg.SubmitFormulaOneSessionResult session.id
+                                                    (List.map .id currentResults)
+                                            }
+                                        ]
+
+                entrySection : Html Msg
+                entrySection =
+                    let
+                        entrantsStatus : Helpers.Http.Status (List Types.FormulaOne.Entrant)
+                        entrantsStatus =
+                            Dict.get session.id model.formulaOneEntrants
                                 |> Maybe.withDefault Helpers.Http.Ready
 
-                        withLeaderboard : Types.FormulaOne.SessionLeaderboard -> Html Msg
-                        withLeaderboard leaderboard =
+                        withEntrants : List Types.FormulaOne.Entrant -> Html Msg
+                        withEntrants entrants =
+                            case Helpers.Time.isEarlier model.now session.startTime of
+                                True ->
+                                    viewPredictionEntry entrants
+
+                                False ->
+                                    viewResultEntry entrants
+                    in
+                    Components.HttpStatus.view
+                        { viewFn = withEntrants
+                        , failedMessage = "Error obtaining the details of the session entrants"
+                        }
+                        entrantsStatus
+
+                leaderboardSection : Html Msg
+                leaderboardSection =
+                    case Helpers.Time.isEarlier model.now session.startTime of
+                        True ->
+                            Html.Extra.nothing
+
+                        False ->
                             let
-                                viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
-                                viewRow leaderboardRow =
+                                leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
+                                leaderboardStatus =
+                                    Dict.get session.id model.formulaOneSessionLeaderboards
+                                        |> Maybe.withDefault Helpers.Http.Ready
+
+                                withLeaderboard : Types.FormulaOne.SessionLeaderboard -> Html Msg
+                                withLeaderboard leaderboard =
                                     let
-                                        viewScoredRow : Types.FormulaOne.ScoredPredictionRow -> Html msg
-                                        viewScoredRow scoredRow =
+                                        viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
+                                        viewRow leaderboardRow =
                                             let
-                                                pointsClass : String
-                                                pointsClass =
-                                                    case scoredRow.score of
-                                                        0 ->
-                                                            "scored-row-zero"
+                                                viewScoredRow : Types.FormulaOne.ScoredPredictionRow -> Html msg
+                                                viewScoredRow scoredRow =
+                                                    let
+                                                        pointsClass : String
+                                                        pointsClass =
+                                                            case scoredRow.score of
+                                                                0 ->
+                                                                    "scored-row-zero"
 
-                                                        4 ->
-                                                            "scored-row-maximum"
+                                                                4 ->
+                                                                    "scored-row-maximum"
 
-                                                        _ ->
-                                                            "scored-row-points"
+                                                                _ ->
+                                                                    "scored-row-points"
 
-                                                actualPosition : String
-                                                actualPosition =
-                                                    case scoredRow.actualPosition of
-                                                        Just position ->
-                                                            String.fromInt position
+                                                        actualPosition : String
+                                                        actualPosition =
+                                                            case scoredRow.actualPosition of
+                                                                Just position ->
+                                                                    String.fromInt position
 
-                                                        Nothing ->
-                                                            "-"
+                                                                Nothing ->
+                                                                    "-"
+                                                    in
+                                                    Html.tr
+                                                        [ Attributes.class "scored-row"
+                                                        , Attributes.class pointsClass
+                                                        ]
+                                                        [ Html.td
+                                                            [ Attributes.class "scored-row-position" ]
+                                                            [ Html.text (String.fromInt scoredRow.predictedPosition) ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-driver" ]
+                                                            [ Html.text scoredRow.entrant.driver ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-actual-position" ]
+                                                            [ Html.text actualPosition ]
+                                                        , Html.td
+                                                            [ Attributes.class "scored-row-score" ]
+                                                            [ Html.text (String.fromInt scoredRow.score) ]
+                                                        ]
+
+                                                scoredRows : List (Html msg)
+                                                scoredRows =
+                                                    leaderboardRow.rows
+                                                        |> List.take 10
+                                                        |> List.map viewScoredRow
                                             in
-                                            Html.tr
-                                                [ Attributes.class "scored-row"
-                                                , Attributes.class pointsClass
+                                            Html.li
+                                                []
+                                                [ Html.details
+                                                    []
+                                                    [ Html.summary
+                                                        []
+                                                        [ Html.span
+                                                            [ Attributes.class "user-name" ]
+                                                            [ Components.UserName.formulaOne
+                                                                leaderboardRow.userId
+                                                                leaderboardRow.userName
+                                                            ]
+                                                        , Html.span
+                                                            [ Attributes.class "total-score" ]
+                                                            [ Html.text (String.fromInt leaderboardRow.total) ]
+                                                        ]
+                                                    , Html.table [] scoredRows
+                                                    ]
                                                 ]
-                                                [ Html.td
-                                                    [ Attributes.class "scored-row-position" ]
-                                                    [ Html.text (String.fromInt scoredRow.predictedPosition) ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-driver" ]
-                                                    [ Html.text scoredRow.entrant.driver ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-actual-position" ]
-                                                    [ Html.text actualPosition ]
-                                                , Html.td
-                                                    [ Attributes.class "scored-row-score" ]
-                                                    [ Html.text (String.fromInt scoredRow.score) ]
-                                                ]
-
-                                        scoredRows : List (Html msg)
-                                        scoredRows =
-                                            leaderboardRow.rows
-                                                |> List.take 10
-                                                |> List.map viewScoredRow
                                     in
-                                    Html.li
-                                        []
-                                        [ Html.details
-                                            []
-                                            [ Html.summary
+                                    Components.Section.view
+                                        { title = "Leaderboard"
+                                        , class = "formula-one-session-leaderboard"
+                                        }
+                                        [ Html.ul [] (List.map viewRow leaderboard.predictions) ]
+                            in
+                            Components.HttpStatus.view
+                                { viewFn = withLeaderboard
+                                , failedMessage = "Error obtaining the session leaderboard"
+                                }
+                                leaderboardStatus
+
+                concordantLeaderboardSection : Html Msg
+                concordantLeaderboardSection =
+                    case Helpers.Time.isEarlier model.now session.startTime of
+                        True ->
+                            Html.Extra.nothing
+
+                        False ->
+                            let
+                                leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
+                                leaderboardStatus =
+                                    Dict.get session.id model.formulaOneSessionLeaderboards
+                                        |> Maybe.withDefault Helpers.Http.Ready
+
+                                withLeaderboard : Types.FormulaOne.SessionLeaderboard -> Html Msg
+                                withLeaderboard leaderboard =
+                                    let
+                                        viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
+                                        viewRow leaderboardRow =
+                                            Html.li
                                                 []
                                                 [ Html.span
                                                     [ Attributes.class "user-name" ]
@@ -460,86 +522,31 @@ view model session =
                                                     ]
                                                 , Html.span
                                                     [ Attributes.class "total-score" ]
-                                                    [ Html.text (String.fromInt leaderboardRow.total) ]
+                                                    [ Html.text
+                                                        (String.fromInt leaderboardRow.concordantScore ++ "/45")
+                                                    ]
                                                 ]
-                                            , Html.table [] scoredRows
-                                            ]
-                                        ]
+
+                                        sortedRows : List Types.FormulaOne.SessionLeaderboardRow
+                                        sortedRows =
+                                            List.sortBy .concordantScore leaderboard.predictions
+                                                |> List.reverse
+                                    in
+                                    Components.Section.view
+                                        { title = "Concordant leaderboard (experimental)"
+                                        , class = "formula-one-session-concordant-leaderboard"
+                                        }
+                                        [ Html.ul [] (List.map viewRow sortedRows) ]
                             in
-                            Components.Section.view
-                                { title = "Leaderboard"
-                                , class = "formula-one-session-leaderboard"
+                            Components.HttpStatus.view
+                                { viewFn = withLeaderboard
+                                , failedMessage = "Error obtaining the session leaderboard"
                                 }
-                                [ Html.ul [] (List.map viewRow leaderboard.predictions) ]
-                    in
-                    Components.HttpStatus.view
-                        { viewFn = withLeaderboard
-                        , failedMessage = "Error obtaining the session leaderboard"
-                        }
-                        leaderboardStatus
-
-        concordantLeaderboardSection : Html Msg
-        concordantLeaderboardSection =
-            case Helpers.Time.isEarlier model.now session.startTime of
-                True ->
-                    Html.Extra.nothing
-
-                False ->
-                    let
-                        leaderboardStatus : Helpers.Http.Status Types.FormulaOne.SessionLeaderboard
-                        leaderboardStatus =
-                            Dict.get session.id model.formulaOneSessionLeaderboards
-                                |> Maybe.withDefault Helpers.Http.Ready
-
-                        withLeaderboard : Types.FormulaOne.SessionLeaderboard -> Html Msg
-                        withLeaderboard leaderboard =
-                            let
-                                viewRow : Types.FormulaOne.SessionLeaderboardRow -> Html Msg
-                                viewRow leaderboardRow =
-                                    Html.li
-                                        []
-                                        [ Html.span
-                                            [ Attributes.class "user-name" ]
-                                            [ Components.UserName.formulaOne
-                                                leaderboardRow.userId
-                                                leaderboardRow.userName
-                                            ]
-                                        , Html.span
-                                            [ Attributes.class "total-score" ]
-                                            [ Html.text
-                                                (String.fromInt leaderboardRow.concordantScore ++ "/45")
-                                            ]
-                                        ]
-
-                                sortedRows : List Types.FormulaOne.SessionLeaderboardRow
-                                sortedRows =
-                                    List.sortBy .concordantScore leaderboard.predictions
-                                        |> List.reverse
-                            in
-                            Components.Section.view
-                                { title = "Concordant leaderboard (experimental)"
-                                , class = "formula-one-session-concordant-leaderboard"
-                                }
-                                [ Html.ul [] (List.map viewRow sortedRows) ]
-                    in
-                    Components.HttpStatus.view
-                        { viewFn = withLeaderboard
-                        , failedMessage = "Error obtaining the session leaderboard"
-                        }
-                        leaderboardStatus
-    in
-    if session.cancelled then
-        [ navigationSection
-        , infoSection
-        , Html.p
-            [ Attributes.class "session-cancelled-notice" ]
-            [ Html.text "This session has been cancelled." ]
-        ]
-
-    else
-        [ navigationSection
-        , infoSection
-        , entrySection
-        , leaderboardSection
-        , concordantLeaderboardSection
-        ]
+                                leaderboardStatus
+            in
+            [ navigationSection
+            , infoSection
+            , entrySection
+            , leaderboardSection
+            , concordantLeaderboardSection
+            ]

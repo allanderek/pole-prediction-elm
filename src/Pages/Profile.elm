@@ -6,7 +6,6 @@ import Helpers.Http
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events
-import Maybe.Extra
 import Model exposing (Model)
 import Msg exposing (Msg)
 import Types.Profile
