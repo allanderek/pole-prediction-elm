@@ -1,4 +1,7 @@
-module Components.SeasonNav exposing (view)
+module Components.SeasonNav exposing
+    ( Config
+    , view
+    )
 
 import Helpers.Classes
 import Html exposing (Html)
@@ -20,16 +23,6 @@ view config =
     let
         viewLink : season -> Html msg
         viewLink linkSeason =
-            let
-                seasonArg : Maybe season
-                seasonArg =
-                    case linkSeason == config.currentSeason of
-                        True ->
-                            Nothing
-
-                        False ->
-                            Just linkSeason
-            in
             Html.li
                 []
                 [ Html.a

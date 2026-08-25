@@ -1,6 +1,8 @@
-module Components.Leaderboard exposing (view)
+module Components.Leaderboard exposing
+    ( Config
+    , view
+    )
 
-import Dict
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import List.Extra

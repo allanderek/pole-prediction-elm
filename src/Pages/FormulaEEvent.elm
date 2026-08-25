@@ -6,6 +6,7 @@ import Components.Login
 import Components.Section
 import Components.Selector
 import Components.Time
+import Components.UserName
 import Dict exposing (Dict)
 import Helpers.Attributes
 import Helpers.Events
@@ -232,7 +233,9 @@ view model season event =
                                                             in
                                                             Html.tr
                                                                 []
-                                                                [ Helpers.Table.stringCell scoredPrediction.userName
+                                                                [ Components.UserName.formulaE
+                                                                    scoredPrediction.userId
+                                                                    scoredPrediction.userName
                                                                 , Helpers.Table.intCell scoredPrediction.score
                                                                 , entrantCell False .pole
                                                                 , entrantCell False .fam

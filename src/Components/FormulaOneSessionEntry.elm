@@ -1,5 +1,6 @@
 module Components.FormulaOneSessionEntry exposing
-    ( Kind(..)
+    ( Config
+    , Kind(..)
     , view
     , viewEntrant
     )
@@ -62,16 +63,6 @@ view config =
 
 viewEntrant : { showPosition : Bool, withHandle : Bool } -> Types.FormulaOne.Entrant -> Html msg
 viewEntrant config entrant =
-    let
-        teamColor : String
-        teamColor =
-            case entrant.teamPrimaryColor == "#FFFFFF" of
-                False ->
-                    entrant.teamPrimaryColor
-
-                True ->
-                    entrant.teamSecondaryColor
-    in
     Html.div
         [ Html.Attributes.attribute "data-id" (String.fromInt entrant.id)
         , Html.Attributes.class "entrant"

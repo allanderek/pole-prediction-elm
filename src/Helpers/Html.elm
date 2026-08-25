@@ -1,7 +1,6 @@
 module Helpers.Html exposing
     ( int
     , nbsp
-    , wrapped
     )
 
 import Html exposing (Html)
@@ -16,8 +15,3 @@ int i =
 nbsp : Html msg
 nbsp =
     Html.text "\u{00A0}"
-
-
-wrapped : (List (Html.Attribute msg) -> List (Html msg) -> Html msg) -> Html msg -> Html msg
-wrapped nodeFun content =
-    nodeFun [] [ content ]

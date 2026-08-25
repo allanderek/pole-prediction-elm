@@ -3,9 +3,6 @@ module Components.Selector exposing
     , Group
     , Option
     , flatNoGroups
-    , hasNoOptions
-    , nameAsValue
-    , pleaseSelectValue
     , view
     )
 
@@ -44,13 +41,6 @@ type alias Group =
 type alias Option =
     { name : String
     , value : String
-    }
-
-
-nameAsValue : String -> Option
-nameAsValue name =
-    { name = name
-    , value = name
     }
 
 

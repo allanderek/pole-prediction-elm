@@ -2,8 +2,6 @@ module Helpers.Decode exposing
     ( emptyString
     , intAsBool
     , nullableInt
-    , nullableString
-    , stringAsInt
     )
 
 import Json.Decode as Decode exposing (Decoder)
@@ -20,11 +18,6 @@ nullableAs defaultValue decoder =
 nullableInt : Decoder Int
 nullableInt =
     nullableAs 0 Decode.int
-
-
-nullableString : Decoder String
-nullableString =
-    nullableAs "" Decode.string
 
 
 emptyString : a -> Decoder a
@@ -52,20 +45,3 @@ intAsBool =
     in
     Decode.int
         |> Decode.map asBool
-
-
-stringAsInt : Decoder Int
-stringAsInt =
-    let
-        interpret : String -> Decoder Int
-        interpret string =
-            case String.toInt string of
-                Just n ->
-                    Decode.succeed n
-
-                Nothing ->
-                    String.append "Expected an integer, but got: " string
-                        |> Decode.fail
-    in
-    Decode.string
-        |> Decode.andThen interpret

@@ -1,4 +1,7 @@
-module Components.TeamName exposing (view)
+module Components.TeamName exposing
+    ( Config
+    , view
+    )
 
 import Html exposing (Html)
 import Html.Attributes

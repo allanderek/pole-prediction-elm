@@ -1,5 +1,6 @@
 module Components.HttpStatus exposing
-    ( view
+    ( Config
+    , view
     , viewList
     )
 
