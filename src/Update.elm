@@ -137,8 +137,18 @@ re-ask each tick until the server catches up. If ours runs behind, the entry but
 linger for a moment and a submit in that window is refused by the server, which we
 already report.
 
-Only while actually looking at that competition, so this never polls in the background.
-An in flight fetch is not Succeeded, so a slow response cannot pile up requests.
+A request that failed counts as not having one, so a leaderboard that could not be
+fetched is asked for again on the next tick. Without that, one unlucky request left the
+results reading 'Error obtaining the leaderboard' for as long as the page stayed open,
+which is the very situation a retry is for.
+
+Only while actually looking at that competition, so this never polls in the background,
+and it stops as soon as the server agrees entry has closed. While a request is in flight
+we do not send another, so a slow response cannot pile them up.
+
+Note this is about not having the data. Data we have but which the server has since
+changed, such as a current probability being updated, is a separate question and is not
+handled here.
 
 -}
 overUnderLeaderboardToRefetch : Model key -> Maybe Types.OverUnder.CompetitionId
@@ -154,16 +164,41 @@ overUnderLeaderboardToRefetch model =
                         |> Maybe.map (Types.OverUnder.deadlinePassed model.now)
                         |> Maybe.withDefault False
 
-                serverSaidOpen : Bool
-                serverSaidOpen =
+                -- Whether we still need to ask for the leaderboard. Every case is
+                -- written out rather than gathered under a catch-all, both because
+                -- each one wants saying and so that adding a state to
+                -- Helpers.Http.Status makes the compiler ask about this decision
+                -- rather than quietly folding it in with the others.
+                needLeaderboard : Bool
+                needLeaderboard =
                     case Dict.get competitionId model.overUnderLeaderboards of
-                        Just (Helpers.Http.Succeeded leaderboard) ->
-                            leaderboard.serverDeadlinePassed |> not
+                        Nothing ->
+                            -- Never asked. initRoute does ask on the way in, so this
+                            -- should not arise, but if it ever does then asking is
+                            -- the right answer.
+                            True
 
-                        _ ->
+                        Just Helpers.Http.Ready ->
+                            -- Same as never having asked.
+                            True
+
+                        Just Helpers.Http.Inflight ->
+                            -- One is already on its way. Asking again every tick
+                            -- would pile them up.
                             False
+
+                        Just (Helpers.Http.Failed _) ->
+                            -- The case the retry exists for. Giving up here left the
+                            -- results reading 'Error obtaining the leaderboard' for
+                            -- as long as the page stayed open.
+                            True
+
+                        Just (Helpers.Http.Succeeded leaderboard) ->
+                            -- We have one, but it is the empty pre-deadline
+                            -- leaderboard if the server still thought entry was open.
+                            not leaderboard.serverDeadlinePassed
             in
-            case weSayClosed && serverSaidOpen of
+            case weSayClosed && needLeaderboard of
                 True ->
                     Just competitionId
 

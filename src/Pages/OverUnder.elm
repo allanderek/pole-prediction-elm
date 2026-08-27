@@ -89,8 +89,7 @@ viewCompetitionDetail model competition =
     let
         open : Bool
         open =
-            Types.OverUnder.deadlinePassed model.now competition
-                |> not
+            not (Types.OverUnder.deadlinePassed model.now competition)
 
         questionsSection : Html Msg
         questionsSection =
