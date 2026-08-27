@@ -15,9 +15,9 @@ module Types.OverUnder exposing
     , deadlinePassed
     , encodeAnswers
     , leaderboardDecoder
+    , numberQuestions
     , outcomeClass
     , outcomeLabel
-    , numberQuestions
     , overProbability
     , underProbability
     )
@@ -60,7 +60,6 @@ type alias Question =
     , text : String
     , currentProbability : Maybe Int
     , outcome : Maybe Bool
-    , resolvedAt : Maybe Time.Posix
     , voided : Bool
     , answer : Maybe Int
     }
@@ -83,7 +82,6 @@ questionDecoder =
         |> Pipeline.required "text" Decode.string
         |> Pipeline.required "current_probability" (Decode.nullable Decode.int)
         |> Pipeline.required "outcome" (Decode.nullable Helpers.Decode.intAsBool)
-        |> Pipeline.required "resolved_at" (Decode.nullable Helpers.Rfc3339.decoder)
         |> Pipeline.required "voided" Decode.bool
         |> Pipeline.required "answer" (Decode.nullable Decode.int)
 
@@ -145,7 +143,7 @@ does not say what the player actually answered, and where a question has no reco
 the target defaults to 50, so both answers score exactly 50 and the score cannot say
 anything at all. Each cell therefore carries the answer as well.
 
-`serverDeadlinePassed` is what the *server* believed when it built this, which is not
+`serverDeadlinePassed` is what the _server_ believed when it built this, which is not
 always what our own clock says. The page uses our clock to decide what to draw, and this
 to decide whether the answers it is holding are the real, post-deadline ones.
 
@@ -254,7 +252,7 @@ outcomeClass outcome =
 
 
 {-| Our current view of an unresolved question. The stored number is the probability of
-the *over* case, so showing it bare would leave the reader guessing which way it points.
+the _over_ case, so showing it bare would leave the reader guessing which way it points.
 -}
 currentProbabilityLabel : Int -> String
 currentProbabilityLabel probability =
