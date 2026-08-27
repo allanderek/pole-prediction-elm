@@ -236,6 +236,7 @@ view model season event =
                                                                 [ Components.UserName.formulaE
                                                                     scoredPrediction.userId
                                                                     scoredPrediction.userName
+                                                                    |> Helpers.Table.cell
                                                                 , Helpers.Table.intCell scoredPrediction.score
                                                                 , entrantCell False .pole
                                                                 , entrantCell False .fam
