@@ -98,7 +98,7 @@ view leaderboard =
             [ Attributes.class "leaderboard"
             , Attributes.class "over-under-leaderboard"
             ]
-                [ Html.thead
+            [ Html.thead
                 []
                 [ Html.tr
                     []

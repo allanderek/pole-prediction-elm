@@ -11,6 +11,7 @@ $(ELMPRODAPP): $(shell fd . -e elm src/)
 	elm make src/Main.elm --optimize --output=$(ELMPRODAPP) 
 
 review:
+	elm-format --validate src/ review/src/
 	elm-review
 
 watch-frontend:
