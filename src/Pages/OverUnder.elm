@@ -174,17 +174,48 @@ viewEntryControls model competition =
                 answers =
                     currentAnswers model competition
 
+                unsaved : Int
+                unsaved =
+                    Model.unsavedOverUnderAnswers model competition
+                        |> List.length
+
                 inflight : Bool
                 inflight =
                     Dict.get competition.id model.overUnderAnswerSubmitStatus
                         |> Maybe.withDefault Helpers.Http.Ready
                         |> Helpers.Http.isInflight
 
+                -- Nothing changed means nothing to send. Before, the button stayed
+                -- live once anything at all was answered, so it invited you to submit
+                -- the same answers over again with no way to tell whether your last
+                -- attempt had worked.
                 disabled : Bool
                 disabled =
-                    inflight || List.isEmpty answers
+                    inflight || unsaved == 0
+
+                unsavedNote : Html Msg
+                unsavedNote =
+                    case unsaved of
+                        0 ->
+                            Html.span
+                                [ Attributes.class "over-under-all-saved" ]
+                                [ Html.text "All your answers are saved." ]
+
+                        1 ->
+                            Html.span
+                                [ Attributes.class "over-under-unsaved-note" ]
+                                [ Html.text "1 unsaved change." ]
+
+                        _ ->
+                            Html.span
+                                [ Attributes.class "over-under-unsaved-note" ]
+                                [ String.fromInt unsaved
+                                    |> (\n -> String.concat [ n, " unsaved changes." ])
+                                    |> Html.text
+                                ]
             in
-            [ Html.button
+            [ unsavedNote
+            , Html.button
                 [ Attributes.class "over-under-submit"
                 , Msg.SubmitOverUnderAnswers competition.id answers
                     |> Helpers.Events.onClickOrDisabled disabled
@@ -240,10 +271,6 @@ viewQuestion model competition open ( mNumber, question ) =
                             |> Html.text
                         ]
 
-        mAnswer : Maybe Int
-        mAnswer =
-            Model.getOverUnderAnswer model competition.id question
-
         loggedIn : Bool
         loggedIn =
             Helpers.Http.toMaybe model.userStatus /= Nothing
@@ -252,10 +279,14 @@ viewQuestion model competition open ( mNumber, question ) =
         answer =
             case open && loggedIn of
                 True ->
-                    viewChoiceButtons competition question mAnswer
+                    viewChoiceButtons model competition question
 
                 False ->
-                    viewAnswerReadOnly mAnswer
+                    -- Deliberately the saved answer rather than mAnswer. This is a
+                    -- report of what the user answered, so a click they never
+                    -- submitted does not belong in it, and showing one here would
+                    -- contradict their own row in the leaderboard below.
+                    viewAnswerReadOnly question.answer
 
         currentProbability : Html Msg
         currentProbability =
@@ -306,12 +337,22 @@ viewQuestion model competition open ( mNumber, question ) =
 extremes of the probability that the endpoint stores, so asking for a confidence later
 is a change to this view rather than to anything underneath it.
 -}
-viewChoiceButtons : Types.OverUnder.Competition -> Types.OverUnder.Question -> Maybe Int -> Html Msg
-viewChoiceButtons competition question mAnswer =
+viewChoiceButtons : Model key -> Types.OverUnder.Competition -> Types.OverUnder.Question -> Html Msg
+viewChoiceButtons model competition question =
     let
+        -- What to show as chosen, which is the click if there is one and the saved
+        -- answer otherwise. Only wanted here, where the user is choosing.
+        mAnswer : Maybe Int
+        mAnswer =
+            Model.getOverUnderAnswer model competition.id question
+
         mChoice : Maybe Types.OverUnder.Choice
         mChoice =
             Maybe.andThen Types.OverUnder.choiceOfProbability mAnswer
+
+        unsaved : Bool
+        unsaved =
+            Model.isOverUnderAnswerUnsaved model competition.id question
 
         viewButton : Types.OverUnder.Choice -> String -> Int -> Html Msg
         viewButton choice label probability =
@@ -337,7 +378,9 @@ viewChoiceButtons competition question mAnswer =
                     Html.Extra.nothing
     in
     Html.span
-        [ Attributes.class "over-under-choices" ]
+        [ Attributes.class "over-under-choices"
+        , Helpers.Classes.boolean "over-under-unsaved" "over-under-saved" unsaved
+        ]
         [ viewButton Types.OverUnder.Under "Under" Types.OverUnder.underProbability
         , viewButton Types.OverUnder.Over "Over" Types.OverUnder.overProbability
         , unexpectedProbability
@@ -416,10 +459,12 @@ viewAnsweredCount model competition =
 
                 Just _ ->
                     let
+                        -- Saved answers only. A click that has not been submitted is
+                        -- not an answer, however much it looks like one on screen.
                         answered : Int
                         answered =
                             competition.questions
-                                |> List.filterMap (Model.getOverUnderAnswer model competition.id)
+                                |> List.filterMap .answer
                                 |> List.length
                     in
                     [ [ String.fromInt answered

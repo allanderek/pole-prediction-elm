@@ -7,6 +7,8 @@ module Model exposing
     , getFromStatusDict
     , getOverUnderAnswer
     , initial
+    , isOverUnderAnswerUnsaved
+    , unsavedOverUnderAnswers
     )
 
 import Dict exposing (Dict)
@@ -121,15 +123,42 @@ andThenWithUser f model =
         |> Maybe.andThen f
 
 
-{-| The answer to show for a question: whatever the user has typed in this session if
-there is anything, otherwise the answer they previously submitted and we fetched back.
-That fallback is what makes the form still hold your answers after a refresh.
+{-| The answer to show for a question while it is being answered: whatever the user has
+clicked if they have clicked anything, otherwise the answer the server has for them.
+
+Note the two are not the same thing. `question.answer` is what is saved, and only ever
+changes when the server tells us so. An entry in `overUnderAnswerInputs` is a click,
+which may or may not have been submitted yet. Anything that reports on what the user's
+answers _are_, rather than what they are currently choosing, should read
+`question.answer` and not this.
+
 -}
 getOverUnderAnswer : Model key -> Types.OverUnder.CompetitionId -> Types.OverUnder.Question -> Maybe Int
 getOverUnderAnswer model competitionId question =
     Dict.get competitionId model.overUnderAnswerInputs
         |> Maybe.andThen (Dict.get question.id)
         |> Maybe.Extra.orElse question.answer
+
+
+{-| Whether the user has changed this answer without saving it.
+
+Worked out by comparing what is shown against what is saved, rather than by emptying the
+inputs once they are submitted. That way an answer clicked back to the value it already
+had stops counting as a change, which clearing could not tell.
+
+-}
+isOverUnderAnswerUnsaved : Model key -> Types.OverUnder.CompetitionId -> Types.OverUnder.Question -> Bool
+isOverUnderAnswerUnsaved model competitionId question =
+    getOverUnderAnswer model competitionId question /= question.answer
+
+
+{-| The questions whose answer has been changed and not saved.
+-}
+unsavedOverUnderAnswers : Model key -> Types.OverUnder.Competition -> List Types.OverUnder.Question
+unsavedOverUnderAnswers model competition =
+    List.filter
+        (isOverUnderAnswerUnsaved model competition.id)
+        competition.questions
 
 
 getFormulaOneCurrentSessionPrediction : Model key -> Types.FormulaOne.SessionId -> Maybe (List Types.FormulaOne.Entrant)

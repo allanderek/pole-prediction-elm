@@ -2210,3 +2210,53 @@ section.section.formula-one-season-leaderboard {
         }
     }
 }
+
+
+/* Unsaved over/under answers.
+
+   A click is not an answer until the server has it, so an answer that has been
+   changed and not submitted has to look different from one that is saved.
+   Marked by a colour and a mark, not by colour alone. */
+.over-under-choices.over-under-unsaved {
+    position: relative;
+
+    .over-under-choice.active {
+        background: #ef6c00;
+        border-color: #ef6c00;
+
+        &:hover {
+            background: #d55f00;
+            border-color: #d55f00;
+        }
+
+        /* Reads as 'not written down yet'. */
+        &::after {
+            content: '\00a0•';
+        }
+    }
+}
+
+.over-under-unsaved-note {
+    color: #ef6c00;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.over-under-all-saved {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.over-under-unsaved-note,
+.over-under-all-saved {
+    display: block;
+    margin: 0 1.5rem 0.5rem 1.5rem;
+}
+
+@media (max-width: 768px) {
+
+    .over-under-unsaved-note,
+    .over-under-all-saved {
+        margin: 0 0.75rem 0.5rem 0.75rem;
+    }
+}

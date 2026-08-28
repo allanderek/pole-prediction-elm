@@ -209,6 +209,48 @@ overUnderLeaderboardToRefetch model =
             Nothing
 
 
+{-| Record answers the server has just accepted as the saved ones.
+
+This is what keeps 'saved' and 'unsaved' apart. Without it the only record of a
+successful submission would be the clicks that caused it, which look exactly like clicks
+that were never sent, and so a refused submission went on being shown as though it had
+worked.
+
+Only the answers passed in are marked, not everything currently entered, since the user
+may have clicked further while the request was in flight.
+
+-}
+applySavedOverUnderAnswers : Types.OverUnder.CompetitionId -> List ( Types.OverUnder.QuestionId, Int ) -> Model key -> Model key
+applySavedOverUnderAnswers competitionId answers model =
+    let
+        saved : Dict Types.OverUnder.QuestionId Int
+        saved =
+            Dict.fromList answers
+
+        markQuestion : Types.OverUnder.Question -> Types.OverUnder.Question
+        markQuestion question =
+            case Dict.get question.id saved of
+                Nothing ->
+                    question
+
+                Just probability ->
+                    { question | answer = Just probability }
+
+        markCompetition : Types.OverUnder.Competition -> Types.OverUnder.Competition
+        markCompetition competition =
+            case competition.id == competitionId of
+                False ->
+                    competition
+
+                True ->
+                    { competition | questions = List.map markQuestion competition.questions }
+    in
+    { model
+        | overUnderCompetitions =
+            Helpers.Http.map (List.map markCompetition) model.overUnderCompetitions
+    }
+
+
 getDataWith : Data -> ( Model key, Effect ) -> ( Model key, Effect )
 getDataWith data ( model, existingEffect ) =
     Return.combine (getData data) ( model, existingEffect )
@@ -1047,7 +1089,7 @@ update msg model =
             , Effect.SubmitOverUnderAnswers { competitionId = competitionId } answers
             )
 
-        Msg.SubmitOverUnderAnswersResponse spec result ->
+        Msg.SubmitOverUnderAnswersResponse spec answers result ->
             let
                 alertMessage : String
                 alertMessage =
@@ -1057,13 +1099,24 @@ update msg model =
 
                         Err _ ->
                             "Failed to submit answers."
+
+                answeredModel : Model key
+                answeredModel =
+                    case result of
+                        Ok _ ->
+                            -- The server has these now, so they are what is saved. We
+                            -- record them rather than re-asking for the competitions,
+                            -- which would blank the page while it was in flight.
+                            applySavedOverUnderAnswers spec.competitionId answers model
+
+                        Err _ ->
+                            -- Left exactly as they were. They are still unsaved, the
+                            -- page now says so, and the user will want to try again.
+                            model
             in
-            -- The answers we fetched are now out of date, but the answers the user
-            -- entered are kept, and getOverUnderAnswer prefers those, so the page
-            -- carries on showing the right thing until the next fetch.
-            ( { model
+            ( { answeredModel
                 | overUnderAnswerSubmitStatus =
-                    Dict.insert spec.competitionId (Helpers.Http.fromResult result) model.overUnderAnswerSubmitStatus
+                    Dict.insert spec.competitionId (Helpers.Http.fromResult result) answeredModel.overUnderAnswerSubmitStatus
               }
             , Effect.NativeAlert alertMessage
             )

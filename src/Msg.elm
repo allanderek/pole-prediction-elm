@@ -80,7 +80,10 @@ type Msg
     | OverUnderCompetitionsResponse (HttpResult (List Types.OverUnder.Competition))
     | SetOverUnderAnswer Types.OverUnder.CompetitionId Types.OverUnder.QuestionId Int
     | SubmitOverUnderAnswers Types.OverUnder.CompetitionId (List ( Types.OverUnder.QuestionId, Int ))
-    | SubmitOverUnderAnswersResponse { competitionId : Types.OverUnder.CompetitionId } (HttpResult ())
+      -- Carries the answers that were actually sent. The user can go on clicking while
+      -- the request is in flight, so what is in the model when the reply arrives is not
+      -- necessarily what the server was told.
+    | SubmitOverUnderAnswersResponse { competitionId : Types.OverUnder.CompetitionId } (List ( Types.OverUnder.QuestionId, Int )) (HttpResult ())
     | OverUnderLeaderboardResponse { competitionId : Types.OverUnder.CompetitionId } (HttpResult Types.OverUnder.Leaderboard)
 
 
