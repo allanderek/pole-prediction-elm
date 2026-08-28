@@ -425,6 +425,35 @@ logoutUser config model =
     )
 
 
+{-| The user has logged in on a separate tab, so everything we have already fetched was
+fetched as somebody else. Several endpoints answer differently depending on who is
+asking, and the season leaderboard returns no rows at all to an anonymous reader before
+its deadline, so what is on screen is not merely incomplete but wrong.
+
+Rather than try to keep a list of which data is user-dependent, we load the page afresh,
+which is what logging out on another tab already does. A list would be a fix that decays,
+since the next person to add a conditional fetch has no reason to think of this.
+
+This is deliberately a single effect rather than a reload batched with a navigation.
+Those two race, and Cmd.batch promises no order. Browser.Navigation.load both navigates
+and loads afresh, so there is nothing to race.
+
+-}
+otherTabLoginNav : Route -> Effect
+otherTabLoginNav route =
+    case route of
+        Route.Login ->
+            Route.unparse Route.Home
+                |> Effect.LoadUrl
+
+        Route.Register ->
+            Route.unparse Route.Home
+                |> Effect.LoadUrl
+
+        _ ->
+            Effect.Reload
+
+
 postLoginNav : Route -> Effect
 postLoginNav route =
     case route of
@@ -513,16 +542,33 @@ update msg model =
                             -- The user has logged-out on a separate tab.
                             logoutUser { clearLocalStorage = False } model
 
-                        ( Just _, Just newUser ) ->
-                            -- The user has just changed something, this doesn't happen often but for example will happen
-                            -- with the loginExpiration when the cookie/token is refreshed.
-                            Return.noEffect { model | userStatus = Helpers.Http.Succeeded newUser }
+                        ( Just currentUser, Just newUser ) ->
+                            case currentUser.id == newUser.id of
+                                False ->
+                                    -- Somebody else has logged in on another tab. As
+                                    -- far as the data we are holding is concerned this
+                                    -- is no different from having been logged out: all
+                                    -- of it was fetched as the previous user.
+                                    ( model
+                                    , otherTabLoginNav model.route
+                                    )
 
-                        ( Nothing, Just newUser ) ->
-                            -- The user has been logged-in on a seperate tab
-                            -- the user profile, let's just assume that this is correct.
-                            ( { model | userStatus = Helpers.Http.Succeeded newUser }
-                            , postLoginNav model.route
+                                True ->
+                                    -- The same person, so only their details have
+                                    -- changed. That is a profile edit, or a token
+                                    -- refresh which does not alter this record at all.
+                                    -- Nothing we have fetched has gone stale, so we
+                                    -- keep it and simply take the new details.
+                                    Return.noEffect
+                                        { model | userStatus = Helpers.Http.Succeeded newUser }
+
+                        ( Nothing, Just _ ) ->
+                            -- The user has been logged-in on a separate tab. As with
+                            -- logging out on another tab, we do not bother updating
+                            -- the model, since we are about to load the page afresh
+                            -- and anything we set here would be thrown away with it.
+                            ( model
+                            , otherTabLoginNav model.route
                             )
 
                         ( Nothing, Nothing ) ->
