@@ -72,11 +72,12 @@ application model =
 
                 Route.FormulaOneEvent season eventId ->
                     let
+                        -- Already in the order they are run, see Types.FormulaOne.eventsDecoder,
+                        -- which is the order findPrevNext below needs them in.
                         sortedEvents : List Types.FormulaOne.Event
                         sortedEvents =
                             Model.getFromStatusDict season model.formulaOneEvents
                                 |> Maybe.withDefault []
-                                |> List.sortBy .round
 
                         mEvent : Maybe Types.FormulaOne.Event
                         mEvent =
@@ -258,13 +259,13 @@ application model =
 
                 Route.FormulaEEvent season eventId ->
                     let
+                        -- Already in the order they are run, see Types.FormulaE.eventsDecoder.
                         sortedFormulaEEvents : List Types.FormulaE.Event
                         sortedFormulaEEvents =
                             Dict.get season model.formulaEEvents
                                 |> Maybe.withDefault Helpers.Http.Ready
                                 |> Helpers.Http.toMaybe
                                 |> Maybe.withDefault []
-                                |> List.sortBy .round
 
                         mEvent : Maybe Types.FormulaE.Event
                         mEvent =

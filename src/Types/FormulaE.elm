@@ -16,8 +16,8 @@ module Types.FormulaE exposing
     , emptyPrediction
     , encodePrediction
     , entrantDecoder
-    , eventDecoder
     , eventLeaderboardDecoder
+    , eventsDecoder
     , scoringVersion
     )
 
@@ -89,6 +89,16 @@ eventDecoder =
         |> Pipeline.required "circuit" Decode.string
         |> Pipeline.required "date" Helpers.Rfc3339.decoder
         |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
+
+
+{-| Events in the order they are run, for the same reason as the Formula One version in
+Types.FormulaOne: the server's order is by id, which is only the right order as long as
+nothing is ever added to the calendar out of sequence.
+-}
+eventsDecoder : Decoder (List Event)
+eventsDecoder =
+    Decode.list eventDecoder
+        |> Decode.map (List.sortBy (.startTime >> Time.posixToMillis))
 
 
 type alias TeamId =

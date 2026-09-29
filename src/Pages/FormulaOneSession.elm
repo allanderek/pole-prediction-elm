@@ -29,11 +29,12 @@ view model session =
         navigationSection : Html msg
         navigationSection =
             let
+                -- Already in the order they are run, see Types.FormulaOne.eventsDecoder,
+                -- which is the order findPrevNext below needs them in.
                 sortedEvents : List Types.FormulaOne.Event
                 sortedEvents =
                     Model.getFromStatusDict session.season model.formulaOneEvents
                         |> Maybe.withDefault []
-                        |> List.sortBy .round
 
                 eventNav : { prev : Maybe Types.FormulaOne.Event, next : Maybe Types.FormulaOne.Event }
                 eventNav =

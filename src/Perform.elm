@@ -150,7 +150,7 @@ perform model effect =
                         , expect =
                             Http.expectJson
                                 (Msg.FormulaOneEventsResponse spec)
-                                (Decode.list Types.FormulaOne.eventDecoder)
+                                Types.FormulaOne.eventsDecoder
                         }
 
                 Types.Data.FormulaOneEventSessions spec ->
@@ -230,7 +230,7 @@ perform model effect =
                         , expect =
                             Http.expectJson
                                 (Msg.FormulaEEventsResponse spec)
-                                (Decode.list Types.FormulaE.eventDecoder)
+                                Types.FormulaE.eventsDecoder
                         }
 
                 Types.Data.FormulaEEventEntrants spec ->

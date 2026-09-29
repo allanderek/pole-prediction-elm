@@ -17,8 +17,8 @@ module Types.FormulaOne exposing
     , currentChampion
     , currentSeason
     , entrantDecoder
-    , eventDecoder
     , eventName
+    , eventsDecoder
     , scoredPredictionRowDecoder
     , scoredPredictionRowsToSessionLeaderboard
     , seasonLeaderboardFromSeasonPredictionRows
@@ -86,6 +86,27 @@ eventDecoder =
         |> Pipeline.required "start_time" Helpers.Rfc3339.decoder
         |> Pipeline.required "last_session_start_time" Helpers.Rfc3339.decoder
         |> Pipeline.required "cancelled" Helpers.Decode.intAsBool
+
+
+{-| Events in the order they are run, which is the order everything wants them in: the
+season's event list, and the previous/next buttons on an event or session page.
+
+The server returns them in whatever order the query happens to produce, which is by id,
+so a race added to the calendar later than it is run comes back in the wrong place. This
+is the single point at which events enter the program, so sorting here means every
+consumer can rely on the order and none of them has to sort again.
+
+Note that only this list decoder is exposed, not `eventDecoder`, so an unsorted list of
+events cannot be built by accident.
+
+Sorting on the start time rather than on the round keeps the order right whatever is done
+with round numbers, which are only ever displayed.
+
+-}
+eventsDecoder : Decoder (List Event)
+eventsDecoder =
+    Decode.list eventDecoder
+        |> Decode.map (List.sortBy (.startTime >> Time.posixToMillis))
 
 
 type alias SessionId =
