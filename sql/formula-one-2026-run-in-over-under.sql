@@ -60,7 +60,14 @@ from (
     -- Perez and Bottas have yet to score for the new team.
     union all select 7, 'Cadillac''s points in 2026 — over/under 0.5'
     -- Eight so far: Antonelli, Russell, Hamilton, Norris, Leclerc, Verstappen, Piastri
-    -- and Gasly. Over needs two names that have not been there yet.
+    -- and Hadjar. Over needs two names that have not been there yet.
+    --
+    -- This comment originally had Gasly as the eighth rather than Hadjar, which was
+    -- what the results said when the question was written. Third place at Monaco,
+    -- round 8, was later corrected from Gasly to Hadjar. It makes no difference to the
+    -- line, the count being eight either way, but it does to the reasoning: all eight
+    -- are now drivers of the top four teams, so a ninth or tenth name has to come from
+    -- outside them, and no such driver has finished better than 5th this season.
     union all select 8, 'Different drivers on the podium in 2026 — over/under 9.5'
 ) as questions
 order by ordinal
