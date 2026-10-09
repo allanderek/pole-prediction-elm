@@ -5,6 +5,8 @@ import Helpers.Http
 import Html exposing (Html)
 import Model exposing (Model)
 import Route exposing (Route)
+import Types.FormulaE
+import Types.FormulaOne
 
 
 view : Model key -> Html msg
@@ -36,8 +38,8 @@ view model =
             []
             [ Html.ul
                 []
-                [ viewLink "Formula One" (Route.FormulaOne Nothing)
-                , viewLink "Formula E" (Route.FormulaE Nothing)
+                [ viewLink "Formula One" (Route.formulaOneSeason Types.FormulaOne.currentSeason)
+                , viewLink "Formula E" (Route.formulaESeason Types.FormulaE.currentSeason)
                 , viewLink "Over/Under" Route.OverUnder
                 , profileOrLoginLink
                 ]
