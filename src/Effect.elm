@@ -18,11 +18,13 @@ type Effect
     = None
     | Batch (List Effect)
     | PushUrl String
+    | ReplaceUrl String
     | LoadUrl String
     | Reload
     | SetLocalStorage String Json.Encode.Value
     | ClearLocalStorage String
     | NativeAlert String
+    | SetCanonical Route
     | GetTimeZone
     | LegacyGetTimeZone
     | SubmitLogin Types.Login.Form

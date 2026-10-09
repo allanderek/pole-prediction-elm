@@ -1,5 +1,6 @@
 module Route exposing
     ( Route(..)
+    , canonical
     , formulaESeason
     , formulaOneSeason
     , googleOAuthPath
@@ -95,34 +96,36 @@ parse url =
         |> Maybe.withDefault NotFound
 
 
+{-| The canonical form of a route: the one URL we want search engines to index
+for the content it shows. The season-less routes `FormulaOne Nothing` and
+`FormulaE Nothing` are aliases for the current season, so they canonicalise to
+the explicit season route, which goes on meaning the same thing after the
+season rolls over. Every other route is its own canonical form.
+-}
+canonical : Route -> Route
+canonical route =
+    case route of
+        FormulaOne Nothing ->
+            FormulaOne (Just Types.FormulaOne.currentSeason)
+
+        FormulaE Nothing ->
+            FormulaE (Just Types.FormulaE.currentSeason)
+
+        _ ->
+            route
+
+
+{-| Internal links always use the explicit season, so that they match the
+canonical URL, see `canonical`.
+-}
 formulaESeason : Types.FormulaE.Season -> Route
 formulaESeason season =
-    let
-        mSeason : Maybe Types.FormulaE.Season
-        mSeason =
-            case season == Types.FormulaE.currentSeason of
-                True ->
-                    Nothing
-
-                False ->
-                    Just season
-    in
-    FormulaE mSeason
+    FormulaE (Just season)
 
 
 formulaOneSeason : Types.FormulaOne.Season -> Route
 formulaOneSeason season =
-    let
-        mSeason : Maybe Types.FormulaOne.Season
-        mSeason =
-            case season == Types.FormulaOne.currentSeason of
-                True ->
-                    Nothing
-
-                False ->
-                    Just season
-    in
-    FormulaOne mSeason
+    FormulaOne (Just season)
 
 
 href : Route -> Html.Attribute msg

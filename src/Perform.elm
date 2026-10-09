@@ -8,6 +8,7 @@ import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode
 import Msg exposing (Msg)
 import Ports
+import Route
 import Task
 import Time
 import TimeZone
@@ -45,6 +46,9 @@ perform model effect =
         Effect.PushUrl url ->
             Browser.Navigation.pushUrl model.navigationKey url
 
+        Effect.ReplaceUrl url ->
+            Browser.Navigation.replaceUrl model.navigationKey url
+
         Effect.LoadUrl url ->
             Browser.Navigation.load url
 
@@ -59,6 +63,9 @@ perform model effect =
 
         Effect.NativeAlert message ->
             Ports.native_alert message
+
+        Effect.SetCanonical route ->
+            Ports.set_canonical (Route.unparse route)
 
         Effect.GetTimeZone ->
             Task.attempt Msg.GetTimeZone TimeZone.getZone

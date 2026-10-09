@@ -384,6 +384,19 @@ def serve_index(request: Request, path: str = None):
                             alert(message); 
                         }});
 
+                        // The canonical link is deliberately absent from the served
+                        // HTML, so that there is never a conflicting one for the
+                        // crawler to weigh against the one set here, see Route.canonical.
+                        app.ports.set_canonical.subscribe(function (path) {{
+                            var link = document.head.querySelector('link[rel="canonical"]');
+                            if (link === null) {{
+                                link = document.createElement('link');
+                                link.setAttribute('rel', 'canonical');
+                                document.head.appendChild(link);
+                            }}
+                            link.setAttribute('href', location.origin + path);
+                        }});
+
                         window.addEventListener('storage', function(event) {{
                             console.log('local storage event');
                             console.log(event);

@@ -266,8 +266,32 @@ getMultipleDataIf datas model =
     getMultipleData (Helpers.List.filterByFirst datas) model
 
 
+{-| Called whenever we land on a route, both at start-up and on every URL change.
+
+A route that is not in its canonical form (see `Route.canonical`) is not set up at
+all, instead the URL is replaced with the canonical one. That replacement comes back
+through `UrlChanged` and so back here with the canonical route, at which point the
+page data is fetched exactly once and the canonical link tag is set.
+
+-}
 initRoute : Model key -> ( Model key, Effect )
 initRoute model =
+    let
+        canonicalRoute : Route
+        canonicalRoute =
+            Route.canonical model.route
+    in
+    case canonicalRoute == model.route of
+        False ->
+            ( model, Effect.ReplaceUrl (Route.unparse canonicalRoute) )
+
+        True ->
+            initCanonicalRoute model
+                |> Return.addEffect (Effect.SetCanonical canonicalRoute)
+
+
+initCanonicalRoute : Model key -> ( Model key, Effect )
+initCanonicalRoute model =
     case model.route of
         Route.Home ->
             Return.noEffect model
