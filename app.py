@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Request, HTTPException, Depends, Response, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, field_validator
 from typing import Optional
@@ -42,8 +42,19 @@ GOOGLE_AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
-# In-memory store for OAuth state parameters (prevents CSRF)
-oauth_states: dict = {}
+# In-memory store for OAuth state parameters (prevents CSRF).
+# Pending OAuth state tokens, mapped to the time they were issued. A token is only
+# removed when its callback arrives, and most never do (crawlers follow the login
+# link and abandon it at Google), so anything older than OAUTH_STATE_TTL is pruned
+# each time a new one is issued.
+oauth_states: dict[str, datetime.datetime] = {}
+OAUTH_STATE_TTL = datetime.timedelta(hours=1)
+
+
+def prune_oauth_states(now: datetime.datetime):
+    expired = [state for state, issued in oauth_states.items() if now - issued > OAUTH_STATE_TTL]
+    for state in expired:
+        del oauth_states[state]
 
 
 @contextlib.contextmanager
@@ -287,6 +298,14 @@ class FormulaEPredictionRequest(BaseModel):
         if v is not None and v not in ["yes", "no", ""]:
             raise ValueError('safety_car must be "yes", "no", or ""')
         return v
+
+
+# Keep crawlers out of the API. In particular the Google login link, which is a
+# redirect to Google's consent screen, otherwise shows up in Search Console as a
+# noindex page.
+@app.get("/robots.txt", response_class=PlainTextResponse)
+def robots_txt():
+    return "User-agent: *\nDisallow: /api/\n"
 
 
 # Serve index.html for '/' and any path starting with '/app'
@@ -569,7 +588,9 @@ def google_oauth_login():
     authorization_url, _ = oauth.create_authorization_url(
         GOOGLE_AUTHORIZE_URL, state=state
     )
-    oauth_states[state] = True
+    now = datetime.datetime.now(datetime.timezone.utc)
+    prune_oauth_states(now)
+    oauth_states[state] = now
     return RedirectResponse(url=authorization_url)
 
 
@@ -585,9 +606,10 @@ def google_oauth_callback(
     if error:
         return RedirectResponse(url=f"{config['base_url']}/app/login")
 
-    if not state or state not in oauth_states:
-        raise HTTPException(status_code=400, detail="Invalid OAuth state")
-    del oauth_states[state]
+    issued = oauth_states.pop(state, None) if state else None
+    now = datetime.datetime.now(datetime.timezone.utc)
+    if issued is None or now - issued > OAUTH_STATE_TTL:
+        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
 
     google_client_id = os.getenv("GOOGLE_CLIENT_ID")
     google_client_secret = os.getenv("GOOGLE_CLIENT_SECRET")
